@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Store, PlusCircle, LayoutList, Compass, Wallet, Menu, X } from "lucide-react";
+import { Store, PlusCircle, LayoutList, Compass, Menu, X } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { WalletButton } from "@/components/wallet/WalletButton";
+import { NetworkStatusBadge } from "@/components/wallet/NetworkStatusBadge";
+import { RabdiNetworkGuard } from "@/components/wallet/RabdiNetworkGuard";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -57,13 +59,8 @@ export function Navbar() {
 
         {/* Action / Wallet Slot */}
         <div className="hidden md:flex items-center gap-3">
-          {/* In Phase 1, this slot is wired to RainbowKit ConnectButton */}
-          <div id="wallet-slot">
-            <Button variant="outline" className="flex items-center gap-2 border-emerald-500/40 hover:border-emerald-500 text-foreground">
-              <Wallet className="h-4 w-4 text-emerald-500" />
-              <span>Connect Wallet</span>
-            </Button>
-          </div>
+          <NetworkStatusBadge />
+          <WalletButton />
         </div>
 
         {/* Mobile menu button */}
@@ -76,6 +73,9 @@ export function Navbar() {
           {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
       </div>
+
+      {/* Network / wallet status banners (wrong chain, missing wallet, low balance) */}
+      <RabdiNetworkGuard />
 
       {/* Mobile Nav */}
       {mobileMenuOpen && (
@@ -99,11 +99,12 @@ export function Navbar() {
               </Link>
             );
           })}
+          <div className="flex items-center justify-between px-3 py-2 text-xs text-muted-foreground">
+            <span>Network</span>
+            <NetworkStatusBadge className="inline-flex" />
+          </div>
           <div className="pt-2 border-t border-border/50">
-            <Button className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
-              <Wallet className="h-4 w-4" />
-              <span>Connect Wallet</span>
-            </Button>
+            <WalletButton fullWidth />
           </div>
         </div>
       )}

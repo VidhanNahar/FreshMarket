@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RainbowKitProvider, lightTheme } from "@rainbow-me/rainbowkit";
 import { wagmiConfig } from "@/lib/wallet/config";
 import { rabdiWalletChain } from "@/lib/arkiv/chain";
+import { WalletConnectionEffects } from "@/components/wallet/WalletConnectionEffects";
 
 interface Web3ProviderProps {
   children: React.ReactNode;
@@ -38,6 +39,7 @@ export function Web3Provider({ children }: Web3ProviderProps) {
             fontStack: "system",
           })}
         >
+          <WalletConnectionEffects />
           {children}
         </RainbowKitProvider>
       </QueryClientProvider>
