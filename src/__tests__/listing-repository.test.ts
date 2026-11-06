@@ -59,6 +59,13 @@ function reader(response: unknown) {
 }
 
 describe("Arkiv listing repository writes", () => {
+  it("stores a public Swarm reference as UTF-8 imageUrl bytes", async () => {
+    const client = wallet();
+    const reference = `bzz://${"ab".repeat(32)}`;
+    await new ArkivListingRepository().create({ ...input, imageUrl: reference }, client);
+    expect(new TextDecoder().decode(client.createEntity.mock.calls[0][1].imageUrl)).toBe(reference);
+  });
+
   it("returns an entity key and writes typed values with the default seven-day lifetime", async () => {
     const client = wallet();
     const repository = new ArkivListingRepository();
@@ -209,6 +216,22 @@ describe("Arkiv listing repository reads", () => {
       request.mockResolvedValue(entity);
       expect(await repository.getById(entityKey)).toBeNull();
     }
+  });
+
+  it("bounds scans of a hostile or excessively large public catalogue", async () => {
+    const { repository, request } = reader({ data: Array(100).fill({ ...rpcEntity(), attributes: [] }), blockNumber: "0x64" });
+    await expect(repository.searchAll()).rejects.toThrow("Catalogue read limit");
+    expect(request).toHaveBeenCalledTimes(101);
+  });
+
+  it("does not stop when SDK schema validation skips every row on a full page", async () => {
+    const { repository, request } = reader(null);
+    const malformed = { ...rpcEntity(), attributes: [] };
+    request.mockResolvedValueOnce({ data: Array(100).fill(malformed), blockNumber: "0x64" })
+      .mockResolvedValueOnce({ data: [rpcEntity()], blockNumber: "0x64" });
+    expect(await repository.searchAll()).toHaveLength(1);
+    expect(request).toHaveBeenCalledTimes(2);
+    expect(request.mock.calls[1][0].params[1].offset).toBe("0x64");
   });
 
   it("loads subsequent discovery pages even when a full page contains rejected rows", async () => {

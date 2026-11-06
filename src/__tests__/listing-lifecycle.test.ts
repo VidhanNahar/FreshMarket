@@ -5,7 +5,7 @@ import { custom, decodeFunctionData, encodeErrorResult, hexToString, parseAbi, t
 import { listingSchema } from "@/lib/arkiv/schema";
 import { rabdiWalletChain } from "@/lib/arkiv/chain";
 import { ArkivListingRepository, type ListingMutationClient } from "@/services/listing-repository";
-import { verifyListingAction } from "@/services/listing-lifecycle";
+import { previewListingAction, verifyListingAction } from "@/services/listing-lifecycle";
 import { changeListingCache } from "@/lib/listing-cache";
 import { listingKeys } from "@/lib/arkiv/queries";
 import { parseListingPrice } from "@/lib/listing-price-input";
@@ -114,6 +114,11 @@ describe("seller lifecycle ownership and writes", () => {
 });
 
 describe("optimistic cache and indexing", () => {
+  it("does not erase required price fields when an optional edit is explicitly undefined", () => {
+    expect(previewListingAction(listing, { kind: "edit", changes: { priceMinor: undefined, description: " Updated " } }))
+      .toEqual({ ...listing, description: "Updated" });
+  });
+
   it("removes a reserved listing from buyer results, retains seller/detail, and rolls back without losing unrelated edits", () => {
     const cache = new QueryClient();
     const catalog = listingKeys.catalog();

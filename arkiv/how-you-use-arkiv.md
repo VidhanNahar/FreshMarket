@@ -60,3 +60,11 @@ The second address is public, not a private key, and must differ from the owner.
 | Wallet A deletion transaction / public absence | Pending |
 
 No live transaction hash, entity key, or network-rejection result is fabricated. Keep #11 and #13 live acceptance open until this evidence is recorded.
+
+## Reproducible reads and Swarm references
+
+Run `npm run query:listings` with an optional `NEXT_PUBLIC_ARKIV_ACCESS_KEY` in the shell environment to query the schema directly without FreshMarket's server. The exact executable query is in `scripts/query-listings.mjs`. It uses `.from(schema)`, `eq('status', 'available')`, ascending `$key` order and a 20-record limit. Bigint values are printed as decimal strings.
+
+`createWithReceipt(input, connectedArkivWallet)` writes schema-typed attributes and a selected lifetime; SDK `createEntity` returns the entity key, transaction hash and exact expiration block. `getById(key)` performs public read-back. `updateStatus(key, 'sold', wallet)` patches only status. `extendExpiry(key, 7, wallet)` adds 302,400 blocks to the freshly read deadline. `deleteListing(key, wallet)` explicitly removes the entity. None of these examples is a fabricated transaction receipt.
+
+Phase 8 uses the same public `imageUrl` field for `bzz://` references, while file bytes are uploaded to Swarm separately. See `swarm.md` for exact source files, upload/read commands and missing live evidence. A failed Swarm upload never automatically creates an Arkiv entity.

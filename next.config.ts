@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  async redirects() {
+    return [{ source: "/storefront", destination: "/storefront/index.html", permanent: false }];
+  },
   turbopack: {
     rules: {
       "*.css": {

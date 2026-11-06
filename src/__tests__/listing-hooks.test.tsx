@@ -26,6 +26,17 @@ beforeEach(() => {
 });
 
 describe("public listing hooks", () => {
+  it("automatically prunes an available item when a later confirmed block reaches expiry", async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity } } });
+    const wrap = ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+    const { result } = renderHook(() => useListings(filters), { wrapper: wrap });
+    await waitFor(() => expect(result.current.data).toEqual([listing]));
+    await act(async () => { client.setQueryData(["rabdi", "blockNumber"], listing.expiresAtBlock); });
+    await waitFor(() => expect(result.current.data).toEqual([]));
+    expect(listing.status).toBe("available");
+    client.clear();
+  });
+
   it("refreshes the catalogue on publishing invalidation and shares verified detail data", async () => {
     const client = new QueryClient({ defaultOptions: { queries: { gcTime: 0 } } });
     const wrap = ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;

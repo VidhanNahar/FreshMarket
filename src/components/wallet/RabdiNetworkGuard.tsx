@@ -172,7 +172,7 @@ export function RabdiNetworkGuard() {
               size="sm"
               onClick={handleSwitch}
               disabled={isPending}
-              className="gap-2 bg-emerald-600 text-white hover:bg-emerald-700"
+              className="gap-2 bg-emerald-700 text-white hover:bg-emerald-800"
             >
               {isPending ? (
                 <RefreshCw className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />

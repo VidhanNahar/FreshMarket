@@ -1,26 +1,46 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #ffffff; --foreground: #17201b;
+  --card: #ffffff; --card-foreground: #17201b;
+  --popover: #ffffff; --popover-foreground: #17201b;
+  --muted: #f1f5f2; --muted-foreground: #526257;
+  --primary: #047857; --primary-foreground: #ffffff;
+  --secondary: #e9f3ed; --secondary-foreground: #14532d;
+  --accent: #e9f3ed; --accent-foreground: #14532d;
+  --border: #d4ded7; --input: #c1cec5; --ring: #047857;
+  --destructive: #b91c1c;
 }
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--background); --color-foreground: var(--foreground);
+  --color-card: var(--card); --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover); --color-popover-foreground: var(--popover-foreground);
+  --color-muted: var(--muted); --color-muted-foreground: var(--muted-foreground);
+  --color-primary: var(--primary); --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary); --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent); --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border); --color-input: var(--input); --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --font-sans: var(--font-geist-sans); --font-mono: var(--font-geist-mono);
 }
-
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #101813; --foreground: #eaf2ec;
+    --card: #16211a; --card-foreground: #eaf2ec;
+    --popover: #16211a; --popover-foreground: #eaf2ec;
+    --muted: #202e25; --muted-foreground: #b3c4b8;
+    --primary: #047857; --secondary: #203a29; --secondary-foreground: #dcfce7;
+    --accent: #203a29; --accent-foreground: #dcfce7;
+    --border: #3b5142; --input: #526b5a; --ring: #6ee7b7; --destructive: #fca5a5;
   }
 }
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+body { background: var(--background); color: var(--foreground); font-family: var(--font-geist-sans), Arial, sans-serif; }
+*, *::before, *::after { min-width: 0; }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+button:focus-visible, a:focus-visible, select:focus-visible { outline: 3px solid var(--ring); outline-offset: 3px; }
+button:not(:disabled), select { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+main { overflow-wrap: anywhere; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }

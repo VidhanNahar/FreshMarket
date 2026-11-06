@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { resolveImageSource } from "../../shared/media";
 import {
   LISTING_CATEGORIES,
   type ListingCategory,
@@ -8,7 +9,8 @@ import {
 
 export { LISTING_CATEGORIES, type ListingCategory, type CreateListingInput };
 
-export const EXPIRATION_DAYS_OPTIONS = [3, 7, 14, 30] as const;
+export const DEMO_EXPIRATION_DAYS = 15 / (24 * 60);
+export const EXPIRATION_DAYS_OPTIONS = [DEMO_EXPIRATION_DAYS, 3, 7, 14, 30] as const;
 export type ExpirationDays = (typeof EXPIRATION_DAYS_OPTIONS)[number];
 
 // Privacy filter to disallow exact personal street addresses in the coarse public city field
@@ -96,21 +98,14 @@ export const listingFormSchema = z.object({
   imageUrl: z
     .string({ message: "Image URL is required" })
     .trim()
-    .url("Please enter a valid URL")
     .max(2048, "Image URL cannot exceed 2048 characters")
-    .refine(
-      (url) => /^https:\/\/.+/i.test(url),
-      "Image URL must start with https://"
-    )
-    .refine((value) => {
-      try { const url = new URL(value); return !url.username && !url.password; }
-      catch { return false; }
-    }, "Image URL cannot contain credentials"),
+    .refine((value) => resolveImageSource(value) !== null,
+      "Use an HTTPS URL without credentials or bzz:// followed by a 64-character public Swarm reference"),
 
   expirationDays: z.union(
-    [z.literal(3), z.literal(7), z.literal(14), z.literal(30)],
+    [z.literal(DEMO_EXPIRATION_DAYS), z.literal(3), z.literal(7), z.literal(14), z.literal(30)],
     {
-      message: "Expiration period must be 3, 7, 14, or 30 days",
+      message: "Choose the 15-minute demo or 3, 7, 14, or 30 days",
     }
   ),
 });

@@ -136,7 +136,7 @@ export function WalletSummary() {
             size="xs"
             onClick={handleSwitch}
             disabled={isSwitching}
-            className="bg-emerald-600 text-white hover:bg-emerald-700"
+            className="bg-emerald-700 text-white hover:bg-emerald-800"
           >
             {isSwitching ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : null}
             Switch

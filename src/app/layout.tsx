@@ -5,6 +5,7 @@ import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Toaster } from "@/components/ui/sonner";
+import { ErrorBoundary } from "@/components/resilience/ErrorBoundary";
 import { Web3Provider } from "@/components/providers/Web3Provider";
 
 const geistSans = Geist({
@@ -31,14 +32,15 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        <Web3Provider>
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded focus:bg-background focus:p-3">Skip to content</a>
+        <ErrorBoundary><Web3Provider>
           <Suspense fallback={<div className="h-16 border-b border-border/40 bg-background" />}>
             <Navbar />
           </Suspense>
-          <main className="flex-1">{children}</main>
+          <main id="main-content" tabIndex={-1} className="flex-1">{children}</main>
           <Footer />
           <Toaster />
-        </Web3Provider>
+        </Web3Provider></ErrorBoundary>
       </body>
     </html>
   );

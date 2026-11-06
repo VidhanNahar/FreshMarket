@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "sonner";
 import { useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useWalletClient } from "wagmi";
@@ -48,6 +49,7 @@ export function usePublishListing() {
         sentHash.current = confirmed.txHash;
         setTxHash(confirmed.txHash);
         setPhase("verifying");
+        toast.info("Confirming on Arkiv indexer…");
         // Invalidate immediately on confirmation, even if public read-back later times out.
         void invalidateListings(queryClient).catch(() => undefined);
       });
@@ -81,7 +83,7 @@ export function usePublishListing() {
   }
 
   function reset() {
-    if (busy.current) return;
+    if (busy.current || (sentHash.current && !receipt)) return;
     // An unknown outcome after broadcast must be checked in the explorer before another write.
     sentHash.current = undefined;
     setTxHash(undefined);
