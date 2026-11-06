@@ -91,7 +91,7 @@ Words left over after category and brand/model resolution (`red`, `barely used`)
 
 - A listing is dropped unless `seller == $owner` and every enum (`status`, `visibility`, `condition`, `fulfilment`) is a known value. Media references that are not safe `https://` or `bzz://` values are discarded.
 - Unknown `categoryPath` values from other writers are shown as stored, not rejected.
-- A seller name is shown only if `getEnsAddress(ensName)` returns the seller's wallet (ENSv2 Universal Resolver `0xeEeEEEeE14D718C2B47D9923Deab1335E144EeEe` on Sepolia). A verified badge requires `<label>.verified.freshmarket.eth` to resolve to the same wallet.
+- A seller name is shown only if `getEnsAddress(ensName)` returns the seller's wallet (the pinned ENSv2 Universal Resolver from `shared/ens-deployment.json`, Sepolia). A verified badge requires `<label>.verified.freshmarket.eth` to resolve to the same wallet.
 - Price filters are inclusive USDT minor units.
 
 ## Queries

@@ -97,3 +97,9 @@ Vidhan Nahar and Dhairya. Source: [VidhanNahar/FreshMarket](https://github.com/V
 ## Security review status
 
 The project-wide hardening pass fixed replayable uploads, unauthenticated body buffering, skipped-row pagination, stale upload completion, incomplete-publication reset and undefined optimistic edits. See [the audit and open release risks](arkiv/security-audit.md) and [SECURITY.md](SECURITY.md). Production Swarm uploads require shared atomic replay/quota state; an in-process cache is never used as a production fallback. Unresolved dependency advisories and live wallet/deployment checks mean the prototype is not yet cleared for unrestricted production use.
+
+## Phase 9: ENSv2 storefront identity
+
+`/identity` provides Sepolia-only parent registry setup, seller-owned subname issuance, dedicated seller resolver deployment, profile records and primary-name controls. Verified names appear on listing cards, detail pages and the seller dashboard; ENS outages fall back to the wallet address without blocking Arkiv queries.
+
+Start with the [step-by-step ENS setup guide](ens/README.md), including obtaining Sepolia test ETH, registering your first parent, and using the wallet-approved setup controls. Configure the public `NEXT_PUBLIC_ENS_*` values from `.env.example` only after registering your own parent. `npm run verify:ens` reproduces the successful real contract read recorded in [the proof](ens/sepolia-read-proof.json). Real parent/subname writes and a populated identity demo still need wallet approvals; they are not claimed complete.

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { SellerIdentity } from "@/components/identity/SellerIdentity";
 import { useState } from "react";
 import { useAccount, useSwitchChain } from "wagmi";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
@@ -70,7 +71,7 @@ export function SellerDashboard() {
   if (!isConnected || !address) return <div className="space-y-4 rounded-2xl border border-border p-8 text-center"><h2 className="text-xl font-semibold">Connect your seller wallet</h2><p>Connect a wallet to view and manage its listings.</p><button type="button" className={button} onClick={openConnectModal}>Connect wallet</button></div>;
 
   return <div className="mt-8 space-y-6">
-    <p className="break-all font-mono text-xs">Seller: {address}</p>
+    <section aria-label="Seller profile" className="space-y-3"><SellerIdentity address={address} profile /><Link href="/identity" className="block text-sm text-emerald-700 underline">Manage ENS storefront identity</Link></section>
     {!onRabdi && <div role="alert" className="rounded-xl border border-amber-500/40 p-4"><p>Switch to Arkiv Rabdi to manage listings. You can still view your inventory.</p><button type="button" disabled={switching} className={`${button} mt-3`} onClick={async () => {
       try { await switchChainAsync({ chainId: ARKIV_RABDI_CHAIN_ID }); }
       catch (error) { toast.error(getWalletErrorReason(error)); }

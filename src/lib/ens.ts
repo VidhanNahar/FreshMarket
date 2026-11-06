@@ -1,24 +1,26 @@
-import { createPublicClient, http, isAddressEqual, type Address, type PublicClient } from "viem";
-import { sepolia } from "viem/chains";
+import { isAddressEqual, type Address, type PublicClient } from "viem";
 import { normalize } from "viem/ens";
+import { ensPublicClient } from "./ens/client";
+import { ensConfig } from "./ens/config";
 
 /**
  * Seller names (`priya.freshmarket.eth`) and verified badges (`priya.verified.freshmarket.eth`)
  * live in FreshMarket's ENSv2 subname registries on Sepolia. A name is trusted only when
  * forward resolution returns the expected wallet; an Arkiv record claiming it proves nothing.
  */
-export const ENS_PARENT_NAME = process.env.NEXT_PUBLIC_ENS_PARENT_NAME || "freshmarket.eth";
-// ENSv2 Universal Resolver proxy on Sepolia (docs.ens.domains/learn/deployments).
-export const ENS_UNIVERSAL_RESOLVER: Address = "0xeEeEEEeE14D718C2B47D9923Deab1335E144EeEe";
+// The fallback is only a label suffix for parsing; trust always comes from forward resolution.
+export const ENS_PARENT_NAME = ensConfig.parentName || "freshmarket.eth";
+// Same pinned ENSv2 resolver as the identity service (shared/ens-deployment.json). The mutable
+// canonical proxy did not serve this root in the live compatibility check.
+export const ENS_UNIVERSAL_RESOLVER: Address = ensConfig.universalResolver;
 
 const LABEL = /^[a-z0-9](?:[a-z0-9-]{1,30}[a-z0-9])?$/;
 
 export type EnsReader = Pick<PublicClient, "getEnsAddress">;
 
-let reader: EnsReader | undefined;
+/** Shares the isolated Sepolia client (NEXT_PUBLIC_ETHEREUM_SEPOLIA_RPC_URL, CCIP-Read off). */
 export function getEnsReader(): EnsReader {
-  reader ??= createPublicClient({ chain: sepolia, transport: http(process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL || undefined) });
-  return reader;
+  return ensPublicClient;
 }
 
 /** "priya.freshmarket.eth" → "priya"; null for any name outside FreshMarket's registry. */

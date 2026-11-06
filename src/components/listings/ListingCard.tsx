@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Clock, MapPin } from "lucide-react";
 import { CONDITION_LABELS, type Listing, displayCity, formatPrice } from "@/domain/listing";
 import { categoryLabel } from "../../../shared/categories";
-import { shortenAddress } from "@/lib/wallet/wallet-ui";
+import { SellerIdentity } from "@/components/identity/SellerIdentity";
 import { ExpirationCountdown } from "./ExpirationCountdown";
 import { ListingImage } from "./ListingImage";
 
@@ -25,7 +25,7 @@ export function ListingCard({ listing, currentBlock }: { listing: Listing; curre
           <span className="flex items-center gap-1"><MapPin aria-hidden="true" className="h-3.5 w-3.5" />{displayCity(listing.city)}</span>
           <span className="flex items-center gap-1"><Clock aria-hidden="true" className="h-3.5 w-3.5" /><ExpirationCountdown expiresAtBlock={listing.expiresAtBlock} currentBlock={currentBlock} /></span>
         </div>
-        <div className="flex items-center justify-between gap-2 border-t editorial-rule pt-3 text-xs"><span title={listing.seller} className="rounded-full bg-muted px-2.5 py-1 font-mono">{shortenAddress(listing.seller)}</span><span className="font-semibold text-emerald-700 transition-transform group-hover:translate-x-1 dark:text-emerald-400">View details →</span></div>
+        <div className="flex items-center justify-between gap-2 border-t editorial-rule pt-3 text-xs"><span title={listing.seller} className="rounded-full bg-muted px-2.5 py-1 font-mono"><SellerIdentity address={listing.seller} /></span><span className="font-semibold text-emerald-700 transition-transform group-hover:translate-x-1 dark:text-emerald-400">View details →</span></div>
       </div>
     </Link>
   );
