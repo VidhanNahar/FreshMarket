@@ -3,6 +3,7 @@ import {
   LISTING_CATEGORIES,
   type ListingCategory,
   type CreateListingInput,
+  toPriceMinor,
 } from "./listing";
 
 export { LISTING_CATEGORIES, type ListingCategory, type CreateListingInput };
@@ -48,7 +49,9 @@ export const listingFormSchema = z.object({
     .string({ message: "Listing title is required" })
     .trim()
     .min(5, "Title must be at least 5 characters")
-    .max(80, "Title cannot exceed 80 characters"),
+    .max(80, "Title cannot exceed 80 characters")
+    // Arkiv str limits bytes, so some Unicode titles hit the limit before 80 characters.
+    .refine((value) => new TextEncoder().encode(value).length <= 128, "Title cannot exceed 128 UTF-8 bytes"),
 
   description: z
     .string({ message: "Description is required" })
@@ -72,13 +75,17 @@ export const listingFormSchema = z.object({
       { message: "Price cannot have more than 2 decimal places" }
     ),
 
-  currency: z.string().min(1, "Currency is required"),
+  currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/, "Use a three-letter currency code")
+    .refine((currency) => /^[A-Z]{3}$/.test(currency) && new Intl.NumberFormat("en", {
+      style: "currency", currency,
+    }).resolvedOptions().maximumFractionDigits === 2, "Currency must use two decimal minor units"),
 
   city: z
     .string({ message: "City is required" })
     .trim()
     .min(2, "City name must be at least 2 characters")
     .max(50, "City name cannot exceed 50 characters")
+    .refine((value) => new TextEncoder().encode(value).length <= 128, "City cannot exceed 128 UTF-8 bytes")
     .refine((val) => !/\d/.test(val), {
       message: "Coarse city only — do not include numbers or postal codes for privacy",
     })
@@ -90,10 +97,15 @@ export const listingFormSchema = z.object({
     .string({ message: "Image URL is required" })
     .trim()
     .url("Please enter a valid URL")
+    .max(2048, "Image URL cannot exceed 2048 characters")
     .refine(
       (url) => /^https:\/\/.+/i.test(url),
       "Image URL must start with https://"
-    ),
+    )
+    .refine((value) => {
+      try { const url = new URL(value); return !url.username && !url.password; }
+      catch { return false; }
+    }, "Image URL cannot contain credentials"),
 
   expirationDays: z.union(
     [z.literal(3), z.literal(7), z.literal(14), z.literal(30)],
@@ -115,7 +127,8 @@ export function toCreateListingInput(
     description: values.description.trim(),
     category: values.category,
     price: Number(values.price),
-    priceMinor: Math.round(Number(values.price) * 100),
+    // Preview metadata only: the repository independently derives the onchain price from price.
+    priceMinor: Number(toPriceMinor(Number(values.price))),
     currency: values.currency || "INR",
     city: values.city.trim(),
     imageUrl: values.imageUrl.trim(),

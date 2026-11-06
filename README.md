@@ -126,3 +126,54 @@ npm run build   # Compiles production build
 
 ## 📄 License
 This project is open-source under the [MIT License](LICENSE).
+
+## Issues #7 and #8: publishing and public query integration
+
+The `/sell` page now connects issue #6's validated form to `usePublishListing()` and `ListingPublishDialog`. Form validation and live preview remain in place; successful validation now starts a real wallet write rather than displaying a JSON payload.
+
+- `src/hooks/use-publish-listing.ts` adapts `useWalletClient()` to the Arkiv SDK using the same connected provider and account. No frontend private key is used.
+- `src/components/listings/ListingPublishDialog.tsx` shows preparation/signature/pending/read-back states, transaction hash, entity key, creator, expiration block, estimated expiration date, and the public detail link.
+- `src/services/publish-listing.ts` confirms a single create before verifying it through the public read client, with bounded retries for indexing lag.
+
+Repository writes return confirmed metadata through `createWithReceipt()`; `create()` still returns only the entity key for existing callers. Do not add automatic mutation retries. A submitted transaction whose confirmation failed must be inspected in the linked explorer before another create. The seller form blocks resetting unresolved submissions. A confirmed write with delayed indexing retains its receipt and offers **Retry public verification**, which never creates a second entity. Closing the dialog does not cancel or reset the transaction; **View publishing status** reopens it. State is in memory; retain the explorer transaction link before navigating away. Reset the form after a confirmed submission to deliberately create another listing.
+
+### Validation agreement with issue #6
+
+Use HTTPS image URLs without embedded credentials. Title, city and category must fit Arkiv's 128-byte UTF-8 string limit (in addition to title's character limit). Descriptions and image URLs use UTF-8 bytes. The repository accepts free listings; the form may intentionally impose the stricter positive-price rule from #6. Currency amounts use two decimal minor units. The form supplies the seller from the connected account, not from editable input.
+
+### Public reads and caching
+
+`useListings(filters)` and `useListing(id)` are exported from `@/hooks/use-listings`. Both use the existing QueryClient provider, a 30-second stale time, and at most two retries for transient network/rate-limit failures. They do not depend on wallet state. Use `getListingReadErrorMessage(error)` for safe user-facing errors; distinguish an empty array or null from a failed read. `useListing` exposes TanStack's `refetch()`; the `/listing/[id]` page now uses this hook and shows loading, unavailable, error, and retry states.
+
+Query wrappers and option builders live in `src/lib/arkiv/queries.ts`. `invalidateListings(queryClient)` refreshes catalog, seller-inventory, and detail queries after a confirmed write. Query keys include the Rabdi chain ID, filters, and decimal strings for bigint price bounds, avoiding JSON hashing errors. Do not persist listing objects with plain `JSON.stringify`: their price and expiration contain bigint values.
+
+`search` supports inclusive `minPriceMinor`/`maxPriceMinor` bounds over indexed `priceMinor`. Bounds use minor units, not display amounts; no exchange-rate conversion occurs across currencies. The default status is `available`; seller history must explicitly request `status: 'all'`. Each query returns one offset page, and expired entities are excluded by Arkiv. An empty page can also reflect incompatible rows being skipped; it is not a total-count API.
+
+### Verification and remaining live acceptance
+
+Automated tests cover real SDK serialization, wallet transport adaptation and network mismatch, single-write/public-read ordering, delayed indexing, rejection, indexed price ranges, cache deduplication, invalidation, and safe error messages. They do not broadcast transactions.
+
+Issue #6's form is integrated. A real connected-wallet write remains a manual acceptance step because this development session has no browser wallet available. No test wallet, transaction hash, or entity key is fabricated here. To finish issue #7's live acceptance:
+
+1. Open `/sell`, connect a funded Rabdi wallet, and publish a listing.
+2. Confirm signature, pending, and verified states. Record the actual wallet, transaction hash, and entity key below.
+3. Open `/listing/<entityKey>` in an incognito window without connecting a wallet and verify the stored details.
+4. Reject a write once; verify no pending hash is shown. Test delayed verification using a network interruption after confirmation, then retry verification without another wallet prompt.
+
+| Live evidence | Value |
+| --- | --- |
+| Network | Arkiv Rabdi, 7794095 |
+| Test wallet | Pending live wallet test |
+| Transaction hash | Pending live wallet test |
+| Entity key | Pending live wallet test |
+| Public read-back / incognito | Pending live wallet test |
+
+Optional read-only live checks (no wallet or transaction is created):
+
+```bash
+RUN_ARKIV_INTEGRATION=1 npm test -- src/__tests__/arkiv-public-queries.test.ts
+# After recording a real, unexpired entity key:
+RUN_ARKIV_INTEGRATION=1 ARKIV_TEST_ENTITY_KEY=0x... npm test -- src/__tests__/arkiv-public-queries.test.ts
+```
+
+The catalog check can pass with an empty testnet catalog. Only the entity-key check and the browser-wallet checklist establish public read-back of your actual write.
