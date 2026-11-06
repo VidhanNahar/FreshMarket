@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore, useState } from "react";
 import { usePathname } from "next/navigation";
+import { isEnsPage } from "@/lib/ens/config";
 import { useAccount, useBalance, useChainId, useSwitchChain } from "wagmi";
 import { toast } from "sonner";
 import { AlertTriangle, Droplets, RefreshCw, Wallet, X } from "lucide-react";
@@ -75,7 +76,7 @@ export function RabdiNetworkGuard() {
   });
 
   // ENS setup deliberately uses Sepolia. Do not compete with its explicit network controls.
-  if (!mounted || pathname === "/identity") return null;
+  if (!mounted || isEnsPage(pathname)) return null;
 
   async function handleSwitch() {
     try {

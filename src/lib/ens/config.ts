@@ -40,3 +40,9 @@ export const ensConfig = {
 
 // Bad optional ENS configuration fails ENS operations, never the marketplace module import.
 export const ensConfigurationError = configurationErrors.join("; ") || null;
+
+/** Pages whose wallet actions run on Ethereum Sepolia (ENS), not Arkiv Rabdi. */
+export const ENS_PAGES = ["/identity", "/storefront/settings"] as const;
+export function isEnsPage(pathname: string | null | undefined): boolean {
+  return (ENS_PAGES as readonly string[]).includes(pathname ?? "");
+}

@@ -2,6 +2,7 @@
 
 import { useAccount, useChainId } from "wagmi";
 import { usePathname } from "next/navigation";
+import { isEnsPage } from "@/lib/ens/config";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
@@ -18,7 +19,7 @@ import {
  */
 export function NetworkStatusBadge({ className }: { className?: string }) {
   const { isConnected } = useAccount();
-  const identityPage = usePathname() === "/identity";
+  const identityPage = isEnsPage(usePathname());
   const chainId = useChainId();
   const onRabdi = identityPage ? chainId === 11155111 : isRabdiChain(chainId);
   const requiredName = identityPage ? "Ethereum Sepolia" : RABDI_CHAIN_NAME;
