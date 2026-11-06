@@ -5,8 +5,8 @@
 FreshMarket stores public PNG/JPEG/WebP files on Swarm and stores their immutable `bzz://<64-hex-reference>` in the Arkiv entity's existing `imageUrl` bytes field. Legacy credential-free HTTPS URLs still work. Encrypted 128-hex references are rejected: they can contain decryption keys and must not be published as plain Arkiv metadata.
 
 - `src/lib/swarm/upload.ts`: bounded image validation, wallet authorization, XHR progress, timeout and response-reference handling. Progress reaches 95% while sending to the server and 100% only after Bee accepts the upload; it is not a network replication percentage.
-- `src/app/api/swarm/upload/route.ts`: server-only postage and Bee credentials, explicit wallet allowlist, origin and signed-content checks, streamed size limit, image magic checks, and a single Bee POST. No automatic upload retry.
-- `src/components/swarm/SwarmUpload.tsx`: accessible file/drop input and upload status. It fills the form; it does not publish a listing.
+- `src/app/api/swarm/upload/route.ts`: server-only postage and Bee credentials, explicit wallet allowlist, origin and signed-content checks, authentication before body allocation, single-use claims, per-wallet quotas, streamed size limit, image magic checks, and a single Bee POST. No automatic upload retry.
+- `src/components/swarm/SwarmUpload.tsx`: accessible file/drop input and upload status. It fills the form; it does not publish a listing. Wallet changes or navigation cancel the upload flow and prevent late results from overwriting the form.
 - `shared/media.ts`: public reference and HTTPS resolution rules shared by both readers, with a configurable network-matched gateway.
 - `src/components/listings/ListingImage.tsx` and `storefront/src/main.ts`: image loading and failure/slow-gateway fallback.
 
@@ -35,7 +35,7 @@ The direct command assumes your Bee endpoint is accessible without a separate AP
 
 ## Security and limits
 
-Only configured wallets can use the upload proxy. The signed authorization binds origin, file hash, MIME type, byte length and a two-minute time window. It uses EOA message recovery, not contract-wallet signature validation. Within that short window an identical signed request can be replayed; enable only trusted demo wallets. A general public upload service needs persistent nonce/rate/quota controls before opening uploads to arbitrary sellers. No storage credits are provisioned automatically.
+Only configured wallets can use the upload proxy. The signed authorization binds origin, file hash, MIME type, byte length and a two-minute time window. It uses EOA message recovery, not contract-wallet signature validation. Authorizations are claimed once before reading the image body, with per-wallet limits of 32 attempts and 16 MiB per UTC hour. Production requires a Redis-compatible HTTPS REST store (`SWARM_UPLOAD_STATE_URL` and `SWARM_UPLOAD_STATE_TOKEN`) supporting atomic EVAL; missing or unavailable shared state fails closed before Bee is contacted. Development uses process memory only. Identical requests, signature malleability and concurrent replays share the same content-message claim. Failed/malformed uploads consume their reservation so they cannot evade quotas. Keep the allowlist restricted; perimeter request/body rate limits are still needed for a public deployment. No storage credits are provisioned automatically.
 
 Files are public and maximum 4 MiB. File signature validation is not a full image decoder or moderation system. Bee acceptance is not a guarantee of indefinite storage or global gateway availability; postage lifetime, pinning and node connectivity matter. A gateway timeout renders a fallback rather than blocking browsing.
 

@@ -9,7 +9,7 @@ Configure these values in Vercel before building:
 - `NEXT_PUBLIC_ARKIV_ACCESS_KEY`: restrict to the final production/preview origins in Arkiv Hub.
 - `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`: use the team's actual project ID and allowed domain settings.
 - `VITE_ARKIV_ACCESS_KEY`: public reader key, origin restricted.
-- Public read gateway variables and server-only Swarm variables from `.env.example`, if enabling optional uploads. The Bee node must be reachable from Vercel over HTTPS. Restrict `SWARM_ALLOWED_ORIGIN` to the intended app origin and enable only intended upload wallets.
+- Public read gateway variables and server-only Swarm variables from `.env.example`, if enabling optional uploads. The Bee node must be reachable from Vercel over HTTPS. Restrict `SWARM_ALLOWED_ORIGIN` to the intended app origin and enable only intended upload wallets. Production uploads additionally require `SWARM_UPLOAD_STATE_URL`/`SWARM_UPLOAD_STATE_TOKEN` for shared atomic replay and quota enforcement.
 
 Do not publish server-only secrets in Vercel's public environment variables. Public build variables are baked into bundles, so redeploy after changing them. Swarm upload requests are bounded to 4 MiB with a 90-second function limit; confirm the deployed account's function limits support it.
 

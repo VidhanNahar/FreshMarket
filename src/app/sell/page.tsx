@@ -134,6 +134,7 @@ export default function SellPage() {
 
   const handleReset = () => {
     // Never discard the only in-memory record of an unresolved submitted transaction.
+    if (mediaBusy) { toast.info("Wait for the image upload to finish before resetting."); return; }
     if (publishing.isPending || (publishing.txHash && !publishing.receipt)) {
       setPublishDialogOpen(true);
       return;
@@ -423,6 +424,7 @@ export default function SellPage() {
                   </Label>
                   <Input
                     id="imageUrl"
+                    disabled={mediaBusy}
                     type="url"
                     placeholder="https://images.unsplash.com/photo-1505740420928-5e560c06d30e"
                     {...register("imageUrl")}

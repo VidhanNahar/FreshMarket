@@ -39,7 +39,7 @@ export function getArkivPublicClient() {
   if (!cachedPublicClient) {
     cachedPublicClient = createPublicClient({
       chain: rabdiReadChain,
-      transport: http(),
+      transport: http(undefined, { timeout: 15_000, retryCount: 1 }),
     });
   }
   return cachedPublicClient;

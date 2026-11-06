@@ -16,3 +16,5 @@ For a reader access key, set `VITE_ARKIV_ACCESS_KEY` in the root `.env.local` or
 `npm run dev` and `npm run build` build these assets automatically. Locally, `/storefront` redirects to the generated `/storefront/index.html`, which is served as a static file outside FreshMarket's React/wallet layout. Polling runs every 15 seconds while visible; the refresh button always performs independent RPC reads. Successful refresh replaces prior results; failed refresh retains and explicitly labels stale data.
 
 Use [the judge script](../arkiv/portability-demo.md) for a live two-client demonstration. Test fixtures demonstrate behavior but are not real transaction evidence.
+
+Public-catalogue scans are bounded to 10,000 node matches (including schema-skipped records) and a 60-second budget checked between bounded RPC requests. An oversized catalogue produces a visible error rather than a silently partial success. Production growth requires server-query filtering and user-visible pagination.

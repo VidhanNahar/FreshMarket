@@ -90,3 +90,7 @@ Automated commands and fixture tests are separate from manual verification. Brow
 ## Team and license
 
 Vidhan Nahar and Dhairya. Source: [VidhanNahar/FreshMarket](https://github.com/VidhanNahar/FreshMarket). Open source under the [MIT License](LICENSE).
+
+## Security review status
+
+The project-wide hardening pass fixed replayable uploads, unauthenticated body buffering, skipped-row pagination, stale upload completion, incomplete-publication reset and undefined optimistic edits. See [the audit and open release risks](arkiv/security-audit.md) and [SECURITY.md](SECURITY.md). Production Swarm uploads require shared atomic replay/quota state; an in-process cache is never used as a production fallback. Unresolved dependency advisories and live wallet/deployment checks mean the prototype is not yet cleared for unrestricted production use.

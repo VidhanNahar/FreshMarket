@@ -20,13 +20,16 @@ beforeEach(() => {
   fetchMock = vi.fn().mockResolvedValue(Response.json({ reference }));
   vi.stubGlobal("fetch", fetchMock);
 });
-afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
+afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
+let previousAuthorizationTime = 0;
 async function request(patch: Record<string, string> = {}, body = image) {
-  const time = Date.now();
+  const time = Math.max(Date.now(), previousAuthorizationTime + 1);
+  previousAuthorizationTime = time;
   const hash = createHash("sha256").update(body).digest("hex");
   const signature = await account.signMessage({ message: uploadAuthorization(origin, hash, "image/png", body.length, time) });
   return new Request(`${origin}/api/swarm/upload`, { method: "POST", headers: {
     origin, "content-type": "image/png", "x-upload-wallet": account.address,
+    "x-upload-digest": hash, "x-upload-bytes": String(body.length),
     "x-upload-time": String(time), "x-upload-signature": signature, ...patch,
   }, body: body.slice().buffer });
 }
@@ -45,6 +48,54 @@ describe("Swarm media reference contract", () => {
 });
 
 describe("authorized Swarm upload proxy", () => {
+  it("bounds a stalled authenticated body without contacting Bee", async () => {
+    const signed = await request();
+    vi.useFakeTimers();
+    let started!: () => void;
+    const reading = new Promise<void>((resolve) => { started = resolve; });
+    const cancel = vi.fn().mockResolvedValue(undefined);
+    vi.spyOn(signed.body!, "getReader").mockReturnValue({
+      read: () => { started(); return new Promise(() => {}); }, cancel,
+    } as unknown as ReadableStreamDefaultReader<Uint8Array<ArrayBuffer>>);
+    const pending = POST(signed);
+    await reading;
+    await vi.advanceTimersByTimeAsync(15_001);
+    expect((await pending).status).toBe(408);
+    expect(cancel).toHaveBeenCalledOnce();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+  it("authenticates before reading an untrusted request body", async () => {
+    const unsigned = await request({ "x-upload-signature": "0x00" });
+    const read = vi.spyOn(unsigned.body!, "getReader");
+    expect((await POST(unsigned)).status).toBe(401);
+    expect(read).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+  it("rejects streamed bytes that exceed or differ from the signed body", async () => {
+    const signed = await request();
+    const oversized = new Request(signed.url, { method: "POST", headers: signed.headers, body: new Uint8Array(9) });
+    expect((await POST(oversized)).status).toBe(413);
+    const altered = await request();
+    const body = image.slice(); body[7] = 0;
+    const tampered = new Request(altered.url, { method: "POST", headers: altered.headers, body });
+    expect((await POST(tampered)).status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("claims a signed upload once, including concurrent replay attempts", async () => {
+    const signed = await request();
+    const results = await Promise.all([POST(signed.clone()), POST(signed.clone())]);
+    expect(results.map((response) => response.status).sort()).toEqual([200, 409]);
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+  it("fails closed in production without a shared replay/quota store", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("SWARM_UPLOAD_STATE_URL", "");
+    vi.stubEnv("SWARM_UPLOAD_STATE_TOKEN", "");
+    expect((await POST(await request())).status).toBe(503);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("forwards validated image bytes to Bee and returns its real response reference", async () => {
     const result = await POST(await request());
     expect(result.status).toBe(200);
