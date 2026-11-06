@@ -8,6 +8,7 @@ import {
   formatUsdt,
   nextCheckoutStep,
   readOrderEvents,
+  readOrderEventsFromExplorer,
   secondsUntilRelease,
   toOrder,
   toPaymentReference,
@@ -118,7 +119,7 @@ describe("Phase 10: FreshPay SDK", () => {
       { ...log, blockNumber: toHex(11n), logIndex: toHex(0) },
       { ...log, blockNumber: null, logIndex: null },
     ]);
-    const events = await readOrderEvents({ request } as unknown as PublicClient, contract, { fromBlock: 5n }, { orderId: 1n });
+    const events = await readOrderEvents({ request, getBlockNumber: async () => 20n } as unknown as PublicClient, contract, { fromBlock: 5n }, { orderId: 1n });
     expect(events.map((event) => event.blockNumber)).toEqual([11n, 12n]);
     expect(events[0]).toMatchObject({ type: "paid", orderId: 1n, ref: listingKey, txHash });
     const [{ topics, fromBlock }] = request.mock.calls[0][0].params;
@@ -126,6 +127,31 @@ describe("Phase 10: FreshPay SDK", () => {
     expect(topics[1]).toBe(`0x${"0".repeat(63)}1`);
     expect(topics[2]).toBeNull();
     expect(fromBlock).toBe("0x5");
+  });
+
+  it("splits long ranges into windows the Whitechain RPC accepts", async () => {
+    const request = vi.fn().mockResolvedValue([]);
+    await readOrderEvents({ request } as unknown as PublicClient, contract, { fromBlock: 0n, toBlock: 25_000n });
+    expect(request.mock.calls.map(([call]) => [call.params[0].fromBlock, call.params[0].toBlock]))
+      .toEqual([["0x0", toHex(9_999n)], [toHex(10_000n), toHex(19_999n)], [toHex(20_000n), toHex(25_000n)]]);
+  });
+
+  it("reads order history from the Blockscout explorer API", async () => {
+    const log = paidLog();
+    const fetcher = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ status: "1", message: "OK", result: [
+      { ...log, topics: [...log.topics, null], blockNumber: toHex(10n), logIndex: toHex(0) },
+      { ...log, address: merchant, blockNumber: toHex(11n), logIndex: toHex(0) },
+    ] }) });
+    const events = await readOrderEventsFromExplorer("https://explorer.testnet.whitechain.io/api", contract, { orderId: 1n }, fetcher);
+    expect(events).toHaveLength(1); // The log from another address is ignored.
+    const url = new URL(fetcher.mock.calls[0][0]);
+    expect(url.searchParams.get("topic1")).toBe(`0x${"0".repeat(63)}1`);
+    expect(url.searchParams.get("address")).toBe(contract);
+
+    const empty = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ status: "0", message: "No logs found", result: [] }) });
+    expect(await readOrderEventsFromExplorer("https://x.test/api", contract, { orderId: 2n }, empty)).toEqual([]);
+    const down = vi.fn().mockResolvedValue({ ok: false, status: 502 });
+    await expect(readOrderEventsFromExplorer("https://x.test/api", contract, {}, down)).rejects.toThrow("502");
   });
 
   it("explains wallet errors in plain language", () => {

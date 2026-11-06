@@ -2,7 +2,8 @@ import { queryOptions } from "@tanstack/react-query";
 import { isAddressEqual, type Address, type Hex } from "viem";
 import type { Listing } from "@/domain/listing";
 import {
-  readActiveOrder, readBuyerOrders, readMerchantOrders, readOrder, readOrderEvents, WHITECHAIN_SEPOLIA_CHAIN_ID,
+  readActiveOrder, readBuyerOrders, readMerchantOrders, readOrder, readOrderEvents, readOrderEventsFromExplorer,
+  WHITECHAIN_SEPOLIA_CHAIN_ID, WHITECHAIN_SEPOLIA_EXPLORER_URL,
   type FreshPayOrder,
 } from "@/freshpay";
 import type { OrderLookup, PurchaseOrder } from "@/services/review-repository";
@@ -29,8 +30,17 @@ const orderReadPolicy = { staleTime: 5_000, retry: 2, enabled: Boolean(freshPayC
 
 export const orderQueryOptions = (id: bigint) => queryOptions({ ...orderReadPolicy, queryKey: orderKeys.order(id),
   queryFn: () => readOrder(whitechainPublicClient, requireFreshPay(), id) });
+/** Order history from the Whitechain explorer; if it is down, scan the node from the deploy block. */
+export async function loadOrderEvents(id: bigint) {
+  const contract = requireFreshPay();
+  try {
+    return await readOrderEventsFromExplorer(`${WHITECHAIN_SEPOLIA_EXPLORER_URL}/api`, contract, { orderId: id });
+  } catch {
+    return readOrderEvents(whitechainPublicClient, contract, { fromBlock: freshPayConfig.deployBlock }, { orderId: id });
+  }
+}
 export const orderEventsQueryOptions = (id: bigint) => queryOptions({ ...orderReadPolicy, queryKey: orderKeys.events(id),
-  queryFn: () => readOrderEvents(whitechainPublicClient, requireFreshPay(), { fromBlock: freshPayConfig.deployBlock }, { orderId: id }) });
+  queryFn: () => loadOrderEvents(id) });
 export const merchantOrdersQueryOptions = (merchant: Address) => queryOptions({ ...orderReadPolicy, queryKey: orderKeys.merchant(merchant),
   queryFn: () => readMerchantOrders(whitechainPublicClient, requireFreshPay(), merchant) });
 export const buyerOrdersQueryOptions = (buyer: Address) => queryOptions({ ...orderReadPolicy, queryKey: orderKeys.buyer(buyer),

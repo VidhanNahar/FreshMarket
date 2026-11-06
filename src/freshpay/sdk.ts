@@ -174,7 +174,7 @@ export const orderEvents = [
 
 const EVENT_TYPES = { OrderPaid: "paid", OrderReleased: "released", OrderRefunded: "refunded" } as const;
 
-type RpcLog = { data: Hex; topics: [Hex, ...Hex[]]; transactionHash: Hex | null; blockNumber: Hex | null; logIndex: Hex | null };
+type RpcLog = { address?: Address; data: Hex; topics: [Hex, ...Hex[]]; transactionHash: Hex | null; blockNumber: Hex | null; logIndex: Hex | null };
 
 /** Decodes one raw `eth_getLogs` entry; pending or foreign logs return null. */
 export function toOrderEvent(log: RpcLog): OrderEvent | null {
@@ -189,24 +189,58 @@ export function toOrderEvent(log: RpcLog): OrderEvent | null {
   return base;
 }
 
+/** Whitechain's public RPC rejects eth_getLogs spans above 10,000 blocks (about 2.8 hours). */
+export const MAX_LOG_RANGE = 10_000n;
+
+const sortEvents = (events: OrderEvent[]) =>
+  events.sort((a, b) => (a.blockNumber === b.blockNumber ? a.logIndex - b.logIndex : a.blockNumber < b.blockNumber ? -1 : 1));
+
+const orderTopics = (filter: { orderId?: bigint; merchant?: Address }) => [
+  filter.orderId !== undefined ? pad(toHex(filter.orderId)) : null,
+  filter.merchant ? pad(filter.merchant.toLowerCase() as Hex) : null,
+] as const;
+
 /**
  * FreshPay events in a block range, optionally for one order or merchant, oldest first.
  * All three events index (orderId, merchant, buyer) in the same topic positions, so one
- * node-side filter serves every event type.
+ * node-side filter serves every event type. Long ranges are split into 10,000-block windows.
  */
 export async function readOrderEvents(client: PublicClient, contract: Address,
   range: { fromBlock: bigint; toBlock?: bigint }, filter: { orderId?: bigint; merchant?: Address } = {}): Promise<OrderEvent[]> {
-  const topics = [
-    orderEvents.map((event) => toEventSelector(event)),
-    filter.orderId !== undefined ? pad(toHex(filter.orderId)) : null,
-    filter.merchant ? pad(filter.merchant.toLowerCase() as Hex) : null,
-  ];
-  const logs = await client.request({
-    method: "eth_getLogs",
-    params: [{ address: contract, topics, fromBlock: toHex(range.fromBlock), toBlock: range.toBlock !== undefined ? toHex(range.toBlock) : "latest" }],
-  }) as RpcLog[];
-  return logs.map(toOrderEvent).filter((event): event is OrderEvent => event !== null)
-    .sort((a, b) => (a.blockNumber === b.blockNumber ? a.logIndex - b.logIndex : a.blockNumber < b.blockNumber ? -1 : 1));
+  const topics = [orderEvents.map((event) => toEventSelector(event)), ...orderTopics(filter)];
+  const toBlock = range.toBlock ?? await client.getBlockNumber();
+  const events: OrderEvent[] = [];
+  for (let from = range.fromBlock; from <= toBlock; from += MAX_LOG_RANGE) {
+    const to = from + MAX_LOG_RANGE - 1n < toBlock ? from + MAX_LOG_RANGE - 1n : toBlock;
+    const logs = await client.request({
+      method: "eth_getLogs", params: [{ address: contract, topics, fromBlock: toHex(from), toBlock: toHex(to) }],
+    }) as RpcLog[];
+    events.push(...logs.map(toOrderEvent).filter((event): event is OrderEvent => event !== null));
+  }
+  return sortEvents(events);
+}
+
+/**
+ * The same events from a Blockscout explorer API, which has no block-range cap. Used for order
+ * history; payment state itself is always read from the contract.
+ */
+export async function readOrderEventsFromExplorer(explorerApiUrl: string, contract: Address,
+  filter: { orderId?: bigint; merchant?: Address }, fetcher: typeof fetch = fetch): Promise<OrderEvent[]> {
+  const [orderTopic, merchantTopic] = orderTopics(filter);
+  const url = new URL(explorerApiUrl);
+  url.search = new URLSearchParams({ module: "logs", action: "getLogs", fromBlock: "0", toBlock: "latest", address: contract,
+    ...(orderTopic ? { topic1: orderTopic } : {}), ...(merchantTopic ? { topic2: merchantTopic } : {}),
+    ...(orderTopic && merchantTopic ? { topic1_2_opr: "and" } : {}) }).toString();
+  const response = await fetcher(url, { signal: AbortSignal.timeout(10_000) });
+  if (!response.ok) throw new Error(`Explorer returned ${response.status}`);
+  const body = await response.json() as { status: string; message: string; result: unknown };
+  if (body.status !== "1") {
+    if (/no logs found/i.test(body.message)) return [];
+    throw new Error("Explorer could not return logs");
+  }
+  const logs = (body.result as RpcLog[]).filter((log) => isAddressEqual(log.address ?? "0x", contract))
+    .map((log) => ({ ...log, topics: log.topics.filter(Boolean) as [Hex, ...Hex[]] }));
+  return sortEvents(logs.map(toOrderEvent).filter((event): event is OrderEvent => event !== null));
 }
 
 const REVERT_MESSAGES: Record<string, string> = {
