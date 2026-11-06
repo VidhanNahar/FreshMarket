@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Store, PlusCircle, LayoutList, Compass, Menu, Settings, X } from "lucide-react";
+import { Store, PlusCircle, LayoutList, Compass, Menu, Settings, Wallet, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { WalletButton } from "@/components/wallet/WalletButton";
@@ -19,6 +19,7 @@ export function Navbar() {
     { href: "/storefront", label: "Storefront B", icon: Store },
     { href: "/sell", label: "Sell Item", icon: PlusCircle },
     { href: "/my-listings", label: "My Listings", icon: LayoutList },
+    { href: "/merchant/payments", label: "Payments", icon: Wallet },
     { href: "/storefront/settings", label: "Storefront Settings", icon: Settings },
   ];
 

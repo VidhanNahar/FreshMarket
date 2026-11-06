@@ -70,7 +70,7 @@ function forkedSepolia() {
         executed.push(call);
         const hash = `0x${executed.length.toString(16).padStart(64, "0")}` as Hex;
         const blockNumber = (await client.getBlockNumber()) + 1n;
-        const logs = result.logs.map((log, logIndex) => ({ ...log, blockNumber, logIndex, transactionHash: hash, removed: false })) as unknown as Log[];
+        const logs = (result.logs ?? []).map((log, logIndex) => ({ ...log, blockNumber, logIndex, transactionHash: hash, removed: false })) as unknown as Log[];
         allLogs.push(...logs);
         receipts.set(hash, { status: "success", blockNumber, logs });
         return hash;

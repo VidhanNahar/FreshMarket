@@ -2,28 +2,23 @@
 
 import { useAccount, useChainId } from "wagmi";
 import { usePathname } from "next/navigation";
-import { isEnsPage } from "@/lib/ens/config";
+import { PAGE_NETWORKS, pageNetwork } from "@/lib/wallet/page-networks";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import {
-  RABDI_CHAIN_ID,
-  RABDI_CHAIN_NAME,
-  describeChain,
-  isRabdiChain,
-} from "@/lib/wallet/wallet-ui";
+import { describeChain } from "@/lib/wallet/wallet-ui";
 
 /**
  * Compact live network indicator for the navbar.
- * Shows the required Rabdi network when disconnected, and the actual
- * wallet network once connected.
+ * Shows the network the current page needs (Rabdi, Sepolia for ENS, Whitechain for
+ * checkout) when disconnected, and the actual wallet network once connected.
  */
 export function NetworkStatusBadge({ className }: { className?: string }) {
   const { isConnected } = useAccount();
-  const identityPage = isEnsPage(usePathname());
+  const required = PAGE_NETWORKS[pageNetwork(usePathname())];
   const chainId = useChainId();
-  const onRabdi = identityPage ? chainId === 11155111 : isRabdiChain(chainId);
-  const requiredName = identityPage ? "Ethereum Sepolia" : RABDI_CHAIN_NAME;
-  const requiredId = identityPage ? 11155111 : RABDI_CHAIN_ID;
+  const onRabdi = chainId === required.chainId;
+  const requiredName = required.name;
+  const requiredId = required.chainId;
 
   if (!isConnected) {
     return (

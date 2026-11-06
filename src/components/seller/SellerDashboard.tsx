@@ -39,6 +39,8 @@ import { parseListingPrice } from "@/lib/listing-price-input";
 import { ListingImage } from "@/components/listings/ListingImage";
 import { ListingGridSkeleton, ListingStatus as StatusBadge } from "@/components/listings/ListingCard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useMerchantOrders } from "@/hooks/use-freshpay-orders";
+import { formatUsdt } from "@/freshpay";
 
 const button = "rounded-lg border border-input px-3 py-2 text-sm font-medium hover:border-emerald-600 disabled:cursor-not-allowed disabled:opacity-50";
 const field = "mt-1 w-full rounded-lg border border-input bg-background px-3 py-2";
@@ -52,6 +54,9 @@ export function SellerDashboard() {
   // Keep the action lock alive across account switches and dialog closures.
   const actions = useListingActions();
   const query = useSellerListings(isConnected ? address : undefined, actions.isPending);
+  // FreshPay never edits Arkiv. A live order is shown here so the seller can update status themselves.
+  const sales = useMerchantOrders(isConnected ? address : undefined);
+  const liveOrders = new Map((sales.data ?? []).filter((order) => order.state !== "Refunded").map((order) => [order.ref.toLowerCase(), order]));
   const [tab, setTab] = useState<ListingStatus | "all">("all");
   const [dialog, setDialog] = useState<ActionDialog | null>(null);
   const [formError, setFormError] = useState("");
@@ -85,7 +90,7 @@ export function SellerDashboard() {
     <button type="button" className={button} disabled={query.isFetching || actions.isPending} onClick={() => void query.refetch()}>Refresh listings</button>
     {query.isPending ? <ListingGridSkeleton /> : query.isError ? <div role="alert"><p>{getListingReadErrorMessage(query.error)}</p><button type="button" className={`${button} mt-3`} onClick={() => void query.refetch()}>Retry</button></div> : !shown.length ? <div className="rounded-2xl border border-dashed border-input p-10 text-center"><h2 className="text-xl font-semibold">{listings.length ? "No listings in this status" : "No listings yet"}</h2><Link href="/sell" className="mt-3 inline-block text-emerald-700 dark:text-emerald-400 underline">Create your first listing</Link></div> : <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">{shown.map((listing) => <article key={listing.id} aria-label={listing.title} className="overflow-hidden rounded-2xl border border-border">
       <ListingImage src={listing.media[0] ?? ""} title={listing.title} />
-      <div className="space-y-4 p-5"><div className="flex items-start justify-between gap-2"><Link href={`/listing/${listing.id}`} className="font-semibold hover:underline">{listing.title}</Link><StatusBadge status={listing.status} /></div><p className="text-xl font-bold">{formatPrice(listing.priceMinor)}</p>{listing.visibility === "unlisted" && <p className="text-xs text-muted-foreground">Unlisted: only people with the link see it in FreshMarket.</p>}<p className="text-xs"><ExpirationCountdown expiresAtBlock={listing.expiresAtBlock} currentBlock={block.data} /></p>
+      <div className="space-y-4 p-5"><div className="flex items-start justify-between gap-2"><Link href={`/listing/${listing.id}`} className="font-semibold hover:underline">{listing.title}</Link><StatusBadge status={listing.status} /></div><p className="text-xl font-bold">{formatPrice(listing.priceMinor)}</p>{listing.visibility === "unlisted" && <p className="text-xs text-muted-foreground">Unlisted: only people with the link see it in FreshMarket.</p>}{(() => { const order = liveOrders.get(listing.id.toLowerCase()); return order && <p role="status" className="rounded-lg bg-amber-500/10 p-3 text-sm">Paid {formatUsdt(order.amount - order.refunded)} via FreshPay (<Link className="underline" href={`/receipt/${order.id}`}>order #{order.id.toString()}</Link>).{listing.status === "available" ? " Mark it reserved or sold so nobody else tries to buy it." : ""}</p>; })()}<p className="text-xs"><ExpirationCountdown expiresAtBlock={listing.expiresAtBlock} currentBlock={block.data} /></p>
         <div className="flex flex-wrap gap-2">{LISTING_STATUSES.filter((status) => status !== listing.status).map((status) => <button type="button" key={status} disabled={disabled} className={`${button} capitalize`} onClick={() => void actions.run(listing, { kind: "status", status })}>Mark as {status}</button>)}
           <button type="button" disabled={disabled} className={button} aria-label="Edit price & description" onClick={() => showDialog(listing, "edit")}>Edit listing</button><button type="button" disabled={disabled} className={button} onClick={() => showDialog(listing, "extend")}>{expirationState(listing.expiresAtBlock, block.data).nearExpiry ? "Renew listing" : "Extend expiration"}</button><button type="button" disabled={disabled} className={`${button} text-red-600`} onClick={() => showDialog(listing, "delete")}>Delete listing</button>
         </div>

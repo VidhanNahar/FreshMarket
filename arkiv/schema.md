@@ -13,7 +13,7 @@ Each schema is an SDK convention, not a centrally registered table. The SDK writ
 | --- | --- | --- |
 | Listing, seller directory, review | **Arkiv** | Public, owned by a wallet, filtered by indexed fields, and expiring on their own |
 | Seller name, profile text, verified badge | ENS (Sepolia) | `priya.freshmarket.eth`; verification is a FreshMarket-issued subname the seller cannot edit |
-| Real price, stock, orders, refunds | FreshPay on Whitechain | Money and atomic stock need a contract. Not part of this repository yet |
+| Payment, one-sale-per-listing lock, orders, refunds | FreshPay on Whitechain (chain 1874) | Money and atomic stock need a contract. See [`whitechain/README.md`](../whitechain/README.md). The Arkiv `priceMinor` is the checkout price; FreshPay never writes to Arkiv |
 | Shipping address, dispute evidence | Private store | Arkiv data is public |
 
 ## `freshmarket.listings.v2`
@@ -65,7 +65,7 @@ Owner: buyer · Expiry: 180 days, so reputation is a trailing six-month window.
 | `itemRating` | `u64` | | 1–5 |
 | `text` | `bytes` | | UTF-8, ≤ 2,000 characters |
 
-A review counts only if the FreshPay order names the reviewer (`$owner`) as buyer and this `seller`, and its state is `Released` or `Refunded` (a refund does not erase a review). Readers keep the newest review per (buyer, order). Until FreshPay is deployed, reviews are read as unverified and rating summaries count none of them.
+A review counts only if the FreshPay order names the reviewer (`$owner`) as buyer and this `seller`, and its state is `Released` or `Refunded` (a refund does not erase a review). Readers keep the newest review per (buyer, order). FreshPay order IDs are sequential `uint64` values starting at 1, so they fit this attribute. Until `NEXT_PUBLIC_FRESHPAY_ADDRESS` is configured, reviews are read as unverified and rating summaries count none of them.
 
 ## Which index answers which search
 

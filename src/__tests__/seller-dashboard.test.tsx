@@ -8,8 +8,9 @@ import { fixtureListing as listing } from "./fixtures/listing";
 const mocks = vi.hoisted(() => ({
   account: { address: "0x1111111111111111111111111111111111111111", isConnected: true, chainId: 7794095 },
   data: [] as unknown[], pending: false, error: false, busy: false,
-  connect: vi.fn(), run: vi.fn(), refetch: vi.fn(), switchChain: vi.fn(),
+  connect: vi.fn(), run: vi.fn(), refetch: vi.fn(), switchChain: vi.fn(), orders: [] as unknown[],
 }));
+vi.mock("@/hooks/use-freshpay-orders", () => ({ useMerchantOrders: () => ({ data: mocks.orders }) }));
 vi.mock("@/hooks/use-seller-identity", () => ({ useSellerIdentity: () => ({ data: null, isError: false, isFetching: false }) }));
 vi.mock("wagmi", () => ({ useAccount: () => mocks.account, useSwitchChain: () => ({ switchChainAsync: mocks.switchChain, isPending: false }) }));
 vi.mock("@rainbow-me/rainbowkit", () => ({ useConnectModal: () => ({ openConnectModal: mocks.connect }) }));
@@ -21,11 +22,22 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.account = { address: listing.seller, isConnected: true, chainId: 7794095 };
   mocks.data = [listing, { ...listing, id: "reserved", title: "Reserved desk", status: "reserved" }, { ...listing, id: "sold", title: "Sold desk", status: "sold" }, { ...listing, id: "other", title: "Other seller", owner: "0x2222222222222222222222222222222222222222" }];
-  mocks.pending = false; mocks.error = false; mocks.busy = false;
+  mocks.pending = false; mocks.error = false; mocks.busy = false; mocks.orders = [];
   mocks.run.mockResolvedValue(true);
 });
 
 describe("seller inventory", () => {
+  it("prompts the seller to update Arkiv after a FreshPay payment without changing the listing", () => {
+    mocks.data = [listing];
+    mocks.orders = [{ id: 4n, ref: listing.id.toUpperCase().replace("0X", "0x"), amount: 12_500_000n, refunded: 0n, state: "Paid" },
+      { id: 3n, ref: listing.id, amount: 1n, refunded: 1n, state: "Refunded" }];
+    render(<SellerDashboard />);
+    const card = screen.getByRole("article", { name: listing.title });
+    expect(within(card).getByRole("status").textContent).toContain("Paid 12.50 USDT via FreshPay (order #4). Mark it reserved or sold");
+    expect(within(card).getByRole("link", { name: "order #4" }).getAttribute("href")).toBe("/receipt/4");
+    expect(mocks.run).not.toHaveBeenCalled();
+  });
+
   it("offers renewal for a listing with less than 24 hours remaining", async () => {
     mocks.data = [{ ...listing, expiresAtBlock: 1000n }];
     render(<SellerDashboard />);
