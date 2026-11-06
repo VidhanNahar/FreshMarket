@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Store, PlusCircle, LayoutList, Compass, Menu, X } from "lucide-react";
+import { Store, PlusCircle, LayoutList, Compass, Menu, Settings, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { WalletButton } from "@/components/wallet/WalletButton";
@@ -19,7 +19,7 @@ export function Navbar() {
     { href: "/storefront", label: "Storefront B", icon: Store },
     { href: "/sell", label: "Sell Item", icon: PlusCircle },
     { href: "/my-listings", label: "My Listings", icon: LayoutList },
-    { href: "/identity", label: "Storefront Identity", icon: Store },
+    { href: "/storefront/settings", label: "Storefront Settings", icon: Settings },
   ];
 
   return (
@@ -42,7 +42,7 @@ export function Navbar() {
         <nav aria-label="Main navigation" className="hidden xl:flex items-center gap-1">
           {navLinks.map((link) => {
             const Icon = link.icon;
-            const isActive = pathname === link.href;
+            const isActive = pathname === link.href || (link.href === "/storefront/settings" && pathname === "/identity");
             return (
               <Link
                 key={link.href}
@@ -89,7 +89,7 @@ export function Navbar() {
         <nav id="mobile-navigation" aria-label="Mobile navigation" onKeyDown={(event) => { if (event.key === "Escape") { setMobileMenuOpen(false); menuButton.current?.focus(); } }} className="xl:hidden max-h-[calc(100dvh-5rem)] overflow-y-auto border-b border-border bg-background px-4 pt-2 pb-4 space-y-2">
           {navLinks.map((link) => {
             const Icon = link.icon;
-            const isActive = pathname === link.href;
+            const isActive = pathname === link.href || (link.href === "/storefront/settings" && pathname === "/identity");
             return (
               <Link
                 key={link.href}

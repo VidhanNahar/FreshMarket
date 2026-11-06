@@ -44,6 +44,37 @@ The operator retains root permissions in the project registry. Seller token owne
 - The navbar allows Sepolia on `/identity`; returning to sell/manage listings requires an explicit Rabdi switch. A Sepolia wallet never becomes an Arkiv write client.
 - Pending hashes lock further ENS actions until confirmation is known. Receipt/event/read-back failures keep the explorer link; **Check submitted transaction** performs a read rather than recreating anything. Closing the page/reloading loses the in-memory lock, so save the link and check its receipt before retrying. This is not an exactly-once guarantee if a provider broadcasts before returning a hash.
 
+## Delegated storefront permissions (#30) and `/storefront/settings` (#31)
+
+Sources checked: `PermissionedResolver.sol`, `PermissionedResolverLib.sol` and `EnhancedAccessControl.sol` at the pinned commit.
+
+- **Roles.** Each seller resolver is initialized with `ROLE_SET_ADDRESS | ROLE_SET_TEXT | ROLE_SET_TEXT_ADMIN` at its root. The admin role (`ROLE_SET_TEXT << 128`) is what lets the seller grant and revoke delegates. A resolver prepared without it rejects `grantSetterRoles` with `EACCannotGrantRoles`. That is proven live below, and the settings page tells the owner to prepare a new resolver.
+- **Grant.** `grantSetterRoles(setText(name, key, ""), delegate)`. The resolver's own `grantRoles` is disabled. The resolver derives the resource as `keccak256(key)`, so the grant covers exactly one text key. Only `freshmarket.description`, `freshmarket.contact`, `description`, `url` and `avatar` can be delegated. Address records and root roles are never delegated.
+- **Revoke.** `revokeRoles(keccak256(key), ROLE_SET_TEXT, delegate)`, then a `roles()` read confirms the role is gone.
+- **Isolation.** EAC resources are scoped by key, not by name. A delegate for `url` could edit `url` on *every* name served by that resolver. That is why every seller gets a dedicated, factory-verified PermissionedResolver, and the delegation service refuses any other resolver. ENS permissions never authorize Arkiv listing changes; those remain the listing owner's wallet signature.
+- **Unauthorized edits.** Writes are simulated before signing. The resolver's `EACUnauthorizedAccountRoles` revert is shown as a clear "no permission" error and nothing is broadcast. **Check permission** on the settings page makes the same `eth_call`, so the verdict comes from the contract itself.
+- **Delegate list.** `EACRolesChanged` logs are scanned in 45k-block windows, back to the resolver's `Initialized` event (at most about 6 months). These logs only nominate candidates. A delegate is listed only if a live `roles(keccak256(key), account)` read confirms the role.
+- **Settings page.** `/storefront/settings` shows the name, the parent and the subname, the token owner, the resolved address, the resolver, the registry, the expiry, every delegable text record, the active delegates, grant and revoke controls (owner only) and a record editor for owners and delegates. Each action reports its status, raises a toast and links to Etherscan. All state is read live; nothing is mocked.
+
+### Live proof against the real Sepolia contracts
+
+`src/__tests__/ens-delegation-live.test.ts` uses `eth_simulateV1` to run the issue's sequence against the deployed `VerifiableFactory` and `PermissionedResolver` implementation. It uses the app's own calldata builders and seller role bitmap. State carries over between calls; nothing is signed or broadcast, so no keys or test ETH are needed.
+
+1. Deploy a seller resolver with the app's `initialize()` payload. Succeeds.
+2. Owner grants `freshmarket.description` to the manager. Succeeds.
+3. Manager edits it. Succeeds, and the value reads back.
+4. A stranger edits it. Reverts with `EACUnauthorizedAccountRoles`.
+5. The manager edits `url`, a key it was not granted. Reverts with `EACUnauthorizedAccountRoles`.
+6. Owner revokes. Succeeds.
+7. Manager edits again. Reverts with `EACUnauthorizedAccountRoles`, and the value is unchanged.
+8. Extra checks: an owner without `ROLE_SET_TEXT_ADMIN` cannot grant (`EACCannotGrantRoles`), and a delegate cannot re-delegate or revoke the owner.
+
+```bash
+npm run test:ens-live
+```
+
+Doing this with real signed transactions on a registered storefront still needs a project parent name (see the table below).
+
 ## Contract sources and ABI choice
 
 Deployment addresses are pinned in [shared/ens-deployment.json](../shared/ens-deployment.json), from ENS's official Sepolia deployment at commit `07e55a056f5b6a9c90119f501bdd05714e67dddd`. The minimal ABIs in `src/lib/ens/contracts.ts` were checked against that deployment's artifacts. Deployment addresses can change on testnets; review the [canonical deployment list](https://docs.ens.domains/learn/deployments/) before changing overrides. The client deliberately uses the pinned `UniversalResolverV2` at `0x24E1D8e068620B647CA097f961A61055f4f42D72`, whose `ROOT_REGISTRY()` was verified against this deployment. The shared canonical proxy timed out on that getter during compatibility checking; its address is retained as reference metadata, not silently used for identity ownership proofs. A resolver/root mismatch fails closed with an address fallback and blocks subname issuance.
@@ -70,6 +101,7 @@ This is #27's real read evidence. It is **not** a project parent registration or
 | Seller token ownership + forward address | Unit fixtures pass; real subname pending |
 | Seller reverse primary name | Unit fixtures pass; live write/read pending |
 | Populated name/avatar on seller's real Arkiv listing | Pending actual seller identity and listing |
+| Delegation grant → edit → unauthorized → revoke → rejected | Verified against real Sepolia contracts via `eth_simulateV1` (`npm run test:ens-live`); signed txs on a registered storefront pending |
 
 Record actual parent, seller/issuer addresses, resolver/subregistry addresses and Sepolia explorer links here after the test. Do not substitute fixture addresses for live evidence.
 

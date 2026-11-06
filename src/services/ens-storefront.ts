@@ -13,11 +13,17 @@ import {
 import { dnsName, labelId, publicHttpsUrl, sellerAddress, storefrontLabel } from "@/lib/ens/names";
 import { findNameRegistry, resolveForwardAddress, resolveSellerIdentity } from "./ens-identity";
 
-type EnsWallet = Pick<Awaited<ReturnType<typeof createEnsWalletClient>>, "account" | "chain" | "writeContract">;
-type WriteReader = Pick<typeof ensPublicClient, "readContract" | "getBlockNumber" | "getCode" | "getBlock" | "simulateContract" | "waitForTransactionReceipt">;
+export type EnsWallet = Pick<Awaited<ReturnType<typeof createEnsWalletClient>>, "account" | "chain" | "writeContract">;
+export type WriteReader = Pick<typeof ensPublicClient, "readContract" | "getBlockNumber" | "getCode" | "getBlock" | "simulateContract" | "waitForTransactionReceipt">;
 export interface EnsWriteResult { txHash: Hex; blockNumber: bigint; }
 export interface StorefrontInput { label: string; seller: Address; resolver: Address; expirationDays: number; }
 export interface StorefrontMetadata { avatar: string; description: string; url: string; }
+
+/** initialize() payload for a dedicated seller resolver: seller roles + forward address in one step. */
+export function sellerResolverInitData(name: string, owner: Address): Hex {
+  const addressCall = encodeFunctionData({ abi: permissionedResolverAbi, functionName: "setAddress", args: [dnsName(name), 60n, owner] });
+  return encodeFunctionData({ abi: permissionedResolverAbi, functionName: "initialize", args: [[{ account: owner, roleBitmap: RESOLVER_SELLER_ROLES }], [addressCall]] });
+}
 
 /** Preserve a broadcast hash even when receipt/event/read-back verification fails. Never auto-retry. */
 export class EnsWriteError extends Error {
@@ -26,15 +32,15 @@ export class EnsWriteError extends Error {
 
 /** Each method is one explicitly approved transaction; setup is intentionally resumable. */
 export class EnsStorefrontService {
-  constructor(private readonly client: WriteReader = ensPublicClient) {}
+  constructor(protected readonly client: WriteReader = ensPublicClient) {}
 
-  private account(wallet: EnsWallet): Address {
+  protected account(wallet: EnsWallet): Address {
     if (ensConfigurationError) throw new Error(ensConfigurationError);
     if (!wallet.account || wallet.chain?.id !== ENS_SEPOLIA_CHAIN_ID) throw new Error("Connect a Sepolia wallet for ENS writes");
     return wallet.account.address;
   }
 
-  private async send(wallet: EnsWallet, call: { address: Address; abi: Abi; functionName: string; args: readonly unknown[] }) {
+  protected async send(wallet: EnsWallet, call: { address: Address; abi: Abi; functionName: string; args: readonly unknown[] }) {
     const account = this.account(wallet);
     const { request } = await this.client.simulateContract({ ...call, account, chain: sepolia });
     const hash = await wallet.writeContract(request);
@@ -110,11 +116,7 @@ export class EnsStorefrontService {
   /** Prepare a dedicated seller-controlled resolver and its forward record atomically. */
   async deploySellerResolver(wallet: EnsWallet, label: string, seller: Address, salt: bigint) {
     const name = `${storefrontLabel(label)}.${this.parent()}`;
-    const owner = sellerAddress(seller);
-    const addressCall = encodeFunctionData({ abi: permissionedResolverAbi, functionName: "setAddress", args: [dnsName(name), 60n, owner] });
-    return this.deploy(wallet, ensConfig.resolverImplementation, encodeFunctionData({
-      abi: permissionedResolverAbi, functionName: "initialize", args: [[{ account: owner, roleBitmap: RESOLVER_SELLER_ROLES }], [addressCall]],
-    }), salt);
+    return this.deploy(wallet, ensConfig.resolverImplementation, sellerResolverInitData(name, sellerAddress(seller)), salt);
   }
 
   async register(wallet: EnsWallet, input: StorefrontInput) {

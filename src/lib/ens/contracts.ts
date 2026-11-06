@@ -1,4 +1,4 @@
-import { parseAbi } from "viem";
+import { keccak256, parseAbi, toBytes } from "viem";
 
 /** Minimal interfaces verified against the pinned ENSv2 deployment in shared/ens-deployment.json. */
 export const registryAbi = parseAbi([
@@ -31,7 +31,38 @@ export const permissionedResolverAbi = parseAbi([
   "function multicall(bytes[] calls) returns (bytes[])",
   "function setAddress(bytes name, uint256 coinType, bytes addressBytes)",
   "function setText(bytes name, string key, string value)",
+  "function resolve(bytes name, bytes data) view returns (bytes)",
+  // Delegation (EnhancedAccessControl). grantRoles() is disabled on this resolver; scoped grants
+  // go through grantSetterRoles(<setter calldata>, account), which derives the resource itself.
+  "function grantSetterRoles(bytes setter, address account) returns (bool)",
+  "function revokeRoles(uint256 resource, uint256 roleBitmap, address account) returns (bool)",
+  "function hasRoles(uint256 resource, uint256 roleBitmap, address account) view returns (bool)",
+  "function roles(uint256 resource, address account) view returns (uint256)",
+  "event EACRolesChanged(uint256 indexed resource, address indexed account, uint256 oldRoleBitmap, uint256 newRoleBitmap)",
+  "event ResourceArgument(uint256 indexed resource, bytes arg)",
+  "event Initialized(uint64 version)",
+  "error EACUnauthorizedAccountRoles(uint256 resource, uint256 roleBitmap, address account)",
+  "error EACCannotGrantRoles(uint256 resource, uint256 roleBitmap, address account)",
+  "error EACCannotRevokeRoles(uint256 resource, uint256 roleBitmap, address account)",
+  "error EACInvalidAccount()",
 ]);
+
+// PermissionedResolverLib (ensdomains/contracts-v2 @ the pinned deployment commit).
+export const ROLE_SET_ADDRESS = 1n;
+export const ROLE_SET_TEXT = 1n << 4n;
+/** Lets its holder grant/revoke ROLE_SET_TEXT, root-wide or for a single text key. */
+export const ROLE_SET_TEXT_ADMIN = ROLE_SET_TEXT << 128n;
+
+/** Text keys a storefront owner may delegate. Address and root roles are never delegated. */
+export const DELEGABLE_TEXT_KEYS = ["freshmarket.description", "freshmarket.contact", "description", "url", "avatar"] as const;
+export type DelegableTextKey = (typeof DELEGABLE_TEXT_KEYS)[number];
+export function isDelegableTextKey(key: string): key is DelegableTextKey {
+  return (DELEGABLE_TEXT_KEYS as readonly string[]).includes(key);
+}
+/** Same as PermissionedResolverLib.resource(string): a key-scoped (not name-scoped) EAC resource. */
+export function textResource(key: string): bigint {
+  return BigInt(keccak256(toBytes(key)));
+}
 // ENSv2's reverse mirror still uses the Sepolia v1 reverse registrar as its write path.
 export const reverseRegistrarAbi = parseAbi(["function setName(string name) returns (bytes32)"]);
 
@@ -48,5 +79,8 @@ export const factoryAbi = parseAbi([
 ]);
 const registryRegularRoles = REGISTRAR_ROLE | (1n << 8n) | (1n << 16n) | (1n << 20n) | (1n << 24n);
 export const REGISTRY_OPERATOR_ROLES = registryRegularRoles | (registryRegularRoles << 128n) | (1n << 156n);
-// A seller gets address/text authority on its own resolver, not on a shared marketplace resolver.
-export const RESOLVER_SELLER_ROLES = 1n | (1n << 4n);
+// A seller gets address/text authority on its OWN resolver, not on a shared marketplace resolver.
+// ROLE_SET_TEXT_ADMIN lets the seller delegate single text keys to a manager wallet. Because EAC
+// resources are key-scoped (not name-scoped), a dedicated resolver per seller is what keeps a
+// delegate from editing any other storefront.
+export const RESOLVER_SELLER_ROLES = ROLE_SET_ADDRESS | ROLE_SET_TEXT | ROLE_SET_TEXT_ADMIN;
