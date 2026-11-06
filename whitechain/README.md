@@ -38,6 +38,7 @@ A FreshMarket listing has no operator who could take a card payment on the selle
 
 - **Order IDs** are sequential `uint64` values starting at 1, the `orderId` that `freshmarket.reviews` stores. A review counts once the order is `Released` or `Refunded` (see [`review-repository.ts`](../src/services/review-repository.ts)).
 - **One live order per (merchant, reference).** FreshMarket uses the Arkiv entity key as the reference, so a second buyer's payment reverts with `ReferenceAlreadyPaid` until the first order is fully refunded. Other merchants pass their own order or invoice ID; the SDK hashes strings to `bytes32`.
+- **Hold period: 10 minutes on the demo deployment.** `releaseDelay` is fixed in the constructor. The deploy script defaults to 600 seconds so a demo can show the seller claiming a payout; set `FRESHPAY_RELEASE_DELAY` (seconds) higher for real goods, where buyers need days to receive an item.
 - **Quote deadline.** `pay` reverts after `deadline` (the widget uses 15 minutes), so a checkout page left open cannot settle a price the seller has since changed.
 - **Exact transfers.** The contract checks the balance it actually received, so a fee-on-transfer token cannot underfund escrow. Approvals are for the exact amount, never unlimited.
 - **No admin.** There is no owner, pause or fee. Nobody but the buyer, merchant and the release timer can move an order's funds.
@@ -89,7 +90,7 @@ The script refuses any chain but 1874 and prints the contract address and deploy
 forge verify-contract <address> src/FreshPay.sol:FreshPay --root contracts \
   --rpc-url $WHITECHAIN_SEPOLIA_RPC_URL --verifier blockscout \
   --verifier-url https://explorer.testnet.whitechain.io/api/ \
-  --constructor-args $(cast abi-encode "constructor(address,uint64)" 0xcedfB56113143d55b2358b8CFbB0dEB5Ad2f55a7 259200)
+  --constructor-args $(cast abi-encode "constructor(address,uint64)" 0xcedfB56113143d55b2358b8CFbB0dEB5Ad2f55a7 600)
 ```
 
 To run the end-to-end flow on a local fork (no keys, no testnet funds): start `anvil --fork-url https://rpc.testnet.whitechain.io --port 8547`, then run `FRESHPAY_FORK_RPC=http://127.0.0.1:8547 npx vitest run src/__tests__/freshpay-fork-live.test.ts`.
@@ -109,6 +110,7 @@ Only real, confirmed transactions belong here. These remain **outstanding**; non
 
 - **The price is not signed by the seller.** The contract cannot read Arkiv, so the checkout page passes the Arkiv price to `pay`. A buyer who calls the contract directly can pay a different amount and lock the listing. The merchant dashboard flags amounts that differ from the listing price, and a full refund frees the listing. Seller-signed EIP-712 quotes would close this gap.
 - **No arbiter.** Disputes come down to the seller refunding or the hold timer releasing funds. The `Disputed` state in `review-repository.ts` is unused by this contract.
+- **A 10-minute hold protects buyers only briefly.** It suits the demo, not shipped goods: an unconfirmed order can be released to the seller 10 minutes after payment. Production needs a redeploy with a longer delay.
 - **Not gasless.** The buyer pays WBT gas for approve and pay. The Scale track's sponsored flow is out of scope.
 - Webhook state needs a Redis-compatible store in production, and the dispatcher must be run by a scheduler. Vercel Hobby crons run only daily, so use the worker script or an external cron.
 - Order lists read every ID for a wallet in one call, which is fine on testnet but would need pagination at scale.

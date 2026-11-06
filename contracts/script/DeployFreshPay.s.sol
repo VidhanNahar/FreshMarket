@@ -14,7 +14,8 @@ contract DeployFreshPay is Script {
     function run() external returns (FreshPay freshPay) {
         require(block.chainid == WHITECHAIN_SEPOLIA_CHAIN_ID, "FreshPay: deploy to Whitechain Sepolia (1874)");
         address usdt = vm.envOr("FRESHPAY_TOKEN", WHITECHAIN_SEPOLIA_USDT);
-        uint64 releaseDelay = uint64(vm.envOr("FRESHPAY_RELEASE_DELAY", uint256(3 days)));
+        // 10 minutes keeps the hackathon demo short; real second-hand goods need days.
+        uint64 releaseDelay = uint64(vm.envOr("FRESHPAY_RELEASE_DELAY", uint256(10 minutes)));
         require(IERC20(usdt).totalSupply() > 0, "FreshPay: token has no supply");
 
         vm.startBroadcast();
