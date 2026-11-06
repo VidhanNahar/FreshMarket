@@ -17,6 +17,7 @@ const { noCorrection, mocks } = vi.hoisted(() => {
 } };
 });
 vi.mock("@/hooks/use-seller-identity", () => ({ useSellerIdentity: () => ({ data: null, isError: false, isFetching: false }) }));
+vi.mock("@/hooks/use-reviews", () => ({ useSellerReviews: () => ({ data: [], isPending: false, isError: false }) }));
 vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams(mocks.params), useRouter: () => ({ push: mocks.push }) }));
 vi.mock("@/hooks/useListings", () => ({
   useListings: () => ({ ...mocks.listings, refetch: mocks.refetch }),

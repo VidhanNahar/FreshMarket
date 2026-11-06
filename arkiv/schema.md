@@ -65,7 +65,7 @@ Owner: buyer · Expiry: 180 days, so reputation is a trailing six-month window.
 | `itemRating` | `u64` | | 1–5 |
 | `text` | `bytes` | | UTF-8, ≤ 2,000 characters |
 
-A review counts only if the FreshPay order names the reviewer (`$owner`) as buyer and this `seller`, and its state is `Released` or `Refunded` (a refund does not erase a review). Readers keep the newest review per (buyer, order). FreshPay order IDs are sequential `uint64` values starting at 1, so they fit this attribute. Until `NEXT_PUBLIC_FRESHPAY_ADDRESS` is configured, reviews are read as unverified and rating summaries count none of them.
+Buyers write reviews from the FreshPay receipt (`/receipt/[orderId]`) once the order is released or refunded, signing on Rabdi; listing pages show the seller's verified reviews and averages. A review counts only if the FreshPay order names the reviewer (`$owner`) as buyer and this `seller`, and its state is `Released` or `Refunded` (a refund does not erase a review). Readers keep the newest review per (buyer, order). FreshPay order IDs are sequential `uint64` values starting at 1, so they fit this attribute. Until `NEXT_PUBLIC_FRESHPAY_ADDRESS` is configured, reviews are read as unverified and rating summaries count none of them.
 
 ## Which index answers which search
 

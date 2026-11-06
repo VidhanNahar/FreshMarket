@@ -8,6 +8,7 @@ import { useListing } from "@/hooks/useListings";
 import { useOrder, useOrderActions, useOrderEvents } from "@/hooks/use-freshpay-orders";
 import { freshPayConfig } from "@/lib/freshpay/config";
 import { shortenAddress } from "@/lib/wallet/wallet-ui";
+import { ReviewForm } from "@/components/reviews/ReviewForm";
 
 const panel = "rounded-2xl border editorial-rule bg-card p-5";
 const EVENT_LABELS: Record<OrderEvent["type"], string> = { paid: "Paid into escrow", released: "Released to seller", refunded: "Refunded to buyer" };
@@ -73,6 +74,7 @@ export function OrderReceipt({ orderId }: { orderId: string }) {
         {actions.pending ? "Confirm in your wallet…" : "Confirm item received"}
       </button>
     </section>}
+    {isBuyer && <ReviewForm order={o} />}
     <section aria-label="Settlement history" className={`${panel} space-y-3`}>
       <h2 className="font-semibold">Whitechain transactions</h2>
       {events.isPending ? <p className="text-sm text-muted-foreground">Loading transactions…</p> : events.isError ? <p role="alert" className="text-sm">Could not load transaction history. The order state above is still read from the contract.</p> :
