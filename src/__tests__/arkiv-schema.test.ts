@@ -1,57 +1,47 @@
 import { describe, it, expect } from "vitest";
 import { isSchema } from "@arkiv-network/sdk";
-import { eq } from "@arkiv-network/sdk/query";
-import { listingSchema, LISTING_SCHEMA_VERSION } from "../lib/arkiv/schema";
-import { toPriceMinor, formatPrice } from "../domain/listing";
+import { eq, or, startsWith } from "@arkiv-network/sdk/query";
+import { listingSchema, reviewSchema, sellerSchema, LISTING_SCHEMA_VERSION } from "../lib/arkiv/schema";
+import { toPriceMinor, toPriceInput, formatPrice } from "../domain/listing";
 import { getArkivPublicClient } from "../lib/arkiv/chain";
 import fs from "fs/promises";
 import path from "path";
 
 describe("Phase 2: Arkiv Schema & Domain Validation", () => {
-  it("defines valid freshmarket.listings schema", () => {
+  it("defines valid freshmarket schemas", () => {
     expect(isSchema(listingSchema)).toBe(true);
-    expect(listingSchema.name).toBe("freshmarket.listings");
-    expect(LISTING_SCHEMA_VERSION).toBe(1);
+    expect(listingSchema.name).toBe("freshmarket.listings.v2");
+    expect(LISTING_SCHEMA_VERSION).toBe(2);
+    expect(sellerSchema.name).toBe("freshmarket.sellers");
+    expect(reviewSchema.name).toBe("freshmarket.reviews");
   });
 
-  it("configures required indexed attributes correctly", () => {
+  it("indexes exactly the listing fields that searches filter on", () => {
     const cols = listingSchema.columns;
-
-    // Indexed columns
-    expect(cols.seller.isIndexed).toBe(true);
+    const indexed = Object.entries(cols).filter(([, column]) => column.isIndexed).map(([name]) => name).sort();
+    expect(indexed).toEqual(["brand", "categoryPath", "city", "condition", "fulfilment", "model", "priceMinor", "seller", "status", "visibility"]);
     expect(cols.seller.type).toBe("addr");
-
-    expect(cols.category.isIndexed).toBe(true);
-    expect(cols.category.type).toBe("str");
-
-    expect(cols.status.isIndexed).toBe(true);
-    expect(cols.status.type).toBe("str");
-
-    expect(cols.city.isIndexed).toBe(true);
-    expect(cols.city.type).toBe("str");
-
-    expect(cols.priceMinor.isIndexed).toBe(true);
     expect(cols.priceMinor.type).toBe("u64");
-
-    // Unindexed payload columns
-    expect(cols.title.isIndexed).toBe(false);
+    expect(cols.categoryPath.type).toBe("str");
     expect(cols.title.type).toBe("str");
-
-    expect(cols.description.isIndexed).toBe(false);
     expect(cols.description.type).toBe("bytes");
-
-    expect(cols.imageUrl.isIndexed).toBe(false);
-    expect(cols.imageUrl.type).toBe("bytes");
-
-    expect(cols.createdAt.isIndexed).toBe(false);
-    expect(cols.createdAt.type).toBe("u64");
+    expect(cols.media.type).toBe("bytes");
+    // Arkiv allows 32 attributes per entity, including the schema tag.
+    expect(Object.keys(cols).length).toBeLessThan(32);
   });
 
-  it("converts major display price to minor integer units reliably", () => {
-    expect(toPriceMinor(100)).toBe(10000n);
-    expect(toPriceMinor(85000)).toBe(8500000n);
-    expect(toPriceMinor(49.99)).toBe(4999n);
-    expect(toPriceMinor(1.005)).toBe(101n);
+  it("indexes seller directory and review lookups", () => {
+    expect(sellerSchema.columns.ensName.isIndexed).toBe(true);
+    expect(sellerSchema.columns.sellerType.isIndexed).toBe(true);
+    expect(reviewSchema.columns.seller.isIndexed).toBe(true);
+    expect(reviewSchema.columns.orderId.isIndexed).toBe(true);
+    expect(reviewSchema.columns.sellerRating.isIndexed).toBe(false);
+  });
+
+  it("converts USDT prices to 6-decimal minor units reliably", () => {
+    expect(toPriceMinor(100)).toBe(100_000_000n);
+    expect(toPriceMinor(49.99)).toBe(49_990_000n);
+    expect(toPriceMinor(1.0000005)).toBe(1_000_001n);
     expect(toPriceMinor(0)).toBe(0n);
     expect(toPriceMinor(1e-7)).toBe(0n);
 
@@ -61,38 +51,43 @@ describe("Phase 2: Arkiv Schema & Domain Validation", () => {
     expect(() => toPriceMinor(Number.MAX_SAFE_INTEGER)).toThrow("safe integer");
   });
 
-  it("formats minor currency units to readable strings", () => {
-    const formatted = formatPrice(8500000n, "INR");
-    expect(formatted).toContain("85,000");
-
-    const formattedUsd = formatPrice(2500n, "USD");
-    expect(formattedUsd).toContain("25");
-    expect(formatPrice(4999n, "INR")).toContain("49.99");
-    expect(formatPrice(18446744073709551615n, "USD")).toBe("$184,467,440,737,095,516.15");
+  it("formats USDT minor units exactly", () => {
+    expect(formatPrice(12_500_000n)).toBe("12.50 USDT");
+    expect(formatPrice(85_000_000_000n)).toBe("85,000.00 USDT");
+    expect(formatPrice(1_234_567n)).toBe("1.234567 USDT");
+    expect(formatPrice(0n)).toBe("0.00 USDT");
+    expect(formatPrice(18446744073709551615n)).toBe("18,446,744,073,709.551615 USDT");
+    expect(toPriceInput(12_500_000n)).toBe("12.5");
+    expect(toPriceInput(3_000_000n)).toBe("3");
     expect(() => formatPrice(1.5)).toThrow("safe integer");
     expect(() => formatPrice(-1n)).toThrow();
   });
 
-  it("builds valid Arkiv query expression using schema and indexed attributes", () => {
+  it("builds category, brand/model and visibility queries from indexed attributes", () => {
     // Rendering validates the schema/filter combination locally; no live RPC call is needed.
-    const publicClient = getArkivPublicClient();
-    const query = publicClient
+    const query = getArkivPublicClient()
       .select()
       .from(listingSchema)
-      .where(eq("status", "available"));
+      .where(eq("status", "available"))
+      .where(startsWith("categoryPath", "pets/dogs/toys"))
+      .where(or(eq("brand", "lenovo"), startsWith("model", "lenovo")));
 
     const queryStr = query.toString();
-    expect(queryStr).toContain("arkiv.schema = str('freshmarket.listings')");
+    expect(queryStr).toContain("arkiv.schema = str('freshmarket.listings.v2')");
     expect(queryStr).toContain("status = str('available')");
+    expect(queryStr).toContain("categoryPath");
+    expect(queryStr).toContain("pets/dogs/toys");
   });
 
   it("verifies /arkiv/schema.md documentation exists with required fields", async () => {
     const schemaDocPath = path.resolve(import.meta.dirname, "../../arkiv/schema.md");
     const content = await fs.readFile(schemaDocPath, "utf-8");
 
-    expect(content).toContain("freshmarket.listings");
+    expect(content).toContain("freshmarket.listings.v2");
+    expect(content).toContain("freshmarket.sellers");
+    expect(content).toContain("freshmarket.reviews");
     expect(content).toContain("7794095");
-    expect(content).toContain("priceMinor");
+    expect(content).toContain("categoryPath");
     expect(content).toContain("ExpirationTime");
   });
 });

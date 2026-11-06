@@ -29,7 +29,7 @@ function render() {
       image.onerror = () => { clearTimeout(timer); image.replaceWith(element("p", "Image unavailable")); };
       article.append(image);
     }
-    article.append(element("p", `${row.category} / ${row.city}`), element("h2", row.title), element("strong", portablePrice(row.priceMinor, row.currency)));
+    article.append(element("p", `${row.category} / ${row.city} / ${row.condition}`), element("h2", row.title), element("strong", portablePrice(row.priceMinor)));
     const badge = element("span", row.status); badge.className = `badge ${row.status}`;
     article.append(badge, element("h3", "ENTITY KEY"), element("code", row.id), element("h3", "SELLER"), element("code", row.seller), element("p", `Expires at block ${row.expiresAtBlock}`));
     const link = element("a", "Inspect on Rabdi Explorer ↗");

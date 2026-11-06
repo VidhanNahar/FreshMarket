@@ -4,17 +4,21 @@ import type { ListingFilters } from "@/domain/listing";
 import { listingRepository } from "@/services/listing-repository";
 import { ARKIV_RABDI_CHAIN_ID } from "./chain";
 
+// TanStack hashes keys with JSON.stringify, which cannot serialize bigint.
+function serializableFilters(filters: ListingFilters) {
+  return {
+    ...filters,
+    minPriceMinor: filters.minPriceMinor?.toString(),
+    maxPriceMinor: filters.maxPriceMinor?.toString(),
+  };
+}
+
 /** Shared prefix lets successful writes refresh catalog, seller inventory and detail caches. */
 export const listingKeys = {
   all: ["arkiv-listings", ARKIV_RABDI_CHAIN_ID] as const,
-  catalog: (filters: Pick<ListingFilters, "category" | "city"> = {}) =>
-    [...listingKeys.all, "catalog", { ...filters }] as const,
-  search: (filters: ListingFilters = {}) => [...listingKeys.all, "search", {
-    ...filters,
-    // TanStack hashes keys with JSON.stringify, which cannot serialize bigint.
-    minPriceMinor: filters.minPriceMinor?.toString(),
-    maxPriceMinor: filters.maxPriceMinor?.toString(),
-  }] as const,
+  catalog: (filters: Omit<ListingFilters, "limit" | "offset"> = {}) =>
+    [...listingKeys.all, "catalog", serializableFilters(filters)] as const,
+  search: (filters: ListingFilters = {}) => [...listingKeys.all, "search", serializableFilters(filters)] as const,
   detail: (id: string) => [...listingKeys.all, "detail", id.toLowerCase()] as const,
 };
 

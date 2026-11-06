@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
+import { CATEGORIES } from "../../shared/categories";
 import {
   listingFormSchema,
   toCreateListingInput,
-  LISTING_CATEGORIES,
   EXPIRATION_DAYS_OPTIONS,
   type ListingFormValues,
 } from "@/domain/listing-schema";
@@ -11,9 +11,13 @@ describe("Phase 2: Seller Listing Schema & Zod Validation", () => {
   const validPayload: ListingFormValues = {
     title: "Sony WH-1000XM5 Noise Canceling Headphones",
     description: "Gently used headphones with original carry case and cables. Working perfectly.",
-    category: "Electronics",
-    price: 18500,
-    currency: "INR",
+    categoryPath: "electronics/audio",
+    brand: "Sony",
+    model: "WH-1000XM5",
+    condition: "like-new",
+    fulfilment: "pickup",
+    visibility: "public",
+    price: 185,
     city: "Mumbai",
     imageUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e",
     expirationDays: 7,
@@ -24,8 +28,8 @@ describe("Phase 2: Seller Listing Schema & Zod Validation", () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.title).toBe(validPayload.title);
-      expect(result.data.category).toBe("Electronics");
-      expect(result.data.price).toBe(18500);
+      expect(result.data.categoryPath).toBe("electronics/audio");
+      expect(result.data.price).toBe(185);
       expect(result.data.city).toBe("Mumbai");
       expect(result.data.expirationDays).toBe(7);
     }
@@ -36,7 +40,8 @@ describe("Phase 2: Seller Listing Schema & Zod Validation", () => {
     { title: "अ".repeat(50) }, { city: "अ".repeat(45) },
     { imageUrl: "https://user:secret@example.com/image.png" },
     { imageUrl: `https://example.com/${"a".repeat(2048)}` },
-    { currency: "JPY" }, { currency: "INVALID" },
+    { brand: "b".repeat(65) }, { model: "m".repeat(65) },
+    { condition: "broken" }, { fulfilment: "teleport" }, { visibility: "secret" },
   ])("rejects values incompatible with Arkiv storage: %j", (change) => {
     expect(listingFormSchema.safeParse({ ...validPayload, ...change }).success).toBe(false);
   });
@@ -113,12 +118,12 @@ describe("Phase 2: Seller Listing Schema & Zod Validation", () => {
     });
   });
 
-  describe("Category Enum Validation", () => {
-    it("accepts all defined categories", () => {
-      for (const cat of LISTING_CATEGORIES) {
+  describe("Category tree validation", () => {
+    it("accepts every category in the shared tree", () => {
+      for (const node of CATEGORIES) {
         const result = listingFormSchema.safeParse({
           ...validPayload,
-          category: cat,
+          categoryPath: node.path,
         });
         expect(result.success).toBe(true);
       }
@@ -127,9 +132,10 @@ describe("Phase 2: Seller Listing Schema & Zod Validation", () => {
     it("rejects undefined or invalid categories", () => {
       const result = listingFormSchema.safeParse({
         ...validPayload,
-        category: "IllegalCategory" as unknown as ListingFormValues["category"],
+        categoryPath: "illegal/category",
       });
       expect(result.success).toBe(false);
+      expect(listingFormSchema.safeParse({ ...validPayload, categoryPath: "" }).success).toBe(false);
     });
   });
 
@@ -148,31 +154,32 @@ describe("Phase 2: Seller Listing Schema & Zod Validation", () => {
       expect(negativeResult.success).toBe(false);
     });
 
-    it("rejects prices with more than 2 decimal places", () => {
+    it("rejects prices with more than 6 decimal places (USDT precision)", () => {
+      expect(listingFormSchema.safeParse({ ...validPayload, price: 19.123456 }).success).toBe(true);
       const result = listingFormSchema.safeParse({
         ...validPayload,
-        price: 19.999,
+        price: 19.1234567,
       });
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error.flatten().fieldErrors.price?.[0]).toMatch(
-          /cannot have more than 2 decimal places/i
+          /cannot have more than 6 decimal places/i
         );
       }
     });
 
-    it("converts price into integer priceMinor (paisa/cents) accurately", () => {
+    it("maps form values to repository input, with the image as the media list", () => {
       const input = toCreateListingInput(
         {
           ...validPayload,
-          price: 18500.5,
+          price: 18.5,
         },
         "0x1111111111111111111111111111111111111111"
       );
 
-      expect(input.price).toBe(18500.5);
-      expect(input.priceMinor).toBe(1850050);
-      expect(input.currency).toBe("INR");
+      expect(input.price).toBe(18.5);
+      expect(input.media).toEqual([validPayload.imageUrl]);
+      expect(input).toMatchObject({ categoryPath: "electronics/audio", brand: "Sony", model: "WH-1000XM5", condition: "like-new", fulfilment: "pickup", visibility: "public" });
       expect(input.seller).toBe("0x1111111111111111111111111111111111111111");
     });
   });
@@ -291,12 +298,15 @@ describe("Phase 2: Seller Listing Schema & Zod Validation", () => {
       expect(output).toEqual({
         title: "Sony WH-1000XM5 Noise Canceling Headphones",
         description: "Gently used headphones with original carry case and cables. Working perfectly.",
-        category: "Electronics",
-        price: 18500,
-        priceMinor: 1850000,
-        currency: "INR",
+        categoryPath: "electronics/audio",
+        brand: "Sony",
+        model: "WH-1000XM5",
+        condition: "like-new",
+        fulfilment: "pickup",
+        visibility: "public",
+        price: 185,
         city: "Mumbai",
-        imageUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e",
+        media: ["https://images.unsplash.com/photo-1505740420928-5e560c06d30e"],
         expirationDays: 7,
         seller,
       });

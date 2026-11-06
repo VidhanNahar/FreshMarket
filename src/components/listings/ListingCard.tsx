@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Clock, MapPin } from "lucide-react";
-import { type Listing, formatPrice } from "@/domain/listing";
+import { CONDITION_LABELS, type Listing, displayCity, formatPrice } from "@/domain/listing";
+import { categoryLabel } from "../../../shared/categories";
 import { shortenAddress } from "@/lib/wallet/wallet-ui";
 import { ExpirationCountdown } from "./ExpirationCountdown";
 import { ListingImage } from "./ListingImage";
@@ -12,12 +13,13 @@ export function ListingStatus({ status }: { status: Listing["status"] }) {
 export function ListingCard({ listing, currentBlock }: { listing: Listing; currentBlock?: bigint }) {
   return (
     <Link href={`/listing/${listing.id}`} className="group overflow-hidden rounded-2xl border border-black/10 bg-background shadow-sm transition hover:-translate-y-1 hover:shadow-md focus-visible:outline-2 focus-visible:outline-emerald-600">
-      <ListingImage src={listing.imageUrl} title={listing.title} />
+      <ListingImage src={listing.media[0] ?? ""} title={listing.title} />
       <div className="space-y-3 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2"><span className="rounded-full border border-black/10 px-2 py-1 text-xs">{listing.category}</span><ListingStatus status={listing.status} /></div>
+        <div className="flex flex-wrap items-center justify-between gap-2"><span className="rounded-full border border-black/10 px-2 py-1 text-xs">{categoryLabel(listing.categoryPath)}</span><ListingStatus status={listing.status} /></div>
         <h2 className="line-clamp-2 font-semibold group-hover:text-emerald-700 dark:text-emerald-400">{listing.title}</h2>
-        <p className="text-xl font-bold">{formatPrice(listing.priceMinor, listing.currency)}</p>
-        <p className="flex items-center gap-1 text-sm text-muted-foreground"><MapPin aria-hidden="true" className="h-3.5 w-3.5" />{listing.city}</p>
+        <p className="text-xl font-bold">{formatPrice(listing.priceMinor)}</p>
+        <p className="text-xs text-muted-foreground">{CONDITION_LABELS[listing.condition]}</p>
+        <p className="flex items-center gap-1 text-sm text-muted-foreground"><MapPin aria-hidden="true" className="h-3.5 w-3.5" />{displayCity(listing.city)}</p>
         <p className="flex items-center gap-1 text-xs text-muted-foreground"><Clock aria-hidden="true" className="h-3.5 w-3.5" /><ExpirationCountdown expiresAtBlock={listing.expiresAtBlock} currentBlock={currentBlock} /></p>
         <div className="flex items-center justify-between gap-2 border-t border-black/10 pt-3 text-xs"><span title={listing.seller} className="rounded bg-black/5 px-2 py-1 font-mono">{shortenAddress(listing.seller)}</span><span className="font-semibold text-emerald-700 dark:text-emerald-400">View details →</span></div>
       </div>

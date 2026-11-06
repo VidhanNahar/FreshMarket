@@ -2,7 +2,7 @@
 
 ## What is implemented
 
-FreshMarket stores public PNG/JPEG/WebP files on Swarm and stores their immutable `bzz://<64-hex-reference>` in the Arkiv entity's existing `imageUrl` bytes field. Legacy credential-free HTTPS URLs still work. Encrypted 128-hex references are rejected: they can contain decryption keys and must not be published as plain Arkiv metadata.
+FreshMarket stores public PNG/JPEG/WebP files on Swarm and stores their immutable `bzz://<64-hex-reference>` in the Arkiv entity's `media` list (UTF-8 JSON bytes). Legacy credential-free HTTPS URLs still work. Encrypted 128-hex references are rejected: they can contain decryption keys and must not be published as plain Arkiv metadata.
 
 - `src/lib/swarm/upload.ts`: bounded image validation, wallet authorization, XHR progress, timeout and response-reference handling. Progress reaches 95% while sending to the server and 100% only after Bee accepts the upload; it is not a network replication percentage.
 - `src/app/api/swarm/upload/route.ts`: server-only postage and Bee credentials, explicit wallet allowlist, origin and signed-content checks, authentication before body allocation, single-use claims, per-wallet quotas, streamed size limit, image magic checks, and a single Bee POST. No automatic upload retry.
@@ -18,7 +18,7 @@ The HTTP integration follows [Bee's upload API](https://docs.ethswarm.org/api/).
 2. Set server-only `SWARM_BEE_URL`, `SWARM_POSTAGE_BATCH_ID`, optionally `SWARM_BEE_API_KEY`, comma-separated `SWARM_UPLOAD_ALLOWED_WALLETS`, and exact `SWARM_ALLOWED_ORIGIN`. Never put a Bee API credential in a `NEXT_PUBLIC_` or `VITE_` variable. Use HTTPS except for a loopback Bee node in local development. A deployed Vercel function cannot reach a Bee node running only on your laptop's localhost.
 3. Set `NEXT_PUBLIC_SWARM_GATEWAY_URL` and `VITE_SWARM_GATEWAY_URL` for the network holding the file. Rebuild browser bundles after changing them.
 4. Start FreshMarket, connect an enabled EOA wallet and select/drop an image on `/sell`. Sign the content-bound authorization message (no gas transaction). An unavailable configuration fails closed; HTTPS images remain usable.
-5. Verify the returned `bzz://` reference through the public gateway, then publish the listing with the actual Rabdi wallet transaction. Read the entity independently and verify `imageUrl` decodes to that same reference.
+5. Verify the returned `bzz://` reference through the public gateway, then publish the listing with the actual Rabdi wallet transaction. Read the entity independently and verify its `media` list contains that same reference.
 6. Open the same entity in `/browse`, its detail page, and `/storefront`. Verify actual image loading through the selected gateway. Record the video timestamp showing this flow.
 
 An operator can also exercise Bee directly, using their real environment configuration:

@@ -67,12 +67,12 @@ describe("seller inventory", () => {
     render(<SellerDashboard />);
     const row = within(screen.getByRole("article", { name: listing.title }));
     await user.click(row.getByRole("button", { name: "Edit price & description" }));
-    const price = screen.getByLabelText("Price (INR)");
+    const price = screen.getByLabelText("Price (USDT, up to 6 decimals)");
     await user.clear(price); await user.type(price, "125.50");
     const description = screen.getByLabelText("Description");
     await user.clear(description); await user.type(description, "Updated desk description");
     await user.click(screen.getByRole("button", { name: "Confirm changes" }));
-    expect(mocks.run).toHaveBeenCalledWith(listing, { kind: "edit", changes: { priceMinor: 12550n, description: "Updated desk description" } });
+    expect(mocks.run).toHaveBeenCalledWith(listing, { kind: "edit", changes: { priceMinor: 125_500_000n, description: "Updated desk description" } });
     await user.click(row.getByRole("button", { name: "Extend expiration" }));
     await user.selectOptions(screen.getByLabelText("Additional days"), "30");
     await user.click(screen.getByRole("button", { name: "Confirm changes" }));

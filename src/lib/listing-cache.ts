@@ -1,15 +1,24 @@
 import type { QueryClient, QueryKey } from "@tanstack/react-query";
-import type { Listing } from "@/domain/listing";
+import { toCityKey, toSearchKey, type Listing, type ListingFilters } from "@/domain/listing";
 import { listingKeys } from "@/lib/arkiv/queries";
 
+type CachedFilters = Omit<ListingFilters, "minPriceMinor" | "maxPriceMinor"> & { minPriceMinor?: string; maxPriceMinor?: string };
+
+/** Mirrors the repository's indexed filters so an edited listing leaves lists it no longer matches. */
 function matches(listing: Listing, key: QueryKey): boolean {
   if (key[2] === "owned") return listing.owner.toLowerCase() === String(key[3]).toLowerCase();
-  const filters = key[3] as { status?: string; category?: string; city?: string; seller?: string; minPriceMinor?: string; maxPriceMinor?: string } | undefined;
+  const filters = key[3] as CachedFilters | undefined;
   if (!filters || typeof filters !== "object") return true;
   const status = filters.status ?? "available";
+  const visibility = filters.visibility ?? "public";
+  const brandOrModel = filters.brandOrModel ? toSearchKey(filters.brandOrModel) : "";
   return (status === "all" || status === listing.status) &&
-    (!filters.category || filters.category === "All Items" || filters.category === listing.category) &&
-    (!filters.city || filters.city === listing.city) &&
+    (visibility === "all" || visibility === listing.visibility) &&
+    (!filters.categoryPaths?.length || filters.categoryPaths.some((path) => listing.categoryPath.startsWith(path))) &&
+    (!brandOrModel || listing.brand === brandOrModel || listing.model.startsWith(brandOrModel)) &&
+    (!filters.city || toCityKey(filters.city) === listing.city) &&
+    (!filters.condition || filters.condition === listing.condition) &&
+    (!filters.fulfilment || filters.fulfilment === listing.fulfilment) &&
     (!filters.seller || filters.seller.toLowerCase() === listing.seller.toLowerCase()) &&
     (filters.minPriceMinor === undefined || listing.priceMinor >= BigInt(filters.minPriceMinor)) &&
     (filters.maxPriceMinor === undefined || listing.priceMinor <= BigInt(filters.maxPriceMinor));

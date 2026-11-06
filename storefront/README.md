@@ -1,6 +1,6 @@
 # SECOND LOOK — Storefront B
 
-A standalone static TypeScript app with an independent Arkiv SDK public reader. It displays the public `freshmarket.listings` contract from Rabdi, including full entity keys, seller addresses, exact prices, statuses and expiry blocks. The theme and rendering are separate from FreshMarket.
+A standalone static TypeScript app with an independent Arkiv SDK public reader. It displays the public `freshmarket.listings.v2` contract from Rabdi, including full entity keys, seller addresses, exact USDT prices, categories, conditions, statuses and expiry blocks. Unlisted listings are hidden here too. The theme and rendering are separate from FreshMarket.
 
 From the repository root:
 

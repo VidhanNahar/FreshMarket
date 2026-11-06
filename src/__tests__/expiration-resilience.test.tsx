@@ -4,7 +4,7 @@ import { act, cleanup, render, screen } from "@testing-library/react";
 import { ExpirationCountdown } from "@/components/listings/ExpirationCountdown";
 import { ErrorBoundary } from "@/components/resilience/ErrorBoundary";
 import { expirationState, isListingExpired } from "@/lib/listing-expiration";
-import { matchesDiscoveryFilters } from "@/lib/listing-discovery";
+import { discoverListings, planDiscovery } from "@/lib/listing-discovery";
 import { formatPrice, isListingStatus, toPriceMinor } from "@/domain/listing";
 import { expiryDemoPreset } from "@/domain/expiry-demo";
 import { listingFormSchema } from "@/domain/listing-schema";
@@ -35,16 +35,16 @@ describe("expiration and resilient domain behavior", () => {
     expect(expirationState(100n).label).toBe("Expires at block 100");
     expect(expirationState(43300n, 100n).nearExpiry).toBe(false);
   });
-  it("matches exact category/city plus case-insensitive title search", () => {
-    const filters = { category: "Furniture", city: "Mumbai", q: "DESK", sort: "newest" as const };
-    expect(matchesDiscoveryFilters(listing, filters)).toBe(true);
-    expect(matchesDiscoveryFilters(listing, { ...filters, city: "Delhi" })).toBe(false);
-    expect(matchesDiscoveryFilters(listing, { ...filters, category: "Books" })).toBe(false);
+  it("matches case-insensitive text within an indexed category", () => {
+    const filters = { q: "DESK", category: "furniture", city: "Mumbai", condition: "" as const, fulfilment: "" as const, minPrice: "", maxPrice: "", sort: "newest" as const };
+    const plan = planDiscovery(filters);
+    expect(plan.arkiv).toMatchObject({ categoryPaths: ["furniture/tables"], city: "Mumbai" });
+    expect(discoverListings([listing], plan.textWords, "newest")).toEqual([listing]);
+    expect(discoverListings([listing], ["lamp"], "newest")).toEqual([]);
   });
-  it("roundtrips INR/USD prices without changing their minor units", () => {
-    expect(toPriceMinor(1.005)).toBe(101n);
-    expect(formatPrice(12550n, "INR")).toBe("₹125.50");
-    expect(formatPrice(12550n, "USD")).toBe("$125.50");
+  it("roundtrips USDT prices without changing their minor units", () => {
+    expect(toPriceMinor(125.5)).toBe(125_500_000n);
+    expect(formatPrice(125_500_000n)).toBe("125.50 USDT");
   });
   it("validates the demo fixture and builds exactly 450 lifetime blocks", () => {
     expect(listingFormSchema.safeParse(expiryDemoPreset).success).toBe(true);

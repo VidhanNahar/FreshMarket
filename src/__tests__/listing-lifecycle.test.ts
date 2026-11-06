@@ -159,9 +159,10 @@ describe("optimistic cache and indexing", () => {
     expect(await verifyListingAction(key, { kind: "delete" }, undefined, { getById }, async () => {})).toBeUndefined();
     expect(getById).toHaveBeenCalledTimes(5);
   });
-  it("parses prices exactly, including uint64 boundary, and rejects fractional paisa", () => {
-    expect(parseListingPrice("184467440737095516.15")).toBe(18446744073709551615n);
+  it("parses USDT prices exactly, including the uint64 boundary, and rejects sub-micro amounts", () => {
+    expect(parseListingPrice("18446744073709.551615")).toBe(18446744073709551615n);
+    expect(parseListingPrice("125.5")).toBe(125_500_000n);
     expect(parseListingPrice("0")).toBe(0n);
-    for (const value of ["1.005", "-1", "NaN", "184467440737095516.16"]) expect(() => parseListingPrice(value)).toThrow();
+    for (const value of ["1.0000005", "-1", "NaN", "18446744073709.551616", "184467440737095"]) expect(() => parseListingPrice(value)).toThrow();
   });
 });

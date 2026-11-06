@@ -42,9 +42,18 @@ import {
   listingFormSchema,
   ListingFormValues,
   toCreateListingInput,
-  LISTING_CATEGORIES,
   EXPIRATION_DAYS_OPTIONS,
 } from "@/domain/listing-schema";
+import {
+  CONDITION_LABELS,
+  FULFILMENT_LABELS,
+  LISTING_CONDITIONS,
+  LISTING_FULFILMENTS,
+  PRICE_CURRENCY,
+  formatPrice,
+  toPriceMinor,
+} from "@/domain/listing";
+import { CATEGORIES, categoryLabel, suggestCategory } from "../../../shared/categories";
 import {
   shortenAddress,
   isRabdiChain,
@@ -53,6 +62,7 @@ import {
 } from "@/lib/wallet/wallet-ui";
 
 const emptySubscribe = () => () => {};
+const selectClass = "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive dark:bg-input/30";
 
 function useIsMounted() {
   return useSyncExternalStore(
@@ -65,9 +75,13 @@ function useIsMounted() {
 const DEFAULT_FORM_VALUES: ListingFormValues = {
   title: "",
   description: "",
-  category: "Electronics",
+  categoryPath: "",
+  brand: "",
+  model: "",
+  condition: "good",
+  fulfilment: "pickup",
+  visibility: "public",
   price: 0,
-  currency: "INR",
   city: "",
   imageUrl: "",
   expirationDays: 7,
@@ -100,10 +114,15 @@ export default function SellPage() {
 
   // useWatch subscribes to preview fields without useForm.watch's compiler limitation.
   const [watchedTitle, watchedPrice, watchedCategory, watchedCity,
-    watchedImageUrl, watchedExpirationDays, watchedDescription] = useWatch({
+    watchedImageUrl, watchedExpirationDays, watchedDescription, watchedCondition] = useWatch({
     control,
-    name: ["title", "price", "category", "city", "imageUrl", "expirationDays", "description"],
+    name: ["title", "price", "categoryPath", "city", "imageUrl", "expirationDays", "description", "condition"],
   });
+  // Suggest a category from the title so sellers do not default to "Other".
+  const suggestedCategory = suggestCategory(watchedTitle || "");
+  const previewPrice = (() => {
+    try { return formatPrice(toPriceMinor(Number(watchedPrice) || 0)); } catch { return `— ${PRICE_CURRENCY}`; }
+  })();
 
   // Associate failure with its URL; editing the URL naturally clears the visible error.
   const imageError = Boolean(watchedImageUrl && failedImageUrl === watchedImageUrl);
@@ -300,26 +319,36 @@ export default function SellPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Category */}
                   <div className="space-y-1.5">
-                    <Label htmlFor="category" className="text-sm font-semibold flex items-center gap-1">
+                    <Label htmlFor="categoryPath" className="text-sm font-semibold flex items-center gap-1">
                       <Tag className="h-3.5 w-3.5 text-muted-foreground" />
                       Category <span className="text-rose-500">*</span>
                     </Label>
                     <select
-                      id="category"
-                      {...register("category")}
-                      className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive dark:bg-input/30"
-                      aria-invalid={Boolean(errors.category)}
+                      id="categoryPath"
+                      {...register("categoryPath")}
+                      className={selectClass}
+                      aria-invalid={Boolean(errors.categoryPath)}
                     >
-                      {LISTING_CATEGORIES.map((cat) => (
-                        <option key={cat} value={cat} className="bg-background text-foreground">
-                          {cat}
+                      <option value="" className="bg-background text-foreground">Choose a category…</option>
+                      {CATEGORIES.map((node) => (
+                        <option key={node.path} value={node.path} className="bg-background text-foreground">
+                          {`${"— ".repeat(node.path.split("/").length - 1)}${node.label}`}
                         </option>
                       ))}
                     </select>
-                    {errors.category && (
+                    {suggestedCategory && suggestedCategory !== watchedCategory && (
+                      <button
+                        type="button"
+                        className="text-[11px] text-emerald-700 dark:text-emerald-400 underline underline-offset-2"
+                        onClick={() => setValue("categoryPath", suggestedCategory, { shouldValidate: true, shouldDirty: true })}
+                      >
+                        Suggested from title: {categoryLabel(suggestedCategory)}
+                      </button>
+                    )}
+                    {errors.categoryPath && (
                       <p className="text-xs text-rose-500 flex items-center gap-1 mt-1">
                         <AlertCircle className="h-3 w-3 shrink-0" />
-                        {errors.category.message}
+                        {errors.categoryPath.message}
                       </p>
                     )}
                   </div>
@@ -327,19 +356,19 @@ export default function SellPage() {
                   {/* Price */}
                   <div className="space-y-1.5">
                     <Label htmlFor="price" className="text-sm font-semibold">
-                      Price (₹ INR) <span className="text-rose-500">*</span>
+                      Price ({PRICE_CURRENCY}) <span className="text-rose-500">*</span>
                     </Label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">
-                        ₹
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-medium">
+                        {PRICE_CURRENCY}
                       </span>
                       <Input
                         id="price"
                         type="number"
-                        step="0.01"
+                        step="0.000001"
                         min="0"
-                        placeholder="12500"
-                        className="pl-7"
+                        placeholder="150"
+                        className="pr-14"
                         {...register("price", { valueAsNumber: true })}
                         aria-invalid={Boolean(errors.price)}
                         aria-describedby={errors.price ? "price-error" : undefined}
@@ -352,11 +381,7 @@ export default function SellPage() {
                       </p>
                     ) : (
                       <p className="text-[11px] text-muted-foreground">
-                        Stored in minor units:{" "}
-                        <strong className="font-mono">
-                          {Math.round((Number(watchedPrice) || 0) * 100).toLocaleString("en-IN")}
-                        </strong>{" "}
-                        paisa
+                        Buyers pay in {PRICE_CURRENCY} on Whitechain. Stored with 6 decimals.
                       </p>
                     )}
                   </div>
@@ -398,7 +423,7 @@ export default function SellPage() {
                     <select
                       id="expirationDays"
                       {...register("expirationDays", { valueAsNumber: true })}
-                      className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive dark:bg-input/30"
+                      className={selectClass}
                       aria-invalid={Boolean(errors.expirationDays)}
                     >
                       {EXPIRATION_DAYS_OPTIONS.map((days) => (
@@ -415,6 +440,44 @@ export default function SellPage() {
                     )}
                   </div>
                 </div>
+
+                {/* Brand & Model: indexed search keys */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="brand" className="text-sm font-semibold">Brand</Label>
+                    <Input id="brand" placeholder="e.g. Lenovo" {...register("brand")} aria-invalid={Boolean(errors.brand)} />
+                    {errors.brand && <p className="text-xs text-rose-500">{errors.brand.message}</p>}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="model" className="text-sm font-semibold">Model</Label>
+                    <Input id="model" placeholder="e.g. ThinkPad T14" {...register("model")} aria-invalid={Boolean(errors.model)} />
+                    {errors.model ? <p className="text-xs text-rose-500">{errors.model.message}</p> : <p className="text-[11px] text-muted-foreground">Optional. Lets buyers find this by brand or model.</p>}
+                  </div>
+                </div>
+
+                {/* Condition, Delivery & Visibility */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="condition" className="text-sm font-semibold">Condition <span className="text-rose-500">*</span></Label>
+                    <select id="condition" {...register("condition")} className={selectClass}>
+                      {LISTING_CONDITIONS.map((condition) => <option key={condition} value={condition} className="bg-background text-foreground">{CONDITION_LABELS[condition]}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="fulfilment" className="text-sm font-semibold">Delivery <span className="text-rose-500">*</span></Label>
+                    <select id="fulfilment" {...register("fulfilment")} className={selectClass}>
+                      {LISTING_FULFILMENTS.map((fulfilment) => <option key={fulfilment} value={fulfilment} className="bg-background text-foreground">{FULFILMENT_LABELS[fulfilment]}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="visibility" className="text-sm font-semibold">Visibility <span className="text-rose-500">*</span></Label>
+                    <select id="visibility" {...register("visibility")} className={selectClass}>
+                      <option value="public" className="bg-background text-foreground">Public (in browse)</option>
+                      <option value="unlisted" className="bg-background text-foreground">Unlisted (link only)</option>
+                    </select>
+                  </div>
+                </div>
+                <p className="text-[11px] text-muted-foreground -mt-3">Unlisted hides the item from FreshMarket browse. Arkiv data stays public to anyone who queries it.</p>
 
                 {/* Image URL */}
                 <div className="space-y-1.5">
@@ -552,7 +615,7 @@ export default function SellPage() {
               {/* Floating Badges */}
               <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
                 <Badge variant="secondary" className="backdrop-blur-md bg-background/80 text-xs shadow-xs font-medium">
-                  {watchedCategory || "Category"}
+                  {watchedCategory ? categoryLabel(watchedCategory) : "Category"}
                 </Badge>
               </div>
 
@@ -567,7 +630,7 @@ export default function SellPage() {
             <CardHeader className="pb-2 pt-4">
               <div className="flex items-baseline justify-between gap-2">
                 <h3 className="text-2xl font-extrabold text-foreground tracking-tight">
-                  ₹ {(Number(watchedPrice) || 0).toLocaleString("en-IN")}
+                  {previewPrice}
                 </h3>
                 <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
                   <Clock className="h-3 w-3" />
@@ -588,7 +651,7 @@ export default function SellPage() {
               <div className="pt-2 border-t border-border/40 flex items-center justify-between text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span>{watchedCity?.trim() || "City location"}</span>
+                  <span>{watchedCity?.trim() || "City location"} · {CONDITION_LABELS[watchedCondition] ?? "Condition"}</span>
                 </div>
                 <div className="flex items-center gap-1 font-mono text-[11px]">
                   <Wallet className="h-3 w-3 text-muted-foreground" />
@@ -600,7 +663,7 @@ export default function SellPage() {
             </CardContent>
 
             <CardFooter className="bg-muted/30 border-t border-border/40 py-2.5 px-4 flex items-center justify-between text-[11px] text-muted-foreground">
-              <span>Arkiv Rabdi Schema: <code>freshmarket.listings</code></span>
+              <span>Arkiv Rabdi Schema: <code>freshmarket.listings.v2</code></span>
               <span className="font-semibold text-emerald-600 dark:text-emerald-400">Time-Limited</span>
             </CardFooter>
           </Card>

@@ -1,6 +1,6 @@
 # FreshMarket Arkiv lifecycle
 
-Listings use the `freshmarket.listings` schema on Rabdi (7794095). Public readers do not require a wallet. The connected wallet provider signs creates and lifecycle operations; private keys never enter the application.
+Listings use the `freshmarket.listings.v2` schema on Rabdi (7794095), alongside `freshmarket.sellers` and `freshmarket.reviews`; see [schema.md](schema.md) for fields, indexes and which search uses which index. Public readers do not require a wallet. The connected wallet provider signs creates and lifecycle operations; private keys never enter the application.
 
 ## Seller lifecycle: issues #11–#13
 
@@ -67,4 +67,4 @@ Run `npm run query:listings` with an optional `NEXT_PUBLIC_ARKIV_ACCESS_KEY` in 
 
 `createWithReceipt(input, connectedArkivWallet)` writes schema-typed attributes and a selected lifetime; SDK `createEntity` returns the entity key, transaction hash and exact expiration block. `getById(key)` performs public read-back. `updateStatus(key, 'sold', wallet)` patches only status. `extendExpiry(key, 7, wallet)` adds 302,400 blocks to the freshly read deadline. `deleteListing(key, wallet)` explicitly removes the entity. None of these examples is a fabricated transaction receipt.
 
-Phase 8 uses the same public `imageUrl` field for `bzz://` references, while file bytes are uploaded to Swarm separately. See `swarm.md` for exact source files, upload/read commands and missing live evidence. A failed Swarm upload never automatically creates an Arkiv entity.
+Phase 8 stores `bzz://` references in the public `media` list, while file bytes are uploaded to Swarm separately. See `swarm.md` for exact source files, upload/read commands and missing live evidence. A failed Swarm upload never automatically creates an Arkiv entity.

@@ -11,11 +11,12 @@ const key = `0x${"ab".repeat(32)}` as Hex;
 const receipt = { entityKey: key, txHash: key, expiresAt: 302500n };
 const input: CreateListingInput = {
   seller, title: "Used desk", description: "Good condition", price: 500,
-  imageUrl: "https://example.com/desk.png", category: "Furniture", city: "Mumbai",
+  media: ["https://example.com/desk.png"], categoryPath: "furniture/tables", condition: "good", fulfilment: "pickup", city: "Mumbai",
 };
 const listing: Listing = {
-  ...input, id: key, priceMinor: 50000n, currency: "INR", status: "available",
-  owner: seller, createdAt: 1700000000000, expiresAtBlock: receipt.expiresAt,
+  seller, title: input.title, description: input.description, media: input.media, categoryPath: input.categoryPath,
+  brand: "", model: "", condition: "good", fulfilment: "pickup", visibility: "public", city: "mumbai",
+  id: key, priceMinor: 500_000_000n, status: "available", owner: seller, createdAtBlock: 100n, expiresAtBlock: receipt.expiresAt,
 };
 const wallet: ListingWalletClient = {
   account: { address: seller, type: "json-rpc" }, chain: rabdiWalletChain,

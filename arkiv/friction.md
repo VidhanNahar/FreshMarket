@@ -8,7 +8,7 @@ Calling `rabdi({ accessKey: '' })` emits a public-endpoint rate-limit warning. F
 
 ## Schema encoding and boundary types
 
-The SDK distinguishes typed u64 attributes from bare bigint values and restricts str values by UTF-8 byte length. We store description and image references as bytes, price and createdAt as explicit u64, and validate byte lengths independently of character counts. Examples showing non-ASCII titles and long descriptions would make the limits clearer. The real SDK serialization tests in `src/__tests__/listing-repository.test.ts` reproduce the expected wire format without signing a transaction.
+The SDK distinguishes typed u64 attributes from bare bigint values and restricts str values by UTF-8 byte length. We store description and the media list as bytes, price as explicit u64, and validate byte lengths independently of character counts. Examples showing non-ASCII titles and long descriptions would make the limits clearer. The real SDK serialization tests in `src/__tests__/listing-repository.test.ts` reproduce the expected wire format without signing a transaction.
 
 ## Expiration extension is a replacement deadline
 
