@@ -3,6 +3,8 @@ import { asc, eq } from "@arkiv-network/sdk/query";
 import { hexToString, isAddressEqual, stringToBytes, type Address } from "viem";
 import { ARKIV_RABDI_CHAIN_ID, getArkivPublicClient } from "@/lib/arkiv/chain";
 import { reviewSchema } from "@/lib/arkiv/schema";
+import { freshPayConfig } from "@/lib/freshpay/config";
+import { freshPayOrderLookup } from "@/lib/freshpay/orders";
 
 /** About six months, Arkiv's maximum lifetime: reputation is a trailing window. */
 export const REVIEW_DAYS = 180;
@@ -17,7 +19,7 @@ export interface PurchaseOrder {
   state: OrderState;
 }
 
-/** Reads FreshPay orders. Supplied once the Whitechain contract is deployed. */
+/** Reads FreshPay orders on Whitechain (`freshPayOrderLookup`). */
 export interface OrderLookup {
   getOrder(orderId: bigint): Promise<PurchaseOrder | null>;
 }
@@ -125,4 +127,5 @@ export class ArkivReviewRepository {
   }
 }
 
-export const reviewRepository = new ArkivReviewRepository();
+// Reviews verify against FreshPay orders once the contract is configured; until then they read unverified.
+export const reviewRepository = new ArkivReviewRepository(undefined, freshPayConfig.contract ? freshPayOrderLookup : undefined);

@@ -3,7 +3,7 @@
 import { SellerIdentity } from "@/components/identity/SellerIdentity";
 
 import Link from "next/link";
-import { Share2 } from "lucide-react";
+import { Share2, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { CONDITION_LABELS, FULFILMENT_LABELS, displayCity, formatPrice } from "@/domain/listing";
 import { categoryLabel } from "../../../shared/categories";
@@ -45,6 +45,9 @@ export function ListingDetail({ id }: { id: string }) {
       <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4"><p className="font-medium"><ExpirationCountdown expiresAtBlock={listing.expiresAtBlock} currentBlock={block.data} /></p><p className="mt-1 text-xs text-muted-foreground">Expires at block {listing.expiresAtBlock.toLocaleString("en-US")}. Time estimates depend on network block speed.</p></div>
       <section><h2 className="mb-2 font-semibold">Description</h2><p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{listing.description}</p></section>
       <section className="space-y-3 rounded-2xl bg-card p-5"><p className="editorial-kicker text-muted-foreground">Seller</p><SellerIdentity address={listing.seller} profile /><p className="text-xs text-muted-foreground">Published at Arkiv block {listing.createdAtBlock.toLocaleString("en-US")}</p></section>
+      {listing.status === "available" && listing.priceMinor > 0n
+        ? <Link href={`/checkout/${listing.id}`} className="flex w-full items-center justify-center gap-2 rounded-full bg-[#191b18] px-6 py-4 text-base font-semibold text-white hover:bg-black dark:bg-white dark:text-black"><ShoppingBag aria-hidden="true" className="h-5 w-5" />Buy now with USDT</Link>
+        : <p className="rounded-xl border border-input p-4 text-sm text-muted-foreground">{listing.status === "available" ? "Free item: arrange pickup with the seller." : `The seller has marked this item ${listing.status}, so it cannot be bought.`}</p>}
       <div className="flex flex-wrap gap-3">
         <button type="button" onClick={() => void share()} className="inline-flex items-center gap-2 rounded-full bg-emerald-700 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-800"><Share2 aria-hidden="true" className="h-4 w-4" />Share listing</button>
         <button type="button" className="rounded-full border border-input bg-card px-5 py-3 text-sm font-medium hover:bg-muted disabled:opacity-50" disabled={query.isFetching} onClick={() => void query.refetch()}>Refresh listing</button>
