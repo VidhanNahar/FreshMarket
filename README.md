@@ -70,9 +70,10 @@ The complete schema, imports and ownership caveats are in [arkiv/schema.md](arki
 | Cache | TanStack Query, shared invalidation, bounded read retries, no automatic wallet-write retry |
 | Independent reader | Static Vite app with its own public SDK client, schema and dark theme |
 | Optional images | Manual Swarm Gateway upload or HTTPS photo link, public bzz references in the Arkiv `media` list, gateway rendering |
-| Tests | Vitest, Testing Library, real SDK serialization with isolated transport fixtures |
+| Payments (optional) | FreshPay contract on Whitechain Sepolia, chain 1874; official test USDT; reusable widget in `src/freshpay/` |
+| Tests | Vitest, Testing Library, real SDK serialization with isolated transport fixtures; Foundry for the contract |
 
-Swarm file bytes remain separate from Arkiv listing metadata. No FreshMarket Solidity contract or payment mechanism is deployed for this core flow. Rabdi uses test tGLM. Expiry is a block height; countdown time is estimated from the two-second target. The buyer view prunes on confirmed block updates; sold records stay onchain until expiry or explicit deletion.
+Swarm file bytes remain separate from Arkiv listing metadata. The Arkiv listing flow uses no FreshMarket Solidity contract; USDT payments are the separate, optional FreshPay contract on Whitechain (Phase 10). Rabdi uses test tGLM. Expiry is a block height; countdown time is estimated from the two-second target. The buyer view prunes on confirmed block updates; sold records stay onchain until expiry or explicit deletion.
 
 `npm run build:storefront` generates `public/storefront/` for independent static hosting. SECOND LOOK imports no FreshMarket API/provider/repository and uses no application local storage. Its public media resolution rules live in `shared/media.ts`. See [its README](storefront/README.md).
 
@@ -86,7 +87,7 @@ RPC rate limits, indexing lag and gateway availability can delay reads. Arkiv is
 
 ## AI assistance and human verification
 
-OpenAI Codex assisted implementation, review, debugging, tests, documentation and branch/commit preparation during this development session. The user also supplied a transcript showing Antigravity CLI / Gemini used for issue planning and creation. No Claude contribution or specific human test result is asserted without evidence.
+OpenAI Codex assisted implementation, review, debugging, tests, documentation and branch/commit preparation during this development session. The user also supplied a transcript showing Antigravity CLI / Gemini used for issue planning and creation. Claude Code (Claude Opus 5.5) assisted Phase 10: revising issues #32–#38 against schema v2, the FreshPay contract and tests, the checkout SDK/widget, checkout pages, webhooks and documentation. Commits it prepared carry a `Co-Authored-By` trailer. No specific human test result is asserted without evidence.
 
 Automated commands and fixture tests are separate from manual verification. Browser automation was unavailable in this session, so mobile/Lighthouse results, real wallet signing, postage acquisition, populated cross-storefront sync and production smoke acceptance are not claimed complete. Team members must personally verify the final deployed demo, confirm their AI-use disclosure and comply with [ETHGlobal's current rules and sponsor requirements](https://ethglobal.com/events/mumbai/prizes) before submission.
 
@@ -103,3 +104,13 @@ The project-wide hardening pass fixed replayable uploads, unauthenticated body b
 `/identity` provides Sepolia-only parent registry setup, seller-owned subname issuance, dedicated seller resolver deployment, profile records and primary-name controls. Verified names appear on listing cards, detail pages and the seller dashboard; ENS outages fall back to the wallet address without blocking Arkiv queries.
 
 Start with the [step-by-step ENS setup guide](ens/README.md), including obtaining Sepolia test ETH, registering your first parent, and using the wallet-approved setup controls. Configure the public `NEXT_PUBLIC_ENS_*` values from `.env.example` only after registering your own parent. `npm run verify:ens` reproduces the successful real contract read recorded in [the proof](ens/sepolia-read-proof.json). Real parent/subname writes and a populated identity demo still need wallet approvals; they are not claimed complete.
+
+## Phase 10: FreshPay USDT checkout on Whitechain
+
+Buyers pay for an Arkiv listing in the official test USDT on Whitechain Sepolia (chain 1874). The FreshPay contract holds the payment until the buyer confirms receipt, allows one paid order per listing, lets the seller refund all or part, and issues the `orderId` that `freshmarket.reviews` cites as proof of purchase. Payment never edits the Arkiv listing: the seller marks it reserved or sold with their own wallet.
+
+**Why onchain stablecoin settlement on Whitechain:** the catalogue has no operator who could hold a card merchant account for sellers, so USDT settles wallet to wallet. The contract enforces what a card rail or plain transfer cannot: one sale per listing across every storefront, escrow until receipt, refunds to the payer, and a public order ID that proves a purchase for reviews.
+
+Routes: `/listing/[id]` → **Buy now with USDT** → `/checkout/[listingId]` → `/receipt/[orderId]`; sellers use `/merchant/payments`. `/checkout-demo` embeds the reusable widget in 20 lines with no FreshMarket imports. Signed, idempotent order webhooks are dispatched from `/api/freshpay/webhooks/dispatch`.
+
+Read the [Whitechain guide](whitechain/README.md) for architecture, deployment, verification, webhooks and limitations, and [WHITECHAIN_FEEDBACK.md](WHITECHAIN_FEEDBACK.md). `npm run contracts:test` runs the Foundry suite. The contract is **not yet deployed** and no live USDT payment, refund or explorer link is claimed; those are recorded in the guide's evidence table once they happen.

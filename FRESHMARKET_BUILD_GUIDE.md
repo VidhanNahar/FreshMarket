@@ -311,6 +311,8 @@ Optional Swarm bonus requires real Arkiv + Swarm usage and `/arkiv/swarm.md` wit
 5. If aiming at **Whitechain Operate**, add a reusable widget/API, merchant and buyer flows, verified contract, real official-test-USDT payment, proof in README, required video and feedback. A payment button alone is insufficient.
 6. If aiming at **Whitechain Scale**, independently demonstrate genuinely gasless payer experience and sponsor-relayer protections; it is **not** automatically achieved by adding Whitechain support.
 
+**Status:** Implemented as FreshPay in Phase 10 (issues #32–#38); see [`whitechain/README.md`](whitechain/README.md).
+
 **Impact:** New chain config, checkout module, checkout UI, transaction verification and potentially a Solidity contract. Existing Arkiv browse/search/seller ownership can remain, but listing/order state must be synchronized intentionally. No claim that Arkiv or ENS grants cross-chain authorization automatically.
 
 **Bottom line:** Future integration is **additive, not zero-modification**. We deliberately keep the Arkiv listing repository independent of the identity display and checkout modules to minimize later refactoring.
