@@ -5,6 +5,9 @@ const checks = [
   ['/', 'FreshMarket'], ['/browse', 'Browse active listings'], ['/sell', 'Create a New Listing'],
   ['/my-listings', 'My listings'], ['/listing/invalid', 'Listing'], ['/storefront/index.html', 'SECOND LOOK'],
   ['/identity', 'ENS storefront identity'],
+  ['/storefront/settings', 'Storefront settings'], ['/merchant/payments', 'Payments'],
+  ['/checkout-demo', 'FreshPay payment demo'], ['/checkout/invalid', 'Invalid checkout link'], ['/receipt/invalid', 'Invalid receipt link'],
+  ['/browse?category=electronics&q=phone&city=Mumbai', 'Browse active listings'],
 ];
 for (const [path, expected] of checks) {
   const response = await fetch(new URL(path, base), { signal: AbortSignal.timeout(30_000) });
@@ -22,3 +25,10 @@ for (const [path, expected] of checks) {
 const redirect = await fetch(new URL('/storefront', base), { redirect: 'manual', signal: AbortSignal.timeout(10_000) });
 if (redirect.status !== 307 || !redirect.headers.get('location')?.endsWith('/storefront/index.html')) throw new Error('Storefront redirect failed');
 console.log('PASS storefront redirect');
+
+const missing = await fetch(new URL('/this-page-does-not-exist', base), { signal: AbortSignal.timeout(15_000) });
+if (missing.status !== 404 || !(await missing.text()).includes('This page isn’t here.')) throw new Error('Custom 404 failed');
+console.log('PASS custom 404: 404');
+const photo = await fetch(new URL('/images/editorial-home.jpg', base), { signal: AbortSignal.timeout(15_000) });
+if (!photo.ok || !(photo.headers.get('content-type') ?? '').startsWith('image/')) throw new Error('Homepage photo failed');
+console.log('PASS homepage photo');

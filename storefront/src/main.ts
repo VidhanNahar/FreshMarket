@@ -1,11 +1,19 @@
 import { createReader, portablePrice, readCatalogue, type PortableListing } from "./reader";
 import "./style.css";
 
+document.querySelector("#theme-toggle")?.addEventListener("click", () => {
+  const dark = document.documentElement.classList.toggle("dark");
+  try { localStorage.setItem("freshmarket-theme", dark ? "dark" : "light"); } catch { /* Storage may be disabled. */ }
+});
+window.addEventListener("storage", event => {
+  if (event.key === "freshmarket-theme") document.documentElement.classList.toggle("dark", event.newValue === "dark");
+});
 const client = createReader(import.meta.env.VITE_ARKIV_ACCESS_KEY ?? "");
 const grid = document.querySelector<HTMLElement>("#listings")!;
 const status = document.querySelector<HTMLElement>("#read-status")!;
 const refresh = document.querySelector<HTMLButtonElement>("#refresh")!;
 const filter = document.querySelector<HTMLSelectElement>("#status-filter")!;
+if (!window.location.pathname.startsWith("/storefront/")) document.querySelector(".home-link")?.remove();
 let rows: PortableListing[] = [];
 let busy = false;
 let lastSuccess: string | undefined;
@@ -23,9 +31,8 @@ function render() {
     const article = element("article", "");
     if (row.imageUrl) {
       const image = element("img", ""); image.src = row.imageUrl; image.alt = row.title; image.loading = "lazy"; image.referrerPolicy = "no-referrer";
-      const timer = setTimeout(() => { image.replaceWith(element("p", "Image unavailable (gateway timeout)")); }, 15_000);
-      image.onload = () => clearTimeout(timer);
-      image.onerror = () => { clearTimeout(timer); image.replaceWith(element("p", "Image unavailable")); };
+      // Lazy images may stay off screen for a long time; do not expire them before loading starts.
+      image.onerror = () => { image.replaceWith(element("p", "Image unavailable")); };
       article.append(image);
     }
     article.append(element("p", `${row.category} / ${row.city} / ${row.condition}`), element("h2", row.title), element("strong", portablePrice(row.priceMinor)));
@@ -34,6 +41,12 @@ function render() {
     const link = element("a", "Inspect on Rabdi Explorer ↗");
     link.href = `https://rabdi.explorer.arkiv.network/entity/${encodeURIComponent(row.id)}`;
     link.target = "_blank"; link.rel = "noopener noreferrer";
+    if (window.location.pathname.startsWith("/storefront/")) {
+      const details = element("a", "View item details →");
+      details.className = "detail-link";
+      details.href = `/listing/${encodeURIComponent(row.id)}`;
+      article.append(details);
+    }
     article.append(link); grid.append(article);
   }
 }

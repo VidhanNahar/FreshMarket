@@ -1,5 +1,6 @@
 "use client";
 
+import { PageSkeleton } from "@/components/listings/PageSkeleton";
 import Link from "next/link";
 import { useState } from "react";
 import { useAccount } from "wagmi";
@@ -67,7 +68,7 @@ export function MerchantPayments() {
 
     <section aria-labelledby="sales-heading" className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="sales-heading" className="text-xl font-semibold">Sales</h2><button type="button" className={button} disabled={sales.isFetching} onClick={() => void sales.refetch()}>Refresh</button></div>
-      {sales.isPending ? <div role="status" className="h-32 animate-pulse rounded-2xl bg-muted" /> : sales.isError ? <p role="alert">Could not read FreshPay orders from Whitechain. Retry shortly.</p> : !sales.data?.length ? <p className="rounded-2xl border border-dashed p-8 text-center">No FreshPay sales for this wallet yet.</p> :
+      {sales.isPending ? <PageSkeleton label="Loading orders" /> : sales.isError ? <p role="alert">Could not read FreshPay orders from Whitechain. Retry shortly.</p> : !sales.data?.length ? <p className="rounded-2xl border border-dashed p-8 text-center">No FreshPay sales for this wallet yet.</p> :
         <ul className="space-y-3">{sales.data.map((order) => {
           const listing = salesListings.get(order.id);
           const prompt = arkivPrompt(order, listing);

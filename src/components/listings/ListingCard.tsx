@@ -12,7 +12,7 @@ export function ListingStatus({ status }: { status: Listing["status"] }) {
 
 export function ListingCard({ listing, currentBlock }: { listing: Listing; currentBlock?: bigint }) {
   return (
-    <Link href={`/listing/${listing.id}`} className="group flex flex-col overflow-hidden rounded-[1.35rem] border border-transparent bg-card transition duration-300 hover:-translate-y-1 hover:border-foreground/15 hover:shadow-[0_20px_50px_rgba(25,27,24,.10)] focus-visible:outline-2 focus-visible:outline-emerald-600">
+    <Link href={`/listing/${listing.id}`} className="group flex flex-col overflow-hidden rounded-2xl border border-transparent bg-card transition duration-200 hover:-translate-y-0.5 hover:border-foreground/15 hover:shadow-[0_20px_50px_rgba(25,27,24,.10)] focus-visible:outline-2 focus-visible:outline-emerald-600">
       <div className="relative">
         <ListingImage src={listing.media[0] ?? ""} title={listing.title} />
         <div className="absolute right-3 top-3 shadow-sm"><ListingStatus status={listing.status} /></div>
@@ -32,5 +32,5 @@ export function ListingCard({ listing, currentBlock }: { listing: Listing; curre
 }
 
 export function ListingGridSkeleton() {
-  return <div role="status" aria-label="Loading listings" className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{Array.from({ length: 8 }, (_, i) => <div key={i} aria-hidden="true" className="animate-pulse overflow-hidden rounded-[1.35rem] bg-card"><div className="aspect-[4/3] bg-muted" /><div className="space-y-4 p-5"><div className="h-4 w-2/3 rounded bg-muted" /><div className="h-6 w-1/2 rounded bg-muted" /><div className="h-4 rounded bg-muted" /></div></div>)}</div>;
+  return <div role="status" aria-label="Loading listings" className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{Array.from({ length: 8 }, (_, i) => <div key={i} aria-hidden="true" className="animate-pulse overflow-hidden rounded-2xl bg-card"><div className="aspect-[4/3] bg-muted" /><div className="space-y-4 p-5"><div className="h-4 w-2/3 rounded bg-muted" /><div className="h-6 w-1/2 rounded bg-muted" /><div className="h-4 rounded bg-muted" /></div></div>)}</div>;
 }

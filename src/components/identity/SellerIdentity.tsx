@@ -11,7 +11,7 @@ export function SellerIdentity({ address, profile = false }: { address: `0x${str
   return <span className={`inline-flex min-w-0 ${profile ? "flex-col items-start gap-2" : "items-center gap-1"}`}>
     <span title={address} className="inline-flex min-w-0 items-center gap-1">
       <span className="break-all">{identity?.name ?? shortenAddress(address)}</span>
-      {identity && <BadgeCheck className="h-4 w-4 shrink-0 text-emerald-700" role="img" aria-label="Sepolia ENS name, owner and forward address verified" />}
+      {identity && <BadgeCheck className="h-4 w-4 shrink-0 text-[#2f6fed]" role="img" aria-label="Sepolia ENS name, owner and forward address verified" />}
     </span>
     {profile && <>
       <code className="break-all text-xs text-muted-foreground">{address}</code>

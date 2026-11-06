@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { ListingFilters } from "@/components/listings/ListingFilters";
 import { ListingCard } from "@/components/listings/ListingCard";
 import { Marketplace } from "@/components/listings/Marketplace";
+import { ListingGallery } from "@/components/listings/ListingGallery";
 import { ListingDetail } from "@/components/listings/ListingDetail";
 import { fixtureListing as listing } from "./fixtures/listing";
 
@@ -139,5 +140,24 @@ describe("listing details", () => {
     mocks.detail.data = { ...listing, expiresAtBlock: 99n };
     rerender(<ListingDetail id={listing.id} />);
     expect(screen.getByText("Listing no longer available")).toBeDefined();
+  });
+});
+
+
+describe("editorial marketplace interactions", () => {
+  it("opens mobile filters and returns to the results", async () => {
+    render(<Marketplace />);
+    await userEvent.click(screen.getByRole("button", { name: "Filters" }));
+    expect(screen.getByRole("dialog")).toBeDefined();
+    await userEvent.click(screen.getByRole("button", { name: "Show results" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+  it("switches the main product photo using gallery thumbnails", async () => {
+    const media = ["https://example.com/front.png", "https://example.com/back.png"];
+    render(<ListingGallery media={media} title="Desk" />);
+    expect(screen.getByAltText("Desk — photo 1").getAttribute("src")).toBe(media[0]);
+    await userEvent.click(screen.getByRole("button", { name: "Show photo 2" }));
+    expect(screen.getByAltText("Desk — photo 2").getAttribute("src")).toBe(media[1]);
+    expect(screen.getByRole("button", { name: "Show photo 2" }).getAttribute("aria-pressed")).toBe("true");
   });
 });

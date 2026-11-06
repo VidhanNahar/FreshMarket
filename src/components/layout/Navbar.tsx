@@ -1,5 +1,6 @@
 "use client";
 
+import { ThemeToggle } from "./ThemeToggle";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Store, PlusCircle, LayoutList, Compass, Menu, Settings, Wallet, X } from "lucide-react";
@@ -16,11 +17,11 @@ export function Navbar() {
 
   const navLinks = [
     { href: "/browse", label: "Browse", icon: Compass },
-    { href: "/storefront", label: "Storefront B", icon: Store },
+    { href: "/storefront", label: "SECOND LOOK", icon: Store },
     { href: "/sell", label: "Sell Item", icon: PlusCircle },
     { href: "/my-listings", label: "My Listings", icon: LayoutList },
     { href: "/merchant/payments", label: "Payments", icon: Wallet },
-    { href: "/storefront/settings", label: "Storefront Settings", icon: Settings },
+    { href: "/storefront/settings", label: "Seller Profile", icon: Settings },
   ];
 
   return (
@@ -43,7 +44,7 @@ export function Navbar() {
         <nav aria-label="Main navigation" className="hidden xl:flex items-center gap-0.5">
           {navLinks.map((link) => {
             const Icon = link.icon;
-            const isActive = pathname === link.href || (link.href === "/storefront/settings" && pathname === "/identity");
+            const isActive = pathname === link.href || (link.href === "/storefront/settings" && pathname === "/identity") || (link.href === "/browse" && Boolean(pathname?.startsWith("/listing/") || pathname?.startsWith("/checkout/"))) || (link.href === "/merchant/payments" && Boolean(pathname?.startsWith("/receipt/")));
             return (
               <Link
                 key={link.href}
@@ -68,6 +69,8 @@ export function Navbar() {
           <WalletButton />
         </div>
 
+        <div className="flex items-center gap-2">
+        <ThemeToggle />
         {/* Mobile menu button */}
         <button
           type="button"
@@ -80,6 +83,7 @@ export function Navbar() {
         >
           {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
+        </div>
       </div>
 
       {/* Network / wallet status banners (wrong chain, missing wallet, low balance) */}
@@ -90,7 +94,7 @@ export function Navbar() {
         <nav id="mobile-navigation" aria-label="Mobile navigation" onKeyDown={(event) => { if (event.key === "Escape") { setMobileMenuOpen(false); menuButton.current?.focus(); } }} className="xl:hidden max-h-[calc(100dvh-5rem)] overflow-y-auto border-b border-border bg-background px-4 pt-2 pb-4 space-y-2">
           {navLinks.map((link) => {
             const Icon = link.icon;
-            const isActive = pathname === link.href || (link.href === "/storefront/settings" && pathname === "/identity");
+            const isActive = pathname === link.href || (link.href === "/storefront/settings" && pathname === "/identity") || (link.href === "/browse" && Boolean(pathname?.startsWith("/listing/") || pathname?.startsWith("/checkout/"))) || (link.href === "/merchant/payments" && Boolean(pathname?.startsWith("/receipt/")));
             return (
               <Link
                 key={link.href}

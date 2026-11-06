@@ -15,7 +15,7 @@ const order: FreshPayOrder = {
 };
 
 const mocks = vi.hoisted(() => ({
-  listing: undefined as unknown, active: { data: null as unknown, isPending: false }, account: undefined as string | undefined,
+  listing: undefined as unknown, active: { data: null as unknown, isPending: false, isError: false, refetch: vi.fn() }, account: undefined as string | undefined,
   widget: vi.fn(),
 }));
 vi.mock("wagmi", () => ({ useAccount: () => ({ address: mocks.account }) }));
@@ -86,11 +86,20 @@ describe("/checkout/[listingId]", () => {
     expect(screen.getByRole("alert").textContent).toContain("reserved or sold");
 
     mocks.listing = listing;
-    mocks.active = { data: order, isPending: false };
+    mocks.active = { data: order, isPending: false, isError: false, refetch: vi.fn() };
     rerender(<ListingCheckout id={listing.id} />);
     expect(screen.getByRole("alert").textContent).toContain("already paid");
     expect(screen.getByRole("link", { name: "View order #4" }).getAttribute("href")).toBe("/receipt/4");
     expect(mocks.widget).not.toHaveBeenCalled();
+  });
+
+  it("blocks payment when purchase availability cannot be checked", () => {
+    mocks.listing = listing;
+    Object.assign(mocks.active, { isError: true, refetch: vi.fn() });
+    render(<ListingCheckout id={listing.id} />);
+    expect(screen.getByRole("alert").textContent).toContain("Couldn’t verify purchase availability");
+    expect(mocks.widget).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Retry availability check" })).toBeDefined();
   });
 
   it("rejects malformed checkout links before reading Arkiv", () => {

@@ -76,7 +76,7 @@ export function RabdiNetworkGuard() {
   });
 
   // ENS setup uses Sepolia and checkout uses Whitechain. Do not compete with their network controls.
-  if (!mounted || pageNetwork(pathname) !== "rabdi") return null;
+  if (!mounted || pageNetwork(pathname) !== "rabdi" || !(pathname === "/sell" || pathname === "/my-listings")) return null;
 
   async function handleSwitch() {
     try {

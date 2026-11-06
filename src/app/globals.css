@@ -1,6 +1,8 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
+  color-scheme: light;
   --background: #f7f7f0; --foreground: #191b18;
   --card: #fffef8; --card-foreground: #191b18;
   --popover: #fffef8; --popover-foreground: #191b18;
@@ -10,6 +12,19 @@
   --accent: #e0eee6; --accent-foreground: #124b38;
   --border: #d8d8ce; --input: #c5c7bd; --ring: #087a55;
   --destructive: #b91c1c;
+  --trust: #245ed0; --warning: #945600;
+}
+html.dark {
+  color-scheme: dark;
+  --background: #101211; --foreground: #f2f4f2;
+  --card: #191c1a; --card-foreground: #f2f4f2;
+  --popover: #202421; --popover-foreground: #f2f4f2;
+  --muted: #292e2a; --muted-foreground: #b5beb7;
+  --primary: #6ee7b7; --primary-foreground: #08291b;
+  --secondary: #18382a; --secondary-foreground: #c8f7df;
+  --accent: #18382a; --accent-foreground: #c8f7df;
+  --border: #3e4941; --input: #58655c; --ring: #6ee7b7;
+  --destructive: #fca5a5; --trust: #93b4ff; --warning: #f3c579;
 }
 @theme inline {
   --color-background: var(--background); --color-foreground: var(--foreground);
@@ -23,22 +38,10 @@
   --color-destructive: var(--destructive);
   --font-sans: var(--font-geist-sans); --font-mono: var(--font-geist-mono);
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #101813; --foreground: #eaf2ec;
-    --card: #16211a; --card-foreground: #eaf2ec;
-    --popover: #16211a; --popover-foreground: #eaf2ec;
-    --muted: #202e25; --muted-foreground: #b3c4b8;
-    --primary: #10b981; --primary-foreground: #04140d; --secondary: #203a29; --secondary-foreground: #dcfce7;
-    --accent: #203a29; --accent-foreground: #dcfce7;
-    --border: #3b5142; --input: #526b5a; --ring: #6ee7b7; --destructive: #fca5a5;
-  }
-}
-html { scroll-behavior: smooth; }
+html { scroll-behavior: auto; }
 ::selection { background: rgb(16 185 129 / .25); }
 input:focus-visible, textarea:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
 body { background: var(--background); color: var(--foreground); font-family: var(--font-geist-sans), Arial, sans-serif; }
-body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; background-image: linear-gradient(rgb(25 27 24 / .025) 1px, transparent 1px), linear-gradient(90deg, rgb(25 27 24 / .025) 1px, transparent 1px); background-size: 48px 48px; mask-image: linear-gradient(to bottom, black, transparent 60%); }
 .editorial-kicker { font-size: .7rem; font-weight: 750; letter-spacing: .16em; text-transform: uppercase; }
 .display-title { font-size: clamp(3rem, 8vw, 7.25rem); line-height: .9; letter-spacing: -.065em; font-weight: 780; }
 .editorial-rule { border-color: color-mix(in srgb, var(--foreground) 16%, transparent); }
@@ -51,3 +54,10 @@ main { overflow-wrap: anywhere; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+
+input::placeholder, textarea::placeholder { color: var(--muted-foreground); opacity: 1; }
+/* Legacy emerald links use a lighter foreground on dark surfaces. Filled buttons retain white text. */
+.dark .text-emerald-700:not(.text-white), .dark .text-emerald-600:not(.text-white) { color: #6ee7b7; }
+.dark .text-\[\#2f6fed\] { color: #93b4ff; }
+
+.text-emerald-600:not(.text-white) { color: var(--primary); }

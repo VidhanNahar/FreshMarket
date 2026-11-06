@@ -9,7 +9,7 @@ export function Footer() {
           {/* Brand Col */}
           <div className="space-y-3 md:col-span-2">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-lime-200 text-[#191b18]">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-[#191b18]">
                 <Store className="h-4 w-4" />
               </div>
               <span className="text-xl font-bold tracking-[-.04em] text-white">FreshMarket</span>
@@ -33,17 +33,17 @@ export function Footer() {
             <h4 className="mb-3 text-sm font-semibold text-white">Marketplace</h4>
             <ul className="space-y-2 text-sm text-white/55">
               <li>
-                <Link href="/browse" className="hover:text-foreground transition-colors">
+                <Link href="/browse" className="hover:text-white transition-colors">
                   Browse Listings
                 </Link>
               </li>
               <li>
-                <Link href="/sell" className="hover:text-foreground transition-colors">
+                <Link href="/sell" className="hover:text-white transition-colors">
                   Sell an Item
                 </Link>
               </li>
               <li>
-                <Link href="/my-listings" className="hover:text-foreground transition-colors">
+                <Link href="/my-listings" className="hover:text-white transition-colors">
                   Seller Dashboard
                 </Link>
               </li>
@@ -59,7 +59,7 @@ export function Footer() {
                   href="https://hub.arkiv.network/"
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
+                  className="inline-flex items-center gap-1 hover:text-white transition-colors"
                 >
                   Arkiv Hub <ExternalLink className="h-3 w-3" />
                 </a>
@@ -69,7 +69,7 @@ export function Footer() {
                   href="https://docs.arkiv.network/"
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
+                  className="inline-flex items-center gap-1 hover:text-white transition-colors"
                 >
                   Arkiv Docs <ExternalLink className="h-3 w-3" />
                 </a>
@@ -79,7 +79,7 @@ export function Footer() {
                   href="https://github.com/VidhanNahar/FreshMarket"
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
+                  className="inline-flex items-center gap-1 hover:text-white transition-colors"
                 >
                   <Code2 className="h-3.5 w-3.5" /> GitHub Repository
                 </a>

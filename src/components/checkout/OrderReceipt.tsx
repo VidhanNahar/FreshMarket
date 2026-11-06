@@ -1,5 +1,6 @@
 "use client";
 
+import { PageSkeleton } from "@/components/listings/PageSkeleton";
 import Link from "next/link";
 import { useAccount } from "wagmi";
 import { isAddressEqual } from "viem";
@@ -39,7 +40,7 @@ export function OrderReceipt({ orderId }: { orderId: string }) {
 
   if (id === null) return <><h1 className="text-2xl font-bold">Invalid receipt link</h1><p className="mt-3">Order numbers are whole numbers starting at 1.</p></>;
   if (!freshPayConfig.contract) return <><h1 className="text-2xl font-bold">Receipts unavailable</h1><p className="mt-3">FreshPay is not configured on this deployment.</p></>;
-  if (order.isPending) return <div role="status" aria-label="Loading receipt" className="h-64 animate-pulse rounded-2xl bg-muted" />;
+  if (order.isPending) return <PageSkeleton label="Loading receipt" />;
   if (order.isError) return <div role="alert"><h1 className="text-2xl font-bold">Could not reach Whitechain</h1><p className="mt-3">The receipt is read live from the FreshPay contract. Retry in a moment.</p><button type="button" className="mt-4 rounded-lg bg-emerald-700 px-5 py-2 text-white" onClick={() => void order.refetch()}>Retry</button></div>;
   if (!order.data) return <><h1 className="text-2xl font-bold">Order #{orderId} not found</h1><p className="mt-3">FreshPay has no order with this number.</p></>;
 

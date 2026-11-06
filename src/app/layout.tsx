@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Toaster } from "@/components/ui/sonner";
@@ -30,17 +31,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html suppressHydrationWarning lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded focus:bg-background focus:p-3">Skip to content</a>
-        <ErrorBoundary><Web3Provider>
+        <ThemeProvider><ErrorBoundary><Web3Provider>
           <Suspense fallback={<div className="h-16 border-b border-border/40 bg-background" />}>
             <Navbar />
           </Suspense>
           <main id="main-content" tabIndex={-1} className="flex-1">{children}</main>
           <Footer />
           <Toaster />
-        </Web3Provider></ErrorBoundary>
+        </Web3Provider></ErrorBoundary></ThemeProvider>
       </body>
     </html>
   );

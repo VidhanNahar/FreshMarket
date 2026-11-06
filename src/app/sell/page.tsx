@@ -192,14 +192,14 @@ export default function SellPage() {
       <div className="pb-6 border-b border-border/40">
         <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm font-semibold mb-1">
           <PlusCircle className="h-4 w-4" />
-          Seller Publishing Flow
+          Pass it on
         </div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
+        <h1 className="text-4xl font-semibold tracking-[-.05em] text-foreground sm:text-5xl">
           Create a New Listing
         </h1>
         <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
-          Publish second-hand items directly to the decentralized <strong>Arkiv Rabdi</strong> testnet.
-          Your connected wallet cryptographically owns the entity and governs its lifecycle.
+          Give something good a second life. Add clear photos, describe its condition, and set your price.
+          Your wallet signs the listing on Arkiv Rabdi testnet.
         </p>
       </div>
 
@@ -222,7 +222,7 @@ export default function SellPage() {
             <div className="flex items-start gap-3">
               <ShieldAlert className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold text-sm">Wallet Connection Required for Writes</p>
+                <p className="font-semibold text-sm">Connect your wallet to list an item</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   Arkiv requires an onchain transaction signed by your wallet to create and own the entity.
                   Connect your wallet on <strong>{RABDI_CHAIN_NAME}</strong> (Chain ID {RABDI_CHAIN_ID}).
