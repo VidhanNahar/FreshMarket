@@ -54,6 +54,14 @@ describe("URL discovery controls", () => {
 });
 
 describe("public marketplace states", () => {
+  it("keeps cached results visible when a background refresh fails", () => {
+    Object.assign(mocks.listings, { data: [listing], isError: true, hasData: true });
+    render(<Marketplace />);
+    expect(screen.getByRole("link", { name: /Wooden desk/ })).toBeDefined();
+    expect(screen.getByRole("alert").textContent).toContain("last successful results");
+    expect(screen.getByRole("button", { name: "Retry refresh" })).toBeDefined();
+  });
+
   it("renders loading, retryable failure, empty, and populated grids without a wallet", async () => {
     mocks.listings.isPending = true;
     const { rerender } = render(<Marketplace />);

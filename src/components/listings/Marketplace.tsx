@@ -11,7 +11,8 @@ export function Marketplace() {
   const query = useListings(filters);
   return <div className="mt-8 space-y-8">
     <ListingFilters />
-    {query.isPending ? <ListingGridSkeleton /> : query.isError ? (
+    {query.isError && query.hasData && <div role="alert">Refresh failed. Showing the last successful results. <button type="button" className="underline" onClick={() => void query.refetch()}>Retry refresh</button></div>}
+    {query.isPending ? <ListingGridSkeleton /> : query.isError && !query.hasData ? (
       <div role="alert" className="rounded-2xl border border-amber-500/40 p-8 text-center"><h2 className="text-lg font-semibold">We couldn’t load listings</h2><p className="mt-2 text-sm text-muted-foreground">Arkiv may be temporarily unavailable or rate limited. Please try again.</p><button type="button" className="mt-4 rounded-lg bg-emerald-600 px-5 py-2 text-white" onClick={() => void query.refetch()}>Try again</button></div>
     ) : <>
       <p role="status" className="text-sm text-muted-foreground">{query.data.length} {query.data.length === 1 ? "listing" : "listings"} found{query.isFetching ? " · Refreshing…" : ""}</p>

@@ -45,6 +45,7 @@ export function useListingActions() {
       confirmed = true;
       setTxHash(receipt.txHash);
       setPhase("verifying");
+      toast.loading("Confirming on Arkiv indexer…", { id: notification });
       if (receipt.expiresAt !== undefined) changeListingCache(cache, listing.id, { ...listing, expiresAtBlock: receipt.expiresAt });
       // Mark every consumer stale immediately; wait for indexing before active refetches.
       await cache.invalidateQueries({ queryKey: listingKeys.all, refetchType: "none" });

@@ -33,6 +33,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { expiryDemoPreset } from "@/domain/expiry-demo";
 import { usePublishListing } from "@/hooks/use-publish-listing";
 import { ListingPublishDialog } from "@/components/listings/ListingPublishDialog";
 import {
@@ -156,6 +157,15 @@ export default function SellPage() {
           Publish second-hand items directly to the decentralized <strong>Arkiv Rabdi</strong> testnet.
           Your connected wallet cryptographically owns the entity and governs its lifecycle.
         </p>
+      </div>
+
+      <div className="mt-5 flex flex-wrap items-center gap-3">
+        <Button type="button" variant="outline" disabled={publishing.isPending || Boolean(publishing.txHash)} onClick={() => {
+          reset(expiryDemoPreset);
+          setFailedImageUrl(null);
+          toast.info("15-minute demo preset loaded. Review it before publishing.");
+        }}>Load 15-minute expiry demo</Button>
+        <p className="text-xs text-muted-foreground">Loads a disposable test listing. Publishing still requires your approval in the wallet.</p>
       </div>
 
       {/* Wallet State Banner */}
@@ -387,7 +397,7 @@ export default function SellPage() {
                     >
                       {EXPIRATION_DAYS_OPTIONS.map((days) => (
                         <option key={days} value={days} className="bg-background text-foreground">
-                          {days} Days {days === 7 ? "(Default / Recommended)" : ""}
+                          {days < 1 ? "15 minutes (expiry demo)" : `${days} Days ${days === 7 ? "(Default / Recommended)" : ""}`}
                         </option>
                       ))}
                     </select>
@@ -457,7 +467,7 @@ export default function SellPage() {
                 <div className="pt-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="text-xs text-muted-foreground flex items-center gap-1.5">
                     <Clock className="h-3.5 w-3.5 text-emerald-500" />
-                    Entity will expire in {watchedExpirationDays || 7} days on Rabdi
+                    Entity lifetime: {watchedExpirationDays && watchedExpirationDays < 1 ? "15 minutes (demo)" : `${watchedExpirationDays || 7} days`} on Rabdi
                   </div>
 
                   {!isWalletConnected ? (
@@ -552,7 +562,7 @@ export default function SellPage() {
                 </h3>
                 <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
                   <Clock className="h-3 w-3" />
-                  {watchedExpirationDays || 7}d expiry
+                  {watchedExpirationDays && watchedExpirationDays < 1 ? "15 min demo" : `${watchedExpirationDays || 7}d expiry`}
                 </span>
               </div>
 

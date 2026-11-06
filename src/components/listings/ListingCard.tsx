@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Clock, MapPin } from "lucide-react";
 import { type Listing, formatPrice } from "@/domain/listing";
 import { shortenAddress } from "@/lib/wallet/wallet-ui";
-import { expirationLabel } from "@/lib/listing-discovery";
+import { ExpirationCountdown } from "./ExpirationCountdown";
 import { ListingImage } from "./ListingImage";
 
 export function ListingStatus({ status }: { status: Listing["status"] }) {
@@ -18,7 +18,7 @@ export function ListingCard({ listing, currentBlock }: { listing: Listing; curre
         <h2 className="line-clamp-2 font-semibold group-hover:text-emerald-600">{listing.title}</h2>
         <p className="text-xl font-bold">{formatPrice(listing.priceMinor, listing.currency)}</p>
         <p className="flex items-center gap-1 text-sm text-muted-foreground"><MapPin aria-hidden="true" className="h-3.5 w-3.5" />{listing.city}</p>
-        <p className="flex items-center gap-1 text-xs text-muted-foreground"><Clock aria-hidden="true" className="h-3.5 w-3.5" />{expirationLabel(listing.expiresAtBlock, currentBlock)}</p>
+        <p className="flex items-center gap-1 text-xs text-muted-foreground"><Clock aria-hidden="true" className="h-3.5 w-3.5" /><ExpirationCountdown expiresAtBlock={listing.expiresAtBlock} currentBlock={currentBlock} /></p>
         <div className="flex items-center justify-between gap-2 border-t border-black/10 pt-3 text-xs"><span title={listing.seller} className="rounded bg-black/5 px-2 py-1 font-mono">{shortenAddress(listing.seller)}</span><span className="font-semibold text-emerald-600">View details →</span></div>
       </div>
     </Link>

@@ -28,9 +28,14 @@ export function discoveryQuery(filters: DiscoveryFilters): string {
   return params.toString();
 }
 
+export function matchesDiscoveryFilters(listing: Listing, filters: DiscoveryFilters): boolean {
+  return (!filters.category || filters.category === "All Items" || listing.category === filters.category) &&
+    (!filters.city || listing.city === filters.city) &&
+    (!filters.q || listing.title.toLocaleLowerCase().includes(filters.q.toLocaleLowerCase()));
+}
+
 export function discoverListings(listings: Listing[], filters: DiscoveryFilters): Listing[] {
-  const search = filters.q.toLocaleLowerCase();
-  return listings.filter((listing) => !search || listing.title.toLocaleLowerCase().includes(search))
+  return listings.filter((listing) => matchesDiscoveryFilters(listing, filters))
     .sort((a, b) => {
       if (filters.sort === "newest") return b.createdAt - a.createdAt || a.id.localeCompare(b.id);
       // Group currencies instead of pretending prices in different currencies are equivalent.

@@ -25,6 +25,13 @@ beforeEach(() => {
 });
 
 describe("seller inventory", () => {
+  it("offers renewal for a listing with less than 24 hours remaining", async () => {
+    mocks.data = [{ ...listing, expiresAtBlock: 1000n }];
+    render(<SellerDashboard />);
+    await userEvent.click(screen.getByRole("button", { name: "Renew listing" }));
+    expect(screen.getByLabelText("Additional days")).toBeDefined();
+  });
+
   it("requires a wallet and never exposes another seller's items", async () => {
     const { rerender } = render(<SellerDashboard />);
     expect(screen.queryByText("Other seller")).toBeNull();
