@@ -22,6 +22,9 @@ import {
   type ListingFilters,
   type ListingWriteReceipt,
   type ListingStatus,
+  type ListingCondition,
+  type ListingFulfilment,
+  type ListingVisibility,
   MAX_MEDIA_ITEMS,
   isListingCondition,
   isListingFulfilment,
@@ -36,7 +39,19 @@ import { isCategoryPath } from "../../shared/categories";
 // Accept an Arkiv SDK client, not an unextended Wagmi/Viem wallet client.
 export type ListingWalletClient = Pick<WalletArkivClient, "account" | "chain" | "createEntity">;
 export type ListingMutationClient = Pick<WalletArkivClient, "account" | "chain" | "patchEntity" | "extendEntity" | "deleteEntity">;
-export type ListingEdits = { priceMinor?: bigint; description?: string };
+export type ListingEdits = {
+  priceMinor?: bigint;
+  description?: string;
+  title?: string;
+  categoryPath?: string;
+  brand?: string;
+  model?: string;
+  condition?: ListingCondition;
+  fulfilment?: ListingFulfilment;
+  visibility?: ListingVisibility;
+  city?: string;
+  media?: string[];
+};
 export type ListingMutationReceipt = { entityKey: Hex; txHash: Hex; expiresAt?: bigint };
 
 /** Storage boundary for UI callers: SDK values and transaction receipts stay in this layer. */
@@ -146,11 +161,41 @@ export class ArkivListingRepository implements ListingRepository {
   }
 
   async updateListing(id: string, changes: ListingEdits, wallet: ListingMutationClient): Promise<ListingMutationReceipt> {
-    if (changes.priceMinor === undefined && changes.description === undefined) throw new Error("No listing changes supplied");
-    const set = {
-      ...(changes.priceMinor !== undefined ? { priceMinor: u64(changes.priceMinor) } : {}),
-      ...(changes.description !== undefined ? { description: stringToBytes(requiredText(changes.description, "Description", 1000)) } : {}),
-    };
+    const hasChanges = Object.values(changes).some((v) => v !== undefined);
+    if (!hasChanges) throw new Error("No listing changes supplied");
+    const set: Record<string, unknown> = {};
+    if (changes.priceMinor !== undefined) set.priceMinor = u64(changes.priceMinor);
+    if (changes.description !== undefined) set.description = stringToBytes(requiredText(changes.description, "Description", 1000));
+    if (changes.title !== undefined) set.title = str(requiredText(changes.title, "Title", 80));
+    if (changes.categoryPath !== undefined) {
+      if (!isCategoryPath(changes.categoryPath)) throw new Error("Choose a category from the FreshMarket category list");
+      set.categoryPath = str(changes.categoryPath);
+    }
+    if (changes.brand !== undefined) set.brand = str(toSearchKey(changes.brand));
+    if (changes.model !== undefined) set.model = str(toSearchKey(changes.model));
+    if (changes.condition !== undefined) {
+      if (!isListingCondition(changes.condition)) throw new Error("Invalid item condition");
+      set.condition = str(changes.condition);
+    }
+    if (changes.fulfilment !== undefined) {
+      if (!isListingFulfilment(changes.fulfilment)) throw new Error("Choose local pickup or shipping");
+      set.fulfilment = str(changes.fulfilment);
+    }
+    if (changes.visibility !== undefined) {
+      if (!isListingVisibility(changes.visibility)) throw new Error("Invalid listing visibility");
+      set.visibility = str(changes.visibility);
+    }
+    if (changes.city !== undefined) set.city = str(toCityKey(requiredText(changes.city, "City")));
+    if (changes.media !== undefined) {
+      const media = changes.media.map((reference) => reference.trim()).filter(Boolean);
+      if (!media.length || media.length > MAX_MEDIA_ITEMS) throw new Error(`Add between 1 and ${MAX_MEDIA_ITEMS} images`);
+      for (const reference of media) {
+        if (reference.length > 2048 || !resolveImageSource(reference)) {
+          throw new Error("Images must be HTTPS URLs without credentials or public bzz:// references");
+        }
+      }
+      set.media = stringToBytes(JSON.stringify(media));
+    }
     await this.ownedListing(id, wallet);
     return wallet.patchEntity(listingSchema, id as Hex, { set });
   }

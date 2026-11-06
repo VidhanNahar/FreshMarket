@@ -5,7 +5,7 @@ import { CONDITION_LABELS, FULFILMENT_LABELS, LISTING_CONDITIONS, LISTING_FULFIL
 import { discoveryQuery, parseDiscoveryFilters, type DiscoveryFilters, type ListingSort } from "@/lib/listing-discovery";
 import { CATEGORIES } from "../../../shared/categories";
 
-const field = "w-full rounded-lg border border-black/20 bg-background px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-emerald-600";
+const field = "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-emerald-600";
 const TOP_LEVEL = CATEGORIES.filter((node) => !node.path.includes("/"));
 
 export function ListingFilters() {
@@ -20,10 +20,10 @@ export function ListingFilters() {
   const topLevel = filters.category.split("/")[0];
 
   return (
-    <section aria-label="Filter listings" className="space-y-5 rounded-2xl border border-black/10 p-4 sm:p-5">
+    <section aria-label="Filter listings" className="space-y-5 rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
       <div className="flex flex-wrap gap-2" role="group" aria-label="Category">
         {[{ path: "", label: "All Items" }, ...TOP_LEVEL].map((node) => <button key={node.path} type="button" aria-pressed={topLevel === node.path} onClick={() => update({ category: node.path })}
-          className={`rounded-full border px-4 py-2 text-sm font-medium transition ${topLevel === node.path ? "border-emerald-600 bg-emerald-700 text-white" : "border-black/15 hover:border-emerald-600"}`}>{node.label}</button>)}
+          className={`rounded-full border px-4 py-2 text-sm font-medium transition ${topLevel === node.path ? "border-emerald-600 bg-emerald-700 text-white" : "border-input hover:border-emerald-600"}`}>{node.label}</button>)}
       </div>
       {topLevel && <label className="block max-w-sm space-y-1 text-sm font-medium">Subcategory<select className={field} value={filters.category} onChange={(event) => update({ category: event.target.value })}>
         {CATEGORIES.filter((node) => node.path === topLevel || node.path.startsWith(`${topLevel}/`)).map((node) =>

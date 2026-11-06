@@ -14,7 +14,7 @@ export function ListingImage({ src, title, full = false }: { src: string; title:
     return () => clearTimeout(timer);
   }, [resolved, loadedSrc, src]);
   return (
-    <div className={`flex aspect-[4/3] items-center justify-center overflow-hidden bg-black/5 ${full ? "rounded-2xl border border-black/10" : "border-b border-black/10"}`}>
+    <div className={`flex aspect-[4/3] items-center justify-center overflow-hidden bg-muted ${full ? "rounded-2xl border border-border" : "border-b border-border"}`}>
       {resolved && failedSrc !== src ? (
         // Public listings can reference any HTTPS host; load directly without a server image proxy.
         // eslint-disable-next-line @next/next/no-img-element
