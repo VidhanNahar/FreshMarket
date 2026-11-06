@@ -31,6 +31,16 @@ describe("Phase 2: Seller Listing Schema & Zod Validation", () => {
     }
   });
 
+  // These constraints must match the repository before a wallet prompt is ever opened.
+  it.each([
+    { title: "अ".repeat(50) }, { city: "अ".repeat(45) },
+    { imageUrl: "https://user:secret@example.com/image.png" },
+    { imageUrl: `https://example.com/${"a".repeat(2048)}` },
+    { currency: "JPY" }, { currency: "INVALID" },
+  ])("rejects values incompatible with Arkiv storage: %j", (change) => {
+    expect(listingFormSchema.safeParse({ ...validPayload, ...change }).success).toBe(false);
+  });
+
   describe("Title constraints (5–80 chars)", () => {
     it("rejects title with fewer than 5 characters", () => {
       const result = listingFormSchema.safeParse({

@@ -61,6 +61,16 @@ export interface ListingFilters {
   seller?: `0x${string}`;
   limit?: number;
   offset?: number;
+  // Bounds are inclusive minor units; no currency conversion is performed.
+  minPriceMinor?: bigint;
+  maxPriceMinor?: bigint;
+}
+
+/** Confirmed SDK write metadata; expiry remains a block height, never a timestamp. */
+export interface ListingWriteReceipt {
+  entityKey: `0x${string}`;
+  txHash: `0x${string}`;
+  expiresAt: bigint;
 }
 
 /**
