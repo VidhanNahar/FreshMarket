@@ -10,7 +10,8 @@ import { useSellerListings } from "@/hooks/use-seller-listings";
 import { useListingActions } from "@/hooks/use-listing-actions";
 import { useRabdiBlock } from "@/hooks/useListings";
 import { ARKIV_RABDI_CHAIN_ID } from "@/lib/arkiv/chain";
-import { expirationLabel } from "@/lib/listing-discovery";
+import { expirationState } from "@/lib/listing-expiration";
+import { ExpirationCountdown } from "@/components/listings/ExpirationCountdown";
 import { getListingReadErrorMessage } from "@/lib/arkiv/queries";
 import { getWalletErrorReason } from "@/lib/wallet/wallet-ui";
 import { parseListingPrice } from "@/lib/listing-price-input";
@@ -63,9 +64,9 @@ export function SellerDashboard() {
     <button type="button" className={button} disabled={query.isFetching || actions.isPending} onClick={() => void query.refetch()}>Refresh listings</button>
     {query.isPending ? <ListingGridSkeleton /> : query.isError ? <div role="alert"><p>{getListingReadErrorMessage(query.error)}</p><button type="button" className={`${button} mt-3`} onClick={() => void query.refetch()}>Retry</button></div> : !shown.length ? <div className="rounded-2xl border border-dashed border-black/20 p-10 text-center"><h2 className="text-xl font-semibold">{listings.length ? "No listings in this status" : "No listings yet"}</h2><Link href="/sell" className="mt-3 inline-block text-emerald-600 underline">Create your first listing</Link></div> : <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">{shown.map((listing) => <article key={listing.id} aria-label={listing.title} className="overflow-hidden rounded-2xl border border-black/10">
       <ListingImage src={listing.imageUrl} title={listing.title} />
-      <div className="space-y-4 p-5"><div className="flex items-start justify-between gap-2"><Link href={`/listing/${listing.id}`} className="font-semibold hover:underline">{listing.title}</Link><StatusBadge status={listing.status} /></div><p className="text-xl font-bold">{formatPrice(listing.priceMinor, listing.currency)}</p><p className="text-xs">{expirationLabel(listing.expiresAtBlock, block.data)}</p>
+      <div className="space-y-4 p-5"><div className="flex items-start justify-between gap-2"><Link href={`/listing/${listing.id}`} className="font-semibold hover:underline">{listing.title}</Link><StatusBadge status={listing.status} /></div><p className="text-xl font-bold">{formatPrice(listing.priceMinor, listing.currency)}</p><p className="text-xs"><ExpirationCountdown expiresAtBlock={listing.expiresAtBlock} currentBlock={block.data} /></p>
         <div className="flex flex-wrap gap-2">{LISTING_STATUSES.filter((status) => status !== listing.status).map((status) => <button type="button" key={status} disabled={disabled} className={`${button} capitalize`} onClick={() => void actions.run(listing, { kind: "status", status })}>Mark as {status}</button>)}
-          <button type="button" disabled={disabled} className={button} onClick={() => showDialog(listing, "edit")}>Edit price & description</button><button type="button" disabled={disabled} className={button} onClick={() => showDialog(listing, "extend")}>Extend expiration</button><button type="button" disabled={disabled} className={`${button} text-red-600`} onClick={() => showDialog(listing, "delete")}>Delete listing</button>
+          <button type="button" disabled={disabled} className={button} onClick={() => showDialog(listing, "edit")}>Edit price & description</button><button type="button" disabled={disabled} className={button} onClick={() => showDialog(listing, "extend")}>{expirationState(listing.expiresAtBlock, block.data).nearExpiry ? "Renew listing" : "Extend expiration"}</button><button type="button" disabled={disabled} className={`${button} text-red-600`} onClick={() => showDialog(listing, "delete")}>Delete listing</button>
         </div>
       </div>
     </article>)}</div>}

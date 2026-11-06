@@ -15,6 +15,7 @@ export function Navbar() {
 
   const navLinks = [
     { href: "/browse", label: "Browse", icon: Compass },
+    { href: "/storefront", label: "Storefront B", icon: Store },
     { href: "/sell", label: "Sell Item", icon: PlusCircle },
     { href: "/my-listings", label: "My Listings", icon: LayoutList },
   ];

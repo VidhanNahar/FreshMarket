@@ -133,7 +133,7 @@ This project is open-source under the [MIT License](LICENSE).
 - Category pills apply immediately. Enter a title search and/or an exact, case-sensitive city name and press **Search**. Sort by newest or price; prices are grouped by currency because no exchange-rate conversion is performed.
 - Filters live in `category`, `city`, `q`, and `sort` URL parameters. Shared links, refresh, and browser back/forward restore them. **Clear all filters** returns to `/browse`.
 - Discovery reads all matching pages (100 records per RPC page) before searching titles and sorting. Large catalogues require more RPC requests; configure an origin-restricted Arkiv access key to reduce rate limiting.
-- Expiration time is estimated from the current block and Rabdi's two-second target. When block reads are unavailable, the exact expiration block remains visible. The catalogue refreshes every minute and the block height every 30 seconds.
+- Expiration time is estimated from the current block and Rabdi's two-second target. When block reads are unavailable, the exact expiration block remains visible. The catalogue refreshes every minute and the block height every five seconds.
 - Failed/missing images have a fallback. Failed reads show a retry action; missing or expired detail records have an unavailable state. The share action uses native sharing when supported, otherwise copies the URL.
 
 Buyer component and hook tests run with `npm test`. To include the opt-in live catalogue read:
@@ -200,3 +200,11 @@ The catalog check can pass with an empty testnet catalog. Only the entity-key ch
 `/my-listings` now reads every live listing owned by the connected seller, with All Items / Available / Reserved / Sold filters. Sellers can change status, edit price and description, extend the existing expiry by +7/+14/+30 days, and confirm permanent removal. Managing records requires Rabdi; inventory reads still work on another network. Sold items remain stored until their normal expiry or an explicit seller deletion.
 
 Actions show wallet/pending/verification states, optimistic changes with rollback, public-indexing delays, and transaction links. If confirmation is unknown after submission, use **Check transaction status** before another action. Pending locks are in memory; retain the transaction link before leaving the page. Full behavior and the pending live two-wallet acceptance checklist are documented in [arkiv/how-you-use-arkiv.md](arkiv/how-you-use-arkiv.md).
+
+### Phases 5–6: expiration, resilience and portable storefront
+
+- Listing cards, details and seller inventory have live countdowns and amber warnings below 24 hours. The seller action becomes **Renew listing** near expiry. Countdown time is an estimate; confirmed blocks and Arkiv queries control expiration. Block height refreshes every five seconds.
+- `/sell` offers **Load 15-minute expiry demo**, a reviewable disposable laptop preset. Publishing still needs a funded Rabdi wallet and your signature. It encodes 450 lifetime blocks and is automatically excluded when the chain deadline arrives.
+- Error boundaries offer recovery for unexpected rendering failures. Known RPC errors retain retry controls; buyer refresh failures preserve and label previously loaded results. Wallet writes are never automatically retried; read-back verification handles indexing lag with bounded backoff.
+- `/storefront` opens SECOND LOOK, a separately built static app with its own Arkiv client, schema declaration and dark theme. It displays the same keys and status changes without FreshMarket's wallet providers, API, or local storage. `npm run dev` and `npm run build` generate its assets automatically; `npm run build:storefront` builds it separately for independent hosting.
+- [Why Arkiv](arkiv/why-arkiv.md), [the judge walkthrough and evidence log](arkiv/portability-demo.md), and [Storefront B deployment instructions](storefront/README.md) document the architecture and honest trade-offs. Live mutation/expiry demonstration evidence remains a separate acceptance step.

@@ -3,11 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "npm run build:storefront && next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:storefront": "vite build --config storefront/vite.config.mts",
+    "prebuild": "npm run build:storefront"
   },
   "dependencies": {
     "@arkiv-network/sdk": "^1.0.1",

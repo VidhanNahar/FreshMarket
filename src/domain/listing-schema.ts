@@ -8,7 +8,8 @@ import {
 
 export { LISTING_CATEGORIES, type ListingCategory, type CreateListingInput };
 
-export const EXPIRATION_DAYS_OPTIONS = [3, 7, 14, 30] as const;
+export const DEMO_EXPIRATION_DAYS = 15 / (24 * 60);
+export const EXPIRATION_DAYS_OPTIONS = [DEMO_EXPIRATION_DAYS, 3, 7, 14, 30] as const;
 export type ExpirationDays = (typeof EXPIRATION_DAYS_OPTIONS)[number];
 
 // Privacy filter to disallow exact personal street addresses in the coarse public city field
@@ -108,9 +109,9 @@ export const listingFormSchema = z.object({
     }, "Image URL cannot contain credentials"),
 
   expirationDays: z.union(
-    [z.literal(3), z.literal(7), z.literal(14), z.literal(30)],
+    [z.literal(DEMO_EXPIRATION_DAYS), z.literal(3), z.literal(7), z.literal(14), z.literal(30)],
     {
-      message: "Expiration period must be 3, 7, 14, or 30 days",
+      message: "Choose the 15-minute demo or 3, 7, 14, or 30 days",
     }
   ),
 });
