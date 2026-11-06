@@ -14,6 +14,15 @@ export function previewListingAction(listing: Listing, action: ListingAction): L
     ...listing,
     ...(action.changes.priceMinor !== undefined ? { priceMinor: action.changes.priceMinor } : {}),
     ...(action.changes.description !== undefined ? { description: action.changes.description.trim() } : {}),
+    ...(action.changes.title !== undefined ? { title: action.changes.title.trim() } : {}),
+    ...(action.changes.categoryPath !== undefined ? { categoryPath: action.changes.categoryPath } : {}),
+    ...(action.changes.brand !== undefined ? { brand: action.changes.brand.trim() } : {}),
+    ...(action.changes.model !== undefined ? { model: action.changes.model.trim() } : {}),
+    ...(action.changes.condition !== undefined ? { condition: action.changes.condition } : {}),
+    ...(action.changes.fulfilment !== undefined ? { fulfilment: action.changes.fulfilment } : {}),
+    ...(action.changes.visibility !== undefined ? { visibility: action.changes.visibility } : {}),
+    ...(action.changes.city !== undefined ? { city: action.changes.city.trim() } : {}),
+    ...(action.changes.media !== undefined ? { media: action.changes.media } : {}),
   };
   return listing; // The SDK receipt supplies the authoritative extended deadline.
 }
