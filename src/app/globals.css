@@ -1,14 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff; --foreground: #17201b;
-  --card: #ffffff; --card-foreground: #17201b;
-  --popover: #ffffff; --popover-foreground: #17201b;
-  --muted: #f1f5f2; --muted-foreground: #526257;
-  --primary: #047857; --primary-foreground: #ffffff;
-  --secondary: #e9f3ed; --secondary-foreground: #14532d;
-  --accent: #e9f3ed; --accent-foreground: #14532d;
-  --border: #d4ded7; --input: #c1cec5; --ring: #047857;
+  --background: #f7f7f0; --foreground: #191b18;
+  --card: #fffef8; --card-foreground: #191b18;
+  --popover: #fffef8; --popover-foreground: #191b18;
+  --muted: #eeeee6; --muted-foreground: #62665f;
+  --primary: #087a55; --primary-foreground: #ffffff;
+  --secondary: #e0eee6; --secondary-foreground: #124b38;
+  --accent: #e0eee6; --accent-foreground: #124b38;
+  --border: #d8d8ce; --input: #c5c7bd; --ring: #087a55;
   --destructive: #b91c1c;
 }
 @theme inline {
@@ -38,6 +38,10 @@ html { scroll-behavior: smooth; }
 ::selection { background: rgb(16 185 129 / .25); }
 input:focus-visible, textarea:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
 body { background: var(--background); color: var(--foreground); font-family: var(--font-geist-sans), Arial, sans-serif; }
+body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; background-image: linear-gradient(rgb(25 27 24 / .025) 1px, transparent 1px), linear-gradient(90deg, rgb(25 27 24 / .025) 1px, transparent 1px); background-size: 48px 48px; mask-image: linear-gradient(to bottom, black, transparent 60%); }
+.editorial-kicker { font-size: .7rem; font-weight: 750; letter-spacing: .16em; text-transform: uppercase; }
+.display-title { font-size: clamp(3rem, 8vw, 7.25rem); line-height: .9; letter-spacing: -.065em; font-weight: 780; }
+.editorial-rule { border-color: color-mix(in srgb, var(--foreground) 16%, transparent); }
 *, *::before, *::after { min-width: 0; }
 button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 button:focus-visible, a:focus-visible, select:focus-visible { outline: 3px solid var(--ring); outline-offset: 3px; }

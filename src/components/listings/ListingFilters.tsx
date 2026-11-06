@@ -5,8 +5,8 @@ import { CONDITION_LABELS, FULFILMENT_LABELS, LISTING_CONDITIONS, LISTING_FULFIL
 import { discoveryQuery, parseDiscoveryFilters, type DiscoveryFilters, type ListingSort } from "@/lib/listing-discovery";
 import { CATEGORIES } from "../../../shared/categories";
 
-const field = "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-emerald-600";
-const TOP_LEVEL = CATEGORIES.filter((node) => !node.path.includes("/") && node.path !== "other");
+const field = "w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm focus-visible:outline-2 focus-visible:outline-emerald-600";
+const TOP_LEVEL = CATEGORIES.filter((node) => !node.path.includes("/"));
 
 export function ListingFilters() {
   const params = useSearchParams();
@@ -20,10 +20,10 @@ export function ListingFilters() {
   const topLevel = filters.category.split("/")[0];
 
   return (
-    <section aria-label="Filter listings" className="space-y-5 rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Category">
+    <section aria-label="Filter listings" className="space-y-5 border-b editorial-rule pb-7">
+      <div className="flex flex-wrap gap-2 overflow-x-auto pb-1" role="group" aria-label="Category">
         {[{ path: "", label: "All Items" }, ...TOP_LEVEL].map((node) => <button key={node.path} type="button" aria-pressed={topLevel === node.path} onClick={() => update({ category: node.path })}
-          className={`rounded-full border px-4 py-2 text-sm font-medium transition ${topLevel === node.path ? "border-emerald-600 bg-emerald-700 text-white" : "border-input hover:border-emerald-600"}`}>{node.label}</button>)}
+          className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium transition ${topLevel === node.path ? "border-[#191b18] bg-[#191b18] text-white dark:border-white dark:bg-white dark:text-[#191b18]" : "border-input bg-card hover:border-emerald-600"}`}>{node.label}</button>)}
       </div>
       {topLevel && <label className="block max-w-sm space-y-1 text-sm font-medium">Subcategory<select className={field} value={filters.category} onChange={(event) => update({ category: event.target.value })}>
         {CATEGORIES.filter((node) => node.path === topLevel || node.path.startsWith(`${topLevel}/`)).map((node) =>
@@ -34,12 +34,12 @@ export function ListingFilters() {
         const data = new FormData(event.currentTarget);
         const text = (name: string) => String(data.get(name) ?? "");
         update({ q: text("q"), city: text("city"), minPrice: text("minPrice"), maxPrice: text("maxPrice") });
-      }} className="grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_0.7fr_0.7fr_auto]">
+      }} className="grid items-end gap-3 rounded-2xl bg-card p-3 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_0.7fr_0.7fr_auto]">
         <label className="space-y-1 text-sm font-medium">Search<input className={field} type="search" name="q" defaultValue={filters.q} placeholder="e.g. dog toy, iphone 13, latpop" maxLength={128} /></label>
         <label className="space-y-1 text-sm font-medium">City<input className={field} name="city" defaultValue={filters.city} placeholder="e.g. Mumbai" maxLength={128} /></label>
         <label className="space-y-1 text-sm font-medium">Min {PRICE_CURRENCY}<input className={field} name="minPrice" inputMode="decimal" defaultValue={filters.minPrice} placeholder="0" /></label>
         <label className="space-y-1 text-sm font-medium">Max {PRICE_CURRENCY}<input className={field} name="maxPrice" inputMode="decimal" defaultValue={filters.maxPrice} placeholder="Any" /></label>
-        <button className="rounded-lg bg-emerald-700 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-800" type="submit">Search</button>
+        <button className="min-h-11 rounded-xl bg-emerald-700 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-800" type="submit">Search</button>
       </form>
       <div className="grid gap-3 sm:grid-cols-3">
         <label className="space-y-1 text-sm font-medium">Condition<select className={field} value={filters.condition} onChange={(event) => update({ condition: event.target.value as DiscoveryFilters["condition"] })}>

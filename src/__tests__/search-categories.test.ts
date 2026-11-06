@@ -6,6 +6,9 @@ describe("text normalization and typo tolerance", () => {
   it("normalizes case, punctuation and spacing", () => {
     expect(normalizeText("  Dog-Toy!! ")).toBe("dog toy");
     expect(squash("Dog Toy")).toBe(squash("dogtoy"));
+    // Indic vowel signs are combining marks and must survive normalization.
+    expect(squash("सैमसंग")).toBe("सैमसंग");
+    expect(squash("सैमसंग")).not.toBe(squash("समसग"));
   });
   it("counts a swap of neighbouring letters as one typo", () => {
     expect(typoDistance("latpop", "laptop")).toBe(1);

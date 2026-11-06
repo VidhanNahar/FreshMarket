@@ -96,7 +96,12 @@ export function planDiscovery(filters: DiscoveryFilters): DiscoveryPlan {
   return { arkiv, textWords, resolved };
 }
 
-type SearchAll = (filters: Omit<ListingFilters, "limit" | "offset">) => Promise<Listing[]>;
+export interface CandidateResult {
+  listings: Listing[];
+  /** A read limit stopped the scan; results are incomplete and the buyer should narrow the search. */
+  truncated: boolean;
+}
+type SearchCatalogue = (filters: Omit<ListingFilters, "limit" | "offset">) => Promise<CandidateResult>;
 
 /**
  * Fetches candidates with indexed filters only:
@@ -104,17 +109,17 @@ type SearchAll = (filters: Omit<ListingFilters, "limit" | "offset">) => Promise<
  * 2. otherwise leftover words as a brand or model key ("lenovo", "iphone13");
  * 3. otherwise the remaining indexed filters, and text matching narrows the result.
  */
-export async function fetchDiscoveryCandidates(plan: DiscoveryPlan, searchAll: SearchAll): Promise<Listing[]> {
+export async function fetchDiscoveryCandidates(plan: DiscoveryPlan, searchAll: SearchCatalogue): Promise<CandidateResult> {
   const paths = plan.arkiv.categoryPaths ?? [];
   if (paths.length) {
-    const listings = await searchAll(plan.arkiv);
+    const result = await searchAll(plan.arkiv);
     const parent = paths.length === 1 ? parentCategory(paths[0]) : undefined;
-    if (listings.length || !parent) return listings;
+    if (result.listings.length || !parent) return result;
     return searchAll({ ...plan.arkiv, categoryPaths: [parent] });
   }
   if (plan.textWords.length) {
     const byKey = await searchAll({ ...plan.arkiv, brandOrModel: plan.textWords.join("") });
-    if (byKey.length) return byKey;
+    if (byKey.listings.length) return byKey;
   }
   return searchAll(plan.arkiv);
 }

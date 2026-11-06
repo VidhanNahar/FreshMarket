@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 };
 
 export default function BrowsePage() {
-  return <div className="container mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-    <header className="border-b border-border pb-8"><p className="mb-2 text-sm font-semibold text-emerald-600">Find something worth keeping</p><h1 className="text-3xl font-extrabold tracking-tight">Browse active listings</h1><p className="mt-2 max-w-2xl text-sm text-muted-foreground">Discover second-hand finds from the live marketplace. Browse freely—no wallet connection required.</p></header>
+  return <div className="container mx-auto max-w-[1600px] px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
+    <header className="grid gap-5 border-b editorial-rule pb-8 md:grid-cols-[1fr_.6fr] md:items-end"><div><p className="editorial-kicker text-emerald-700">The live catalogue</p><h1 className="mt-3 text-4xl font-extrabold tracking-[-.055em] sm:text-6xl">Browse active listings</h1></div><p className="max-w-xl text-sm leading-relaxed text-muted-foreground md:justify-self-end">Discover useful things from local sellers. Search and compare without connecting a wallet.</p></header>
     <Suspense fallback={<div className="mt-8"><ListingGridSkeleton /></div>}><Marketplace /></Suspense>
   </div>;
 }

@@ -14,11 +14,11 @@ export function useListings(filters: DiscoveryFilters) {
     ...listingReadPolicy,
     // Text words are part of the key because they can switch the fetch to a brand/model lookup.
     queryKey: [...listingKeys.catalog(plan.arkiv), plan.textWords] as const,
-    queryFn: () => fetchDiscoveryCandidates(plan, (arkiv) => listingRepository.searchAll(arkiv)),
+    queryFn: () => fetchDiscoveryCandidates(plan, (arkiv) => listingRepository.searchCatalogue(arkiv)),
     refetchInterval: 60_000,
   });
   const block = useRabdiBlock();
-  const active = (query.data ?? []).filter((listing) =>
+  const active = (query.data?.listings ?? []).filter((listing) =>
     block.data === undefined || listing.expiresAtBlock > block.data);
   return {
     ...query,
@@ -27,6 +27,7 @@ export function useListings(filters: DiscoveryFilters) {
     currentBlock: block.data,
     resolved: plan.resolved,
     fallbackCategory: discoveryFallback(plan, active),
+    truncated: query.data?.truncated ?? false,
   };
 }
 

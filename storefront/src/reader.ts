@@ -1,4 +1,4 @@
-import { MAX_CATALOGUE_MATCHES, CATALOGUE_READ_BUDGET_MS, CatalogueReadLimitError } from "../../shared/catalogue-limits";
+import { MAX_CATALOGUE_MATCHES, CATALOGUE_READ_BUDGET_MS } from "../../shared/catalogue-limits";
 import { resolveImageSource } from "../../shared/media";
 import { categoryLabel } from "../../shared/categories";
 import { hexToString } from "viem";
@@ -27,15 +27,17 @@ function firstImage(media: `0x${string}`): string | undefined {
 export function createReader(accessKey = "") {
   return createPublicClient({ chain: rabdi({ accessKey }), transport: http(undefined, { retryCount: 1, timeout: 15_000 }) });
 }
-export async function readCatalogue(client: PublicArkivClient): Promise<{ listings: PortableListing[]; block: bigint }> {
+/** truncated: the read limit stopped the scan, so a flood of public entities cannot blank this reader. */
+export async function readCatalogue(client: PublicArkivClient): Promise<{ listings: PortableListing[]; block: bigint; truncated: boolean }> {
   const records = new Map<string, PortableListing>();
   const started = performance.now();
+  let truncated = false;
   for (let offset = 0; ; offset += 100) {
-    if (offset > MAX_CATALOGUE_MATCHES || performance.now() - started > CATALOGUE_READ_BUDGET_MS) throw new CatalogueReadLimitError();
+    if (offset > MAX_CATALOGUE_MATCHES || performance.now() - started > CATALOGUE_READ_BUDGET_MS) { truncated = true; break; }
     // Unlisted listings are hidden from browse here too; they still exist publicly on Arkiv.
     const page = await client.select().from(storefrontSchema).where(eq("visibility", "public")).orderBy(asc("$key")).limit(offset === MAX_CATALOGUE_MATCHES ? 1 : 100).offset(offset).fetch();
     if (offset === MAX_CATALOGUE_MATCHES) {
-      if (page.entities.length + page.skipped) throw new CatalogueReadLimitError();
+      truncated = page.entities.length + page.skipped > 0;
       break;
     }
     for (const row of page.entities) {
@@ -47,7 +49,7 @@ export async function readCatalogue(client: PublicArkivClient): Promise<{ listin
     if (page.entities.length + page.skipped < 100) break;
   }
   const block = await client.getBlockNumber({ cacheTime: 0 });
-  return { listings: [...records.values()].filter((row) => row.expiresAtBlock > block), block };
+  return { listings: [...records.values()].filter((row) => row.expiresAtBlock > block), block, truncated };
 }
 /** USDT minor units (6 decimals) with 2–6 fraction digits: 12_500_000n → "12.50 USDT". */
 export function portablePrice(minor: bigint) {

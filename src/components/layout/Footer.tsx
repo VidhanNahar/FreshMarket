@@ -3,22 +3,22 @@ import { Store, ExternalLink, ShieldCheck, Clock, Code2 } from "lucide-react";
 
 export function Footer() {
   return (
-    <footer className="w-full border-t border-border/40 bg-muted/20 py-8 mt-auto">
-      <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+    <footer className="mt-auto w-full border-t editorial-rule bg-[#191b18] py-10 text-white">
+      <div className="container mx-auto max-w-[1600px] px-4 sm:px-8 lg:px-10">
+        <div className="mb-10 grid grid-cols-1 gap-10 md:grid-cols-4">
           {/* Brand Col */}
           <div className="space-y-3 md:col-span-2">
             <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-700 text-white">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-lime-200 text-[#191b18]">
                 <Store className="h-4 w-4" />
               </div>
-              <span className="font-bold text-foreground text-lg">FreshMarket</span>
+              <span className="text-xl font-bold tracking-[-.04em] text-white">FreshMarket</span>
             </div>
-            <p className="text-sm text-muted-foreground max-w-md">
+            <p className="max-w-md text-sm leading-relaxed text-white/55">
               A wallet-owned, portable second-hand marketplace with time-limited listings.
               Built from scratch for ETHGlobal Mumbai 2026 on Arkiv Rabdi testnet.
             </p>
-            <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground pt-1">
+            <div className="flex flex-wrap items-center gap-4 pt-1 text-xs text-white/55">
               <span className="flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5 text-emerald-500" /> Auto-Expiring Listings
               </span>
@@ -30,8 +30,8 @@ export function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h4 className="text-sm font-semibold text-foreground mb-3">Marketplace</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
+            <h4 className="mb-3 text-sm font-semibold text-white">Marketplace</h4>
+            <ul className="space-y-2 text-sm text-white/55">
               <li>
                 <Link href="/browse" className="hover:text-foreground transition-colors">
                   Browse Listings
@@ -52,8 +52,8 @@ export function Footer() {
 
           {/* Protocol Links */}
           <div>
-            <h4 className="text-sm font-semibold text-foreground mb-3">Protocol & Resources</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
+            <h4 className="mb-3 text-sm font-semibold text-white">Protocol & Resources</h4>
+            <ul className="space-y-2 text-sm text-white/55">
               <li>
                 <a
                   href="https://hub.arkiv.network/"
@@ -88,7 +88,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-border/40 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
+        <div className="flex flex-col items-center justify-between gap-4 border-t border-white/15 pt-6 text-xs text-white/40 sm:flex-row">
           <p>© 2026 FreshMarket Team (Vidhan Nahar & Dhairya). Open-source under MIT License.</p>
           <p>Target: Arkiv — Build on Arkiv (From Scratch) • Chain ID: 7794095</p>
         </div>

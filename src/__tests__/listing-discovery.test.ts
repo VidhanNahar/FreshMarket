@@ -46,18 +46,19 @@ describe("discovery plan: queries become indexed Arkiv filters", () => {
 
 describe("candidate fetching", () => {
   it("falls back one category level when the requested branch is empty", async () => {
-    const searchAll = vi.fn().mockResolvedValueOnce([]).mockResolvedValueOnce([{ ...base, categoryPath: "pets/dogs/beds" }]);
+    const searchAll = vi.fn().mockResolvedValueOnce({ listings: [], truncated: false })
+      .mockResolvedValueOnce({ listings: [{ ...base, categoryPath: "pets/dogs/beds" }], truncated: false });
     const plan = planDiscovery({ ...filters, q: "dogtoy" });
-    const rows = await fetchDiscoveryCandidates(plan, searchAll);
+    const { listings: rows } = await fetchDiscoveryCandidates(plan, searchAll);
     expect(searchAll.mock.calls[1][0].categoryPaths).toEqual(["pets/dogs"]);
     expect(discoveryFallback(plan, rows)).toBe("pets/dogs");
     expect(discoveryFallback(plan, [chewBall])).toBeUndefined();
   });
   it("tries unrecognized words as a brand or model key before a broad read", async () => {
-    const searchAll = vi.fn().mockResolvedValueOnce([laptop]);
+    const searchAll = vi.fn().mockResolvedValueOnce({ listings: [laptop], truncated: false });
     await fetchDiscoveryCandidates(planDiscovery({ ...filters, q: "lenovo" }), searchAll);
     expect(searchAll).toHaveBeenCalledWith({ brandOrModel: "lenovo" });
-    const empty = vi.fn().mockResolvedValue([]);
+    const empty = vi.fn().mockResolvedValue({ listings: [], truncated: false });
     await fetchDiscoveryCandidates(planDiscovery({ ...filters, q: "zzz" }), empty);
     expect(empty.mock.calls.map(([arkiv]) => arkiv)).toEqual([{ brandOrModel: "zzz" }, {}]);
   });

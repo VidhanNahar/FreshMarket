@@ -135,6 +135,7 @@ export function getWalletErrorReason(error: unknown): string {
   if (lower.includes("unauthorized") || lower.includes("notowner") || /is owned by.*not /.test(lower) || lower.includes("not the owner") || lower.includes("only the listing owner")) {
     return "Only the listing owner can change or delete this item. Connect the seller wallet and try again.";
   }
+  if (lower.includes("maximum lifetime")) return "Arkiv keeps an entity for at most about 182 days from now. Choose a shorter extension.";
   if (lower.includes("account changed")) return "Your wallet account changed. Reconnect the seller wallet and try again.";
   if (lower.includes("expired") || lower.includes("listing is missing")) return "This listing is no longer available. Refresh your listings.";
 

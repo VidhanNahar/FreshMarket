@@ -11,7 +11,7 @@ import { categoryLabel } from "../../../shared/categories";
 export function Marketplace() {
   const filters = parseDiscoveryFilters(useSearchParams());
   const query = useListings(filters);
-  return <div className="mt-8 space-y-8">
+  return <div className="mt-7 space-y-7">
     <ListingFilters />
     {query.isError && query.hasData && <div role="alert" className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm">Refresh failed. Showing the last successful results. <button type="button" className="font-medium underline underline-offset-4" onClick={() => void query.refetch()}>Retry refresh</button></div>}
     {query.isPending ? <ListingGridSkeleton /> : query.isError && !query.hasData ? (
@@ -19,8 +19,9 @@ export function Marketplace() {
     ) : <>
       {query.resolved.corrected && query.resolved.recognized.length > 0 && <p className="text-sm">Showing results for <strong>{query.resolved.recognized.join(" ")}</strong></p>}
       {query.fallbackCategory && <p className="text-sm">No exact matches nearby. Showing other items in <strong>{categoryLabel(query.fallbackCategory)}</strong>.</p>}
-      <p role="status" className="text-sm text-muted-foreground">{query.data.length} {query.data.length === 1 ? "listing" : "listings"} found{query.isFetching ? " · Refreshing…" : ""}</p>
-      {query.data.length ? <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{query.data.map((listing) => <ListingCard key={listing.id} listing={listing} currentBlock={query.currentBlock} />)}</div> : <div className="rounded-2xl border border-dashed border-input px-6 py-16 text-center"><h2 className="text-xl font-semibold">No listings found</h2><p className="mt-2 text-sm text-muted-foreground">Try another category or city, clear your search, or check back for new items.</p></div>}
+      {query.truncated && <p className="rounded-lg border border-amber-500/40 p-3 text-sm">Too many listings match to load them all. Showing the first part only. Pick a category or city to see everything relevant.</p>}
+      <div className="flex items-center justify-between border-b editorial-rule pb-3"><p role="status" className="text-sm font-medium">{query.data.length} {query.data.length === 1 ? "listing" : "listings"}<span className="font-normal text-muted-foreground">{query.isFetching ? " · Refreshing…" : " found"}</span></p><span className="editorial-kicker text-muted-foreground">Live catalogue</span></div>
+      {query.data.length ? <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{query.data.map((listing) => <ListingCard key={listing.id} listing={listing} currentBlock={query.currentBlock} />)}</div> : <div className="rounded-3xl border border-dashed border-input px-6 py-20 text-center"><h2 className="text-2xl font-semibold tracking-tight">No listings found</h2><p className="mt-2 text-sm text-muted-foreground">Try another category or city, clear your search, or check back for new items.</p></div>}
     </>}
   </div>;
 }

@@ -41,6 +41,8 @@ describe("Phase 2: Seller Listing Schema & Zod Validation", () => {
     { imageUrl: "https://user:secret@example.com/image.png" },
     { imageUrl: `https://example.com/${"a".repeat(2048)}` },
     { brand: "b".repeat(65) }, { model: "m".repeat(65) },
+    // Under 64 characters but over Arkiv's 128-byte limit once stored.
+    { brand: "सैमसंग".repeat(9) },
     { condition: "broken" }, { fulfilment: "teleport" }, { visibility: "secret" },
   ])("rejects values incompatible with Arkiv storage: %j", (change) => {
     expect(listingFormSchema.safeParse({ ...validPayload, ...change }).success).toBe(false);
