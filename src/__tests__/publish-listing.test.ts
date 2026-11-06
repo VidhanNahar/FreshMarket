@@ -64,6 +64,7 @@ describe("Connected wallet adapter", () => {
   function provider(chainId: number = rabdiWalletChain.id) {
     const request = vi.fn(async ({ method }: { method: string }) => {
       if (method === "eth_chainId") return `0x${chainId.toString(16)}`;
+      if (method === "eth_accounts") return [seller];
       if (method === "eth_sendTransaction") return key;
       throw new Error(`Unexpected method: ${method}`);
     });
@@ -81,6 +82,26 @@ describe("Connected wallet adapter", () => {
     expect(typeof adapted.createEntity).toBe("function");
     await adapted.transport.request({ method: "eth_sendTransaction", params: [{ from: seller }] });
     expect(states).toEqual(["signature", key]);
+  });
+
+  it("rechecks the provider account immediately before sending", async () => {
+    const { client, request } = provider();
+    const adapted = await createListingWalletClient(client);
+    request.mockImplementation(async ({ method }) => {
+      if (method === "eth_chainId") return `0x${rabdiWalletChain.id.toString(16)}`;
+      if (method === "eth_accounts") return ["0x2222222222222222222222222222222222222222"];
+      throw new Error("A stale account must never reach send");
+    });
+    await expect(adapted.transport.request({ method: "eth_sendTransaction", params: [{ from: seller }] })).rejects.toThrow("account changed");
+    expect(request.mock.calls.some(([args]) => args.method === "eth_sendTransaction")).toBe(false);
+  });
+
+  it("rechecks the provider chain if it changes after adapter construction", async () => {
+    const { client, request } = provider();
+    const adapted = await createListingWalletClient(client);
+    request.mockImplementation(async ({ method }) => method === "eth_chainId" ? "0x1" : [seller]);
+    await expect(adapted.transport.request({ method: "eth_sendTransaction", params: [{ from: seller }] })).rejects.toThrow("Rabdi");
+    expect(request.mock.calls.some(([args]) => args.method === "eth_sendTransaction")).toBe(false);
   });
 
   it("rejects a provider network mismatch even if Wagmi metadata says Rabdi", async () => {
