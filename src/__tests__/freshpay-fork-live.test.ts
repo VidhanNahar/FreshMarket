@@ -24,6 +24,7 @@ const buyer = getAddress("0x70997970c51812dc3a719c79b437b10d83f4c79c");
 const rival = getAddress("0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc");
 const holder = getAddress("0xffd76ff981cc7ea15ee2f67680815763c4c7683e"); // Received test USDT on Whitechain Sepolia
 const listing = { ...fixtureListing, seller: merchant, owner: merchant, priceMinor: 12_500_000n };
+const ref = listing.id as Hex; // The Arkiv entity key is the payment reference
 
 describe.skipIf(!rpc)("Phase 10: FreshPay on a Whitechain Sepolia fork", () => {
   it("pays, blocks a second buyer, verifies, refunds, releases and notifies", { timeout: 120_000 }, async () => {
@@ -49,16 +50,16 @@ describe.skipIf(!rpc)("Phase 10: FreshPay on a Whitechain Sepolia fork", () => {
     // Buyer checkout, as the widget does it.
     await send(await client.writeContract({ account: buyer, address: WHITECHAIN_SEPOLIA_USDT, abi: erc20Abi, functionName: "approve", args: [contract, listing.priceMinor] }));
     const deadline = BigInt(Math.floor(Date.now() / 1000) + 900);
-    const payHash = await client.writeContract({ account: buyer, address: contract, abi: freshPayAbi, functionName: "pay", args: [merchant, listing.id, listing.priceMinor, deadline] });
+    const payHash = await client.writeContract({ account: buyer, address: contract, abi: freshPayAbi, functionName: "pay", args: [merchant, ref, listing.priceMinor, deadline] });
     await send(payHash);
-    const verified = await verifyPayment(reader, contract, payHash, { merchant, reference: listing.id, amount: listing.priceMinor });
+    const verified = await verifyPayment(reader, contract, payHash, { merchant, reference: ref, amount: listing.priceMinor });
     expect(verified.order).toMatchObject({ id: 1n, buyer, merchant, state: "Paid" });
 
     // The listing is now locked onchain even though Arkiv still says "available".
-    const active = await readActiveOrder(reader, contract, merchant, listing.id);
+    const active = await readActiveOrder(reader, contract, merchant, ref);
     expect(checkoutBlock({ contract, listing, viewer: rival, activeOrder: active })).toBe("already-paid");
     await send(await client.writeContract({ account: rival, address: WHITECHAIN_SEPOLIA_USDT, abi: erc20Abi, functionName: "approve", args: [contract, listing.priceMinor] }));
-    await expect(client.simulateContract({ account: rival, address: contract, abi: freshPayAbi, functionName: "pay", args: [merchant, listing.id, listing.priceMinor, deadline] }))
+    await expect(client.simulateContract({ account: rival, address: contract, abi: freshPayAbi, functionName: "pay", args: [merchant, ref, listing.priceMinor, deadline] }))
       .rejects.toThrow(/ReferenceAlreadyPaid/);
 
     // A spoofed hash (the approval) is not accepted as a payment.
