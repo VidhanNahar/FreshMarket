@@ -108,6 +108,12 @@ describe("Phase 1: wallet UI helpers", () => {
   });
 
   describe("getWalletErrorReason", () => {
+    it("explains an unapproved custom-chain WalletConnect session", () => {
+      const reason = getWalletErrorReason({ cause: { message: "Invalid chainId" } });
+      expect(reason).toContain("Disconnect FreshMarket");
+      expect(reason).toContain("reconnect");
+    });
+
     it("explains a rejected wallet request", () => {
       expect(getWalletErrorReason({ code: 4001 })).toContain("rejected");
       expect(
