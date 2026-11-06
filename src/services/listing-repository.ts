@@ -29,6 +29,7 @@ export interface ListingRepository {
   create(input: CreateListingInput, walletClient: ListingWalletClient): Promise<string>;
   getById(id: string): Promise<Listing | null>;
   search(filters?: ListingFilters): Promise<Listing[]>;
+  searchAll(filters?: Pick<ListingFilters, "category" | "city">): Promise<Listing[]>;
 }
 
 type ListingRow = FullRow<typeof listingSchema>;
@@ -44,7 +45,12 @@ function mapEntityToListing(row: ListingRow): Listing | null {
     return null;
   }
   // Only the application timestamp becomes a number; preserve expiry and price as bigint.
-  if (row.createdAt.value > BigInt(Number.MAX_SAFE_INTEGER)) return null;
+  if (row.createdAt.value > 8_640_000_000_000_000n) return null;
+  // Public writers can reuse our schema tag with unsupported display values.
+  if (!/^[A-Z]{3}$/.test(row.currency.value)) return null;
+  if (new Intl.NumberFormat("en", {
+    style: "currency", currency: row.currency.value,
+  }).resolvedOptions().maximumFractionDigits !== 2) return null;
 
   return {
     id: row.$key,
@@ -153,6 +159,25 @@ export class ArkivListingRepository implements ListingRepository {
    * mismatches and rejected domain rows can make the returned page smaller than limit.
    */
   async search(filters: ListingFilters = {}): Promise<Listing[]> {
+    const rows = await this.searchRows(filters);
+    return rows.map(mapEntityToListing).filter((listing) => listing !== null);
+  }
+
+  /** Fetch every matching page before client-side title search and price sorting. */
+  async searchAll(filters: Pick<ListingFilters, "category" | "city"> = {}): Promise<Listing[]> {
+    const listings = new Map<string, Listing>();
+    for (let offset = 0; ; offset += 100) {
+      const rows = await this.searchRows({ ...filters, limit: 100, offset });
+      for (const row of rows) {
+        const listing = mapEntityToListing(row);
+        if (listing) listings.set(listing.id, listing);
+      }
+      // Count raw rows, since invalid domain rows can shorten a mapped page.
+      if (rows.length < 100) return [...listings.values()];
+    }
+  }
+
+  private async searchRows(filters: ListingFilters): Promise<readonly ListingRow[]> {
     const client = this.publicClient ?? getArkivPublicClient();
     const query = client.select().from(listingSchema);
     const status = filters.status ?? "available";
@@ -176,7 +201,7 @@ export class ArkivListingRepository implements ListingRepository {
       .limit(filters.limit ?? 20)
       .offset(filters.offset ?? 0)
       .fetch();
-    return result.entities.map(mapEntityToListing).filter((listing) => listing !== null);
+    return result.entities;
   }
 }
 

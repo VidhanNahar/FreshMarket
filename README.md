@@ -126,3 +126,20 @@ npm run build   # Compiles production build
 
 ## 📄 License
 This project is open-source under the [MIT License](LICENSE).
+
+### Buyer discovery (issues #9 and #10)
+
+- `/browse` reads available, non-expired listings from Arkiv without a wallet. Cards link to `/listing/[id]`, which displays the actual description, image, seller, publication time, expiration block, and Rabdi Explorer record.
+- Category pills apply immediately. Enter a title search and/or an exact, case-sensitive city name and press **Search**. Sort by newest or price; prices are grouped by currency because no exchange-rate conversion is performed.
+- Filters live in `category`, `city`, `q`, and `sort` URL parameters. Shared links, refresh, and browser back/forward restore them. **Clear all filters** returns to `/browse`.
+- Discovery reads all matching pages (100 records per RPC page) before searching titles and sorting. Large catalogues require more RPC requests; configure an origin-restricted Arkiv access key to reduce rate limiting.
+- Expiration time is estimated from the current block and Rabdi's two-second target. When block reads are unavailable, the exact expiration block remains visible. The catalogue refreshes every minute and the block height every 30 seconds.
+- Failed/missing images have a fallback. Failed reads show a retry action; missing or expired detail records have an unavailable state. The share action uses native sharing when supported, otherwise copies the URL.
+
+Buyer component and hook tests run with `npm test`. To include the opt-in live catalogue read:
+
+```bash
+TEST_ARKIV_DISCOVERY=1 npm test
+```
+
+The live test only reads public data. When the catalogue is empty, populated card and detail flows are covered using fixtures rather than creating onchain records.

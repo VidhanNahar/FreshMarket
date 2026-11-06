@@ -184,6 +184,29 @@ describe("Arkiv listing repository reads", () => {
     expect(params[1]).toMatchObject({ limit: "0x5", offset: "0xa", select: { key: true, owner: true } });
   });
 
+  it("excludes public records that would crash date or currency rendering", async () => {
+    const { repository, request } = reader(null);
+    for (const [name, value] of [["createdAt", "0x1fffffffffffff"], ["currency", "invalid"], ["currency", "JPY"]]) {
+      const entity = rpcEntity();
+      const attribute = entity.attributes.find((attribute) => attribute.name === name)!;
+      attribute.value = value;
+      request.mockResolvedValue(entity);
+      expect(await repository.getById(entityKey)).toBeNull();
+    }
+  });
+
+  it("loads subsequent discovery pages even when a full page contains rejected rows", async () => {
+    const { repository, request } = reader(null);
+    request.mockResolvedValueOnce({
+      data: Array.from({ length: 100 }, () => rpcEntity("unknown")), blockNumber: "0x64",
+    }).mockResolvedValueOnce({ data: [rpcEntity()], blockNumber: "0x64" });
+    expect(await repository.searchAll({ city: "Mumbai", category: "Furniture" })).toHaveLength(1);
+    expect(request).toHaveBeenCalledTimes(2);
+    expect(request.mock.calls[1][0].params[1]).toMatchObject({ limit: "0x64", offset: "0x64" });
+    expect(request.mock.calls[1][0].params[0]).toContain("city = str('Mumbai')");
+    expect(request.mock.calls[1][0].params[0]).toContain("status = str('available')");
+  });
+
   it("supports all seller statuses, explicit sold status, and default page size", async () => {
     const { repository, request } = reader({ data: [rpcEntity("sold")], blockNumber: "0x64" });
     expect((await repository.search({ status: "all", seller }))[0].status).toBe("sold");
