@@ -16,7 +16,7 @@ export function NetworkStatusBadge({ className }: { className?: string }) {
   const { isConnected } = useAccount();
   const required = PAGE_NETWORKS[pageNetwork(usePathname())];
   const chainId = useChainId();
-  const onRabdi = chainId === required.chainId;
+  const onRequired = chainId === required.chainId;
   const requiredName = required.name;
   const requiredId = required.chainId;
 
@@ -39,21 +39,23 @@ export function NetworkStatusBadge({ className }: { className?: string }) {
     <Badge
       variant="outline"
       className={cn(
-        "hidden lg:inline-flex",
-        onRabdi
+        "hidden whitespace-nowrap lg:inline-flex",
+        onRequired
           ? "border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
           : "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
         className
       )}
+      title={onRequired ? undefined : `Wallet is on ${describeChain(chainId)}; this page needs ${requiredName} (chain ${requiredId})`}
     >
       <span
         className={cn(
           "inline-block h-1.5 w-1.5 rounded-full",
-          onRabdi ? "bg-emerald-500" : "bg-amber-500"
+          onRequired ? "bg-emerald-500" : "bg-amber-500"
         )}
         aria-hidden="true"
       />
-      {onRabdi ? `${requiredName} · ${requiredId}` : `Wrong network · ${describeChain(chainId)}`}
+      {/* Name the network this page needs; the tooltip names the one the wallet is on. */}
+      {onRequired ? `${requiredName} · ${requiredId}` : `Switch to ${requiredName}`}
     </Badge>
   );
 }
