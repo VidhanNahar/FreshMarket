@@ -1,7 +1,8 @@
 import { getDefaultConfig } from "@rainbow-me/rainbowkit";
 import { http } from "wagmi";
-import { mainnet } from "wagmi/chains";
+import { mainnet, sepolia } from "wagmi/chains";
 import { rabdiWalletChain } from "@/lib/arkiv/chain";
+import { ensConfig } from "@/lib/ens/config";
 
 /**
  * WalletConnect Project ID from environment.
@@ -18,10 +19,12 @@ export const wagmiConfig = getDefaultConfig({
   // which Wagmi can send the add/switch request for the custom network.
   // Start new sessions on Ethereum; preserve Rabdi when already connected there.
   // Marketplace guards require Rabdi before writes.
-  chains: [mainnet, rabdiWalletChain],
+  chains: [mainnet, rabdiWalletChain, sepolia],
   transports: {
     [rabdiWalletChain.id]: http(),
     [mainnet.id]: http(),
+    // ENS actions select this chain explicitly; Arkiv's transport and initial session stay intact.
+    [sepolia.id]: http(ensConfig.rpcUrl),
   },
   ssr: true,
 });

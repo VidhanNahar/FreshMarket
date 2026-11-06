@@ -1,5 +1,7 @@
 "use client";
 
+import { SellerIdentity } from "@/components/identity/SellerIdentity";
+
 import Link from "next/link";
 import { Share2 } from "lucide-react";
 import { toast } from "sonner";
@@ -41,7 +43,7 @@ export function ListingDetail({ id }: { id: string }) {
       <h1 className="break-words text-3xl font-extrabold tracking-tight">{listing.title}</h1><p className="text-3xl font-bold text-emerald-700 dark:text-emerald-400">{formatPrice(listing.priceMinor, listing.currency)}</p>
       <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4"><p className="font-medium"><ExpirationCountdown expiresAtBlock={listing.expiresAtBlock} currentBlock={block.data} /></p><p className="mt-1 text-xs text-muted-foreground">Expires at block {listing.expiresAtBlock.toLocaleString("en-US")}. Time estimates depend on network block speed.</p></div>
       <section><h2 className="mb-2 font-semibold">Description</h2><p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{listing.description}</p></section>
-      <section className="space-y-3 border-t border-black/10 pt-5"><h2 className="font-semibold">Seller</h2><code className="block break-all text-sm">{listing.seller}</code><p className="text-xs text-muted-foreground">Published (seller-provided): <time dateTime={new Date(listing.createdAt).toISOString()}>{new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(listing.createdAt)} UTC</time></p></section>
+      <section className="space-y-3 border-t border-black/10 pt-5"><h2 className="font-semibold">Seller</h2><SellerIdentity address={listing.seller} profile /><p className="text-xs text-muted-foreground">Published (seller-provided): <time dateTime={new Date(listing.createdAt).toISOString()}>{new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(listing.createdAt)} UTC</time></p></section>
       <button type="button" onClick={() => void share()} className="inline-flex items-center gap-2 rounded-lg border border-black/20 px-4 py-2 text-sm font-medium hover:border-emerald-600"><Share2 aria-hidden="true" className="h-4 w-4" />Share listing</button>
       <button type="button" className="ml-3 rounded-lg border border-black/20 px-4 py-2 text-sm" disabled={query.isFetching} onClick={() => void query.refetch()}>Refresh listing</button>
     </div>

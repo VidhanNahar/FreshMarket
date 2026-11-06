@@ -11,7 +11,8 @@
     "build:storefront": "vite build --config storefront/vite.config.mts",
     "prebuild": "npm run build:storefront",
     "query:listings": "node scripts/query-listings.mjs",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "verify:ens": "node scripts/verify-ens.mjs"
   },
   "dependencies": {
     "@arkiv-network/sdk": "^1.0.1",

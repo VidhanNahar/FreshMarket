@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   data: [] as unknown[], pending: false, error: false, busy: false,
   connect: vi.fn(), run: vi.fn(), refetch: vi.fn(), switchChain: vi.fn(),
 }));
+vi.mock("@/hooks/use-seller-identity", () => ({ useSellerIdentity: () => ({ data: null, isError: false, isFetching: false }) }));
 vi.mock("wagmi", () => ({ useAccount: () => mocks.account, useSwitchChain: () => ({ switchChainAsync: mocks.switchChain, isPending: false }) }));
 vi.mock("@rainbow-me/rainbowkit", () => ({ useConnectModal: () => ({ openConnectModal: mocks.connect }) }));
 vi.mock("@/hooks/use-seller-listings", () => ({ useSellerListings: () => ({ data: mocks.data, isPending: mocks.pending, isError: mocks.error, isFetching: false, refetch: mocks.refetch }) }));

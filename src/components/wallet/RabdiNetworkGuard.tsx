@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useAccount, useBalance, useChainId, useSwitchChain } from "wagmi";
 import { toast } from "sonner";
 import { AlertTriangle, Droplets, RefreshCw, Wallet, X } from "lucide-react";
@@ -50,6 +51,7 @@ function useHasInjectedWallet() {
  * a wallet popup; the switch only runs on an explicit click.
  */
 export function RabdiNetworkGuard() {
+  const pathname = usePathname();
   const { address, isConnected, chain } = useAccount();
   const chainId = useChainId();
   const { switchChainAsync, isPending } = useSwitchChain();
@@ -72,7 +74,8 @@ export function RabdiNetworkGuard() {
     },
   });
 
-  if (!mounted) return null;
+  // ENS setup deliberately uses Sepolia. Do not compete with its explicit network controls.
+  if (!mounted || pathname === "/identity") return null;
 
   async function handleSwitch() {
     try {

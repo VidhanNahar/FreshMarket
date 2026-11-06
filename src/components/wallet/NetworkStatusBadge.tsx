@@ -1,6 +1,7 @@
 "use client";
 
 import { useAccount, useChainId } from "wagmi";
+import { usePathname } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
@@ -17,8 +18,11 @@ import {
  */
 export function NetworkStatusBadge({ className }: { className?: string }) {
   const { isConnected } = useAccount();
+  const identityPage = usePathname() === "/identity";
   const chainId = useChainId();
-  const onRabdi = isRabdiChain(chainId);
+  const onRabdi = identityPage ? chainId === 11155111 : isRabdiChain(chainId);
+  const requiredName = identityPage ? "Ethereum Sepolia" : RABDI_CHAIN_NAME;
+  const requiredId = identityPage ? 11155111 : RABDI_CHAIN_ID;
 
   if (!isConnected) {
     return (
@@ -30,7 +34,7 @@ export function NetworkStatusBadge({ className }: { className?: string }) {
         )}
       >
         <span className="inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground" aria-hidden="true" />
-        {RABDI_CHAIN_NAME}
+        {requiredName}
       </Badge>
     );
   }
@@ -53,7 +57,7 @@ export function NetworkStatusBadge({ className }: { className?: string }) {
         )}
         aria-hidden="true"
       />
-      {onRabdi ? `${RABDI_CHAIN_NAME} · ${RABDI_CHAIN_ID}` : `Wrong network · ${describeChain(chainId)}`}
+      {onRabdi ? `${requiredName} · ${requiredId}` : `Wrong network · ${describeChain(chainId)}`}
     </Badge>
   );
 }

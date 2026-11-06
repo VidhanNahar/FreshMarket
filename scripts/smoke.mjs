@@ -4,6 +4,7 @@ if (!['http:', 'https:'].includes(base.protocol)) throw new Error('Use an HTTP(S
 const checks = [
   ['/', 'FreshMarket'], ['/browse', 'Browse active listings'], ['/sell', 'Create a New Listing'],
   ['/my-listings', 'My listings'], ['/listing/invalid', 'Listing'], ['/storefront/index.html', 'SECOND LOOK'],
+  ['/identity', 'ENS storefront identity'],
 ];
 for (const [path, expected] of checks) {
   const response = await fetch(new URL(path, base), { signal: AbortSignal.timeout(30_000) });

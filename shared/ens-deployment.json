@@ -1,0 +1,13 @@
+{
+  "chainId": 11155111,
+  "source": "https://github.com/ensdomains/contracts-v2/tree/07e55a056f5b6a9c90119f501bdd05714e67dddd/contracts/deployments/sepolia",
+  "rootRegistry": "0xb458d6a3a77919449d03e7a6903c26827c1ec43f",
+  "ethRegistry": "0xd4ebcbbdf463c9c45784603db0ddd499bc44a8b4",
+  "factory": "0xda70306c98e97ece36f997a21368e53298572991",
+  "userRegistryImplementation": "0x9bd8a88719068d09ecee662f36c0e3856708366a",
+  "permissionedResolverImplementation": "0x115eb53f0c60696633855f90b138178fb40b2b2c",
+  "publicResolver": "0xdc4a563d00f5c3012b699794eb9e13a561be386f",
+  "universalResolver": "0x24e1d8e068620b647ca097f961a61055f4f42d72",
+  "canonicalUniversalResolverProxy": "0xeeeeeeee14d718c2b47d9923deab1335e144eeee",
+  "reverseRegistrar": "0xa0a1abcdae1a2a4a2ef8e9113ff0e02dd81dc0c6"
+}

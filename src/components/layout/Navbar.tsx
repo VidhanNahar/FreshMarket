@@ -19,6 +19,7 @@ export function Navbar() {
     { href: "/storefront", label: "Storefront B", icon: Store },
     { href: "/sell", label: "Sell Item", icon: PlusCircle },
     { href: "/my-listings", label: "My Listings", icon: LayoutList },
+    { href: "/identity", label: "Storefront Identity", icon: Store },
   ];
 
   return (
