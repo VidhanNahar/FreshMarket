@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Store, PlusCircle, LayoutList, Compass, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { WalletButton } from "@/components/wallet/WalletButton";
 import { NetworkStatusBadge } from "@/components/wallet/NetworkStatusBadge";
@@ -11,6 +11,7 @@ import { RabdiNetworkGuard } from "@/components/wallet/RabdiNetworkGuard";
 
 export function Navbar() {
   const pathname = usePathname();
+  const menuButton = useRef<HTMLButtonElement>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
@@ -26,7 +27,7 @@ export function Navbar() {
         {/* Brand */}
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2 font-bold text-lg tracking-tight hover:opacity-90 transition">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-sm">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-700 text-white shadow-sm">
               <Store className="h-5 w-5" />
             </div>
             <span className="font-extrabold text-foreground text-xl">FreshMarket</span>
@@ -37,7 +38,7 @@ export function Navbar() {
         </div>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-1">
+        <nav aria-label="Main navigation" className="hidden xl:flex items-center gap-1">
           {navLinks.map((link) => {
             const Icon = link.icon;
             const isActive = pathname === link.href;
@@ -45,6 +46,7 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
+                aria-current={isActive ? "page" : undefined}
                 className={`flex items-center gap-2 px-3.5 py-2 rounded-md text-sm font-medium transition-colors ${
                   isActive
                     ? "bg-muted text-foreground font-semibold"
@@ -59,7 +61,7 @@ export function Navbar() {
         </nav>
 
         {/* Action / Wallet Slot */}
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden xl:flex items-center gap-3">
           <NetworkStatusBadge />
           <WalletButton />
         </div>
@@ -67,7 +69,10 @@ export function Navbar() {
         {/* Mobile menu button */}
         <button
           type="button"
-          className="md:hidden inline-flex items-center justify-center p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+          className="xl:hidden inline-flex items-center justify-center p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+          ref={menuButton}
+          aria-expanded={mobileMenuOpen}
+          aria-controls="mobile-navigation"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label="Toggle navigation menu"
         >
@@ -80,7 +85,7 @@ export function Navbar() {
 
       {/* Mobile Nav */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-b border-border bg-background px-4 pt-2 pb-4 space-y-2">
+        <nav id="mobile-navigation" aria-label="Mobile navigation" onKeyDown={(event) => { if (event.key === "Escape") { setMobileMenuOpen(false); menuButton.current?.focus(); } }} className="xl:hidden max-h-[calc(100dvh-5rem)] overflow-y-auto border-b border-border bg-background px-4 pt-2 pb-4 space-y-2">
           {navLinks.map((link) => {
             const Icon = link.icon;
             const isActive = pathname === link.href;
@@ -88,6 +93,7 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
+                aria-current={isActive ? "page" : undefined}
                 onClick={() => setMobileMenuOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-base font-medium ${
                   isActive
@@ -107,7 +113,7 @@ export function Navbar() {
           <div className="pt-2 border-t border-border/50">
             <WalletButton fullWidth />
           </div>
-        </div>
+        </nav>
       )}
     </header>
   );

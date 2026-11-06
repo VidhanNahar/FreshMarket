@@ -104,3 +104,7 @@ Arkiv entities and their unindexed content are public. FreshMarket's structured 
 
 - [Official Arkiv documentation](https://docs.arkiv.network/)
 - [Arkiv TypeScript SDK source](https://github.com/Arkiv-Network/arkiv-sdk-js) (implementation checked against installed SDK 1.0.1)
+
+## Public media references (Phase 8)
+
+`imageUrl` remains UTF-8 bytes. It accepts either a credential-free HTTPS URL or `bzz://` followed by a public unencrypted 64-hex Swarm reference. Readers resolve that reference through their own network-matched gateway. The value stored on Arkiv is the immutable reference, not the local blob URL, upload credential or postage signing key. Swarm files and Arkiv metadata are public. Encrypted key-bearing references are intentionally rejected.

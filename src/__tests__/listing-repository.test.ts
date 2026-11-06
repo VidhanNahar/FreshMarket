@@ -59,6 +59,13 @@ function reader(response: unknown) {
 }
 
 describe("Arkiv listing repository writes", () => {
+  it("stores a public Swarm reference as UTF-8 imageUrl bytes", async () => {
+    const client = wallet();
+    const reference = `bzz://${"ab".repeat(32)}`;
+    await new ArkivListingRepository().create({ ...input, imageUrl: reference }, client);
+    expect(new TextDecoder().decode(client.createEntity.mock.calls[0][1].imageUrl)).toBe(reference);
+  });
+
   it("returns an entity key and writes typed values with the default seven-day lifetime", async () => {
     const client = wallet();
     const repository = new ArkivListingRepository();

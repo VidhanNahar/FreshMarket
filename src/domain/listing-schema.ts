@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { resolveImageSource } from "../../shared/media";
 import {
   LISTING_CATEGORIES,
   type ListingCategory,
@@ -97,16 +98,9 @@ export const listingFormSchema = z.object({
   imageUrl: z
     .string({ message: "Image URL is required" })
     .trim()
-    .url("Please enter a valid URL")
     .max(2048, "Image URL cannot exceed 2048 characters")
-    .refine(
-      (url) => /^https:\/\/.+/i.test(url),
-      "Image URL must start with https://"
-    )
-    .refine((value) => {
-      try { const url = new URL(value); return !url.username && !url.password; }
-      catch { return false; }
-    }, "Image URL cannot contain credentials"),
+    .refine((value) => resolveImageSource(value) !== null,
+      "Use an HTTPS URL without credentials or bzz:// followed by a 64-character public Swarm reference"),
 
   expirationDays: z.union(
     [z.literal(DEMO_EXPIRATION_DAYS), z.literal(3), z.literal(7), z.literal(14), z.literal(30)],

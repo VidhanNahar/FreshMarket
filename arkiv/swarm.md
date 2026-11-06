@@ -1,0 +1,53 @@
+# Swarm image integration
+
+## What is implemented
+
+FreshMarket stores public PNG/JPEG/WebP files on Swarm and stores their immutable `bzz://<64-hex-reference>` in the Arkiv entity's existing `imageUrl` bytes field. Legacy credential-free HTTPS URLs still work. Encrypted 128-hex references are rejected: they can contain decryption keys and must not be published as plain Arkiv metadata.
+
+- `src/lib/swarm/upload.ts`: bounded image validation, wallet authorization, XHR progress, timeout and response-reference handling. Progress reaches 95% while sending to the server and 100% only after Bee accepts the upload; it is not a network replication percentage.
+- `src/app/api/swarm/upload/route.ts`: server-only postage and Bee credentials, explicit wallet allowlist, origin and signed-content checks, streamed size limit, image magic checks, and a single Bee POST. No automatic upload retry.
+- `src/components/swarm/SwarmUpload.tsx`: accessible file/drop input and upload status. It fills the form; it does not publish a listing.
+- `shared/media.ts`: public reference and HTTPS resolution rules shared by both readers, with a configurable network-matched gateway.
+- `src/components/listings/ListingImage.tsx` and `storefront/src/main.ts`: image loading and failure/slow-gateway fallback.
+
+The HTTP integration follows [Bee's upload API](https://docs.ethswarm.org/api/). Public references are fetched as `/bzz/<reference>/`. Swarm testnet uploads need a testnet gateway; changing the gateway does not move content between networks.
+
+## Configure and reproduce
+
+1. Obtain a usable postage batch from your Bee node/service or the Swarm team. Record its actual ID, network, expiry, buyer wallet or provider. No postage purchase or faucet allocation has been performed by this agent.
+2. Set server-only `SWARM_BEE_URL`, `SWARM_POSTAGE_BATCH_ID`, optionally `SWARM_BEE_API_KEY`, comma-separated `SWARM_UPLOAD_ALLOWED_WALLETS`, and exact `SWARM_ALLOWED_ORIGIN`. Never put a Bee API credential in a `NEXT_PUBLIC_` or `VITE_` variable. Use HTTPS except for a loopback Bee node in local development. A deployed Vercel function cannot reach a Bee node running only on your laptop's localhost.
+3. Set `NEXT_PUBLIC_SWARM_GATEWAY_URL` and `VITE_SWARM_GATEWAY_URL` for the network holding the file. Rebuild browser bundles after changing them.
+4. Start FreshMarket, connect an enabled EOA wallet and select/drop an image on `/sell`. Sign the content-bound authorization message (no gas transaction). An unavailable configuration fails closed; HTTPS images remain usable.
+5. Verify the returned `bzz://` reference through the public gateway, then publish the listing with the actual Rabdi wallet transaction. Read the entity independently and verify `imageUrl` decodes to that same reference.
+6. Open the same entity in `/browse`, its detail page, and `/storefront`. Verify actual image loading through the selected gateway. Record the video timestamp showing this flow.
+
+An operator can also exercise Bee directly, using their real environment configuration:
+
+```bash
+curl --fail-with-body -X POST "$SWARM_BEE_URL/bzz?name=product-image" \
+  -H "swarm-postage-batch-id: $SWARM_POSTAGE_BATCH_ID" \
+  -H 'Content-Type: image/png' --data-binary @product.png
+# Use the reference returned by Bee in your configured read gateway:
+curl --fail-with-body "$NEXT_PUBLIC_SWARM_GATEWAY_URL/bzz/$SWARM_REFERENCE/" --output downloaded.png
+```
+
+The direct command assumes your Bee endpoint is accessible without a separate API credential; use your service's documented authentication otherwise. Never commit its credential or terminal output containing one.
+
+## Security and limits
+
+Only configured wallets can use the upload proxy. The signed authorization binds origin, file hash, MIME type, byte length and a two-minute time window. It uses EOA message recovery, not contract-wallet signature validation. Within that short window an identical signed request can be replayed; enable only trusted demo wallets. A general public upload service needs persistent nonce/rate/quota controls before opening uploads to arbitrary sellers. No storage credits are provisioned automatically.
+
+Files are public and maximum 4 MiB. File signature validation is not a full image decoder or moderation system. Bee acceptance is not a guarantee of indefinite storage or global gateway availability; postage lifetime, pinning and node connectivity matter. A gateway timeout renders a fallback rather than blocking browsing.
+
+## Genuine evidence status
+
+| Required evidence | Status |
+| --- | --- |
+| Bee node/service and network | Not supplied or connected |
+| Postage batch ID and buyer/provider | Not supplied |
+| Real Swarm reference and public read URL | No live upload performed |
+| Rabdi entity key containing the reference | No live Swarm-backed listing published |
+| Writer transaction hash and wallet | No real writer evidence supplied |
+| Demo video timestamp | Not recorded |
+
+The implementation and mock-transport tests do not establish bonus qualification. Issue #22's live acceptance and #23's real gateway-rendering acceptance remain open until this evidence is recorded. Official requirements: https://ethglobal.com/events/mumbai/prizes

@@ -9,7 +9,7 @@ export function Footer() {
           {/* Brand Col */}
           <div className="space-y-3 md:col-span-2">
             <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-600 text-white">
+              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-700 text-white">
                 <Store className="h-4 w-4" />
               </div>
               <span className="font-bold text-foreground text-lg">FreshMarket</span>
@@ -18,7 +18,7 @@ export function Footer() {
               A wallet-owned, portable second-hand marketplace with time-limited listings.
               Built from scratch for ETHGlobal Mumbai 2026 on Arkiv Rabdi testnet.
             </p>
-            <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1">
+            <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground pt-1">
               <span className="flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5 text-emerald-500" /> Auto-Expiring Listings
               </span>
