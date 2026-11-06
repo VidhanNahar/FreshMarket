@@ -1,0 +1,4 @@
+# The Next.js build never reads the Foundry project; its cache holds local deploy metadata.
+contracts/
+.env*
+!.env.example
