@@ -1,3 +1,4 @@
+import { CatalogueReadLimitError } from "../../../shared/catalogue-limits";
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import type { ListingFilters } from "@/domain/listing";
 import { listingRepository } from "@/services/listing-repository";
@@ -39,6 +40,7 @@ export function readErrorKind(error: unknown): "rate-limit" | "network" | "other
 }
 
 export function getListingReadErrorMessage(error: unknown): string {
+  if (error instanceof CatalogueReadLimitError) return error.message;
   const kind = readErrorKind(error);
   if (kind === "rate-limit") return "Arkiv is busy. Wait a moment, then retry.";
   if (kind === "network") return "Could not reach Arkiv. Check your connection and retry.";

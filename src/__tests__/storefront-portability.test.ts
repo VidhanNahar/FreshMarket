@@ -20,6 +20,18 @@ function entity(status = "available", price = "0x1388") {
 }
 
 describe("two independent storefront readers", () => {
+  it("continues after a full page of SDK-skipped rows", async () => {
+    const malformed = { ...entity(), attributes: [] };
+    let pages = 0;
+    const request = vi.fn(async ({ method }: { method: string }) => {
+      if (method === "eth_blockNumber") return "0x64";
+      return { data: pages++ === 0 ? Array(100).fill(malformed) : [entity()], blockNumber: "0x64" };
+    });
+    const client = createPublicClient({ chain: rabdiReadChain, transport: custom({ request }, { retryCount: 0 }) });
+    expect((await readCatalogue(client)).listings).toHaveLength(1);
+    expect(pages).toBe(2);
+  });
+
   it("preserves the stored Swarm reference and resolves it independently for media rendering", async () => {
     const record = entity();
     record.attributes.find((attribute) => attribute.name === "imageUrl")!.value = stringToHex(`bzz://${"ab".repeat(32)}`);

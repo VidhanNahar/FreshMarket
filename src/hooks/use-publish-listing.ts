@@ -83,7 +83,7 @@ export function usePublishListing() {
   }
 
   function reset() {
-    if (busy.current) return;
+    if (busy.current || (sentHash.current && !receipt)) return;
     // An unknown outcome after broadcast must be checked in the explorer before another write.
     sentHash.current = undefined;
     setTxHash(undefined);

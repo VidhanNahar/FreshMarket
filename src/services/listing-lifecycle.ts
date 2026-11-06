@@ -10,7 +10,11 @@ export type ListingAction =
 export function previewListingAction(listing: Listing, action: ListingAction): Listing | null {
   if (action.kind === "delete") return null;
   if (action.kind === "status") return { ...listing, status: action.status };
-  if (action.kind === "edit") return { ...listing, ...action.changes };
+  if (action.kind === "edit") return {
+    ...listing,
+    ...(action.changes.priceMinor !== undefined ? { priceMinor: action.changes.priceMinor } : {}),
+    ...(action.changes.description !== undefined ? { description: action.changes.description.trim() } : {}),
+  };
   return listing; // The SDK receipt supplies the authoritative extended deadline.
 }
 

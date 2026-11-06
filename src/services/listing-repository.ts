@@ -9,6 +9,7 @@ import {
   type PublicArkivClient,
   type WalletArkivClient,
 } from "@arkiv-network/sdk";
+import { MAX_CATALOGUE_MATCHES, CATALOGUE_READ_BUDGET_MS, CatalogueReadLimitError } from "../../shared/catalogue-limits";
 import { resolveImageSource } from "../../shared/media";
 import { asc, eq, gte, lte } from "@arkiv-network/sdk/query";
 import { hexToString, isAddressEqual, stringToBytes, type Hex } from "viem";
@@ -217,7 +218,7 @@ export class ArkivListingRepository implements ListingRepository {
    * mismatches and rejected domain rows can make the returned page smaller than limit.
    */
   async search(filters: ListingFilters = {}): Promise<Listing[]> {
-    const rows = await this.searchRows(filters);
+    const { rows } = await this.searchRows(filters);
     return rows.map(mapEntityToListing).filter((listing) => listing !== null);
   }
 
@@ -232,18 +233,24 @@ export class ArkivListingRepository implements ListingRepository {
 
   private async readAll(filters: ListingFilters): Promise<Listing[]> {
     const listings = new Map<string, Listing>();
+    const started = performance.now();
     for (let offset = 0; ; offset += 100) {
-      const rows = await this.searchRows({ ...filters, limit: 100, offset });
+      if (offset > MAX_CATALOGUE_MATCHES || performance.now() - started > CATALOGUE_READ_BUDGET_MS) throw new CatalogueReadLimitError();
+      const { rows, covered } = await this.searchRows({ ...filters, limit: offset === MAX_CATALOGUE_MATCHES ? 1 : 100, offset });
+      if (offset === MAX_CATALOGUE_MATCHES) {
+        if (covered) throw new CatalogueReadLimitError();
+        return [...listings.values()];
+      }
       for (const row of rows) {
         const listing = mapEntityToListing(row);
         if (listing) listings.set(listing.id, listing);
       }
-      // Count raw rows, since invalid domain rows can shorten a mapped page.
-      if (rows.length < 100) return [...listings.values()];
+      // Skipped schema rows still consume node offsets and must not end pagination.
+      if (covered < 100) return [...listings.values()];
     }
   }
 
-  private async searchRows(filters: ListingFilters): Promise<readonly ListingRow[]> {
+  private async searchRows(filters: ListingFilters): Promise<{ rows: readonly ListingRow[]; covered: number }> {
     const client = this.publicClient ?? getArkivPublicClient();
     const query = client.select().from(listingSchema);
     const status = filters.status ?? "available";
@@ -274,7 +281,7 @@ export class ArkivListingRepository implements ListingRepository {
       .limit(filters.limit ?? 20)
       .offset(filters.offset ?? 0)
       .fetch();
-    return result.entities;
+    return { rows: result.entities, covered: result.entities.length + result.skipped };
   }
 }
 

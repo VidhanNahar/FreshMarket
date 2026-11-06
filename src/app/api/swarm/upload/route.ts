@@ -1,3 +1,4 @@
+import { claimUpload } from "@/lib/swarm/upload-state";
 import { createHash } from "node:crypto";
 import { isAddress, verifyMessage, type Hex } from "viem";
 import { MAX_IMAGE_BYTES, IMAGE_TYPES, uploadAuthorization, validImageBytes } from "@/lib/swarm/protocol";
@@ -26,25 +27,47 @@ export async function POST(request: Request) {
   const type = request.headers.get("content-type") ?? "";
   if (!(IMAGE_TYPES as readonly string[]).includes(type)) return fail("Only PNG, JPEG and WebP images are supported", 415);
   if (Number(request.headers.get("content-length")) > MAX_IMAGE_BYTES) return fail("Image exceeds 4 MiB", 413);
-  // Bound the streamed body even when Content-Length is absent or untrusted.
+  const declaredSize = Number(request.headers.get("x-upload-bytes"));
+  const digest = request.headers.get("x-upload-digest") ?? "";
+  if (!Number.isSafeInteger(declaredSize) || declaredSize < 1 || declaredSize > MAX_IMAGE_BYTES || !/^[a-f0-9]{64}$/.test(digest)) return fail("Invalid image size or digest", 400);
+  const message = uploadAuthorization(origin, digest, type, declaredSize, timestamp);
+  try {
+    const signature = request.headers.get("x-upload-signature") ?? "";
+    if (!await verifyMessage({ address: wallet, message, signature: signature as Hex })) return fail("Upload signature is invalid", 401);
+  } catch { return fail("Upload signature is invalid", 401); }
+  const claim = await claimUpload(message, wallet, declaredSize);
+  if (claim === "replay") return fail("This upload authorization was already used. Select the image again.", 409);
+  if (claim === "quota") return fail("Upload quota reached. Try again next hour.", 429);
+  if (claim !== "ok") return fail("Upload authorization storage is unavailable. No Bee request was sent.", 503);
+  // Reserve quota before allocating the body; malformed attempts consume their signed reservation.
+  // Authenticate before allocating the image body; bound bytes even when Content-Length is absent.
   const reader = request.body?.getReader();
   if (!reader) return fail("No image supplied", 400);
   const chunks: Uint8Array[] = []; let size = 0;
+  let timedOut = false;
+  let interrupt!: (error: Error) => void;
+  const interrupted = new Promise<never>((_, reject) => { interrupt = reject; });
+  const abort = () => interrupt(new Error("Request aborted"));
+  const deadline = setTimeout(() => { timedOut = true; interrupt(new Error("Body timed out")); }, 15_000);
+  request.signal.addEventListener("abort", abort, { once: true });
   try {
+    if (request.signal.aborted) throw new Error("Request aborted");
     while (true) {
-      const part = await reader.read(); if (part.done) break;
+      const part = await Promise.race([reader.read(), interrupted]); if (part.done) break;
       size += part.value.length;
-      if (size > MAX_IMAGE_BYTES) { await reader.cancel(); return fail("Image exceeds 4 MiB", 413); }
+      if (size > declaredSize) { void reader.cancel().catch(() => {}); return fail("Image exceeds its authorized size", 413); }
       chunks.push(part.value);
     }
-  } catch { return fail("Image upload was interrupted", 400); }
+  } catch {
+    void reader.cancel().catch(() => {});
+    return fail(timedOut ? "Image body upload timed out" : "Image upload was interrupted", timedOut ? 408 : 400);
+  } finally {
+    clearTimeout(deadline);
+    request.signal.removeEventListener("abort", abort);
+  }
   const bytes = Buffer.concat(chunks);
-  if (!size || !validImageBytes(bytes, type)) return fail("File contents do not match the selected image type", 415);
-  const signature = request.headers.get("x-upload-signature") ?? "";
-  try {
-    const message = uploadAuthorization(origin, createHash("sha256").update(bytes).digest("hex"), type, size, timestamp);
-    if (!await verifyMessage({ address: wallet, message, signature: signature as Hex })) return fail("Upload signature is invalid", 401);
-  } catch { return fail("Upload signature is invalid", 401); }
+  if (size !== declaredSize || createHash("sha256").update(bytes).digest("hex") !== digest) return fail("Image does not match its authorization", 400);
+  if (!validImageBytes(bytes, type)) return fail("File contents do not match the selected image type", 415);
   try {
     const response = await fetch(`${bee.href.replace(/\/$/, "")}/bzz?name=product-image`, {
       method: "POST", redirect: "error", signal: AbortSignal.timeout(60_000),

@@ -6,6 +6,21 @@ const file = { type: "image/png", size: png.length, arrayBuffer: async () => png
 const address = "0x1111111111111111111111111111111111111111";
 afterEach(() => { vi.unstubAllGlobals(); });
 describe("Swarm upload client", () => {
+  it("cancels while waiting for a wallet signature without starting a request", async () => {
+    vi.stubGlobal("crypto", webcrypto);
+    vi.stubGlobal("window", { location: { origin: "https://freshmarket.example" } });
+    const xhr = vi.fn(); vi.stubGlobal("XMLHttpRequest", xhr);
+    let started!: () => void;
+    const signing = new Promise<void>((resolve) => { started = resolve; });
+    const signMessage = vi.fn(() => { started(); return new Promise<`0x${string}`>(() => {}); });
+    const controller = new AbortController();
+    const pending = uploadImage(file, { address, signal: controller.signal, signMessage, onProgress: vi.fn() });
+    await signing;
+    controller.abort();
+    await expect(pending).rejects.toMatchObject({ name: "AbortError" });
+    expect(xhr).not.toHaveBeenCalled();
+  });
+
   it("signs the content authorization, reports progress, and preserves the immutable reference", async () => {
     vi.stubGlobal("crypto", webcrypto);
     vi.stubGlobal("window", { location: { origin: "https://freshmarket.example" } });
