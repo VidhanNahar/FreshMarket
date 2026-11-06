@@ -45,6 +45,7 @@ export interface CreateListingInput {
   title: string;
   description: string;
   price: number; // Display price in major units (e.g. 2500)
+  priceMinor?: number; // Minor currency units (e.g. 250000 for ₹2,500.00)
   currency?: string; // Default "INR"
   category: string;
   city: string;

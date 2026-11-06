@@ -1,0 +1,295 @@
+import { describe, it, expect } from "vitest";
+import {
+  listingFormSchema,
+  toCreateListingInput,
+  LISTING_CATEGORIES,
+  EXPIRATION_DAYS_OPTIONS,
+  type ListingFormValues,
+} from "@/domain/listing-schema";
+
+describe("Phase 2: Seller Listing Schema & Zod Validation", () => {
+  const validPayload: ListingFormValues = {
+    title: "Sony WH-1000XM5 Noise Canceling Headphones",
+    description: "Gently used headphones with original carry case and cables. Working perfectly.",
+    category: "Electronics",
+    price: 18500,
+    currency: "INR",
+    city: "Mumbai",
+    imageUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e",
+    expirationDays: 7,
+  };
+
+  it("validates a compliant listing form submission", () => {
+    const result = listingFormSchema.safeParse(validPayload);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.title).toBe(validPayload.title);
+      expect(result.data.category).toBe("Electronics");
+      expect(result.data.price).toBe(18500);
+      expect(result.data.city).toBe("Mumbai");
+      expect(result.data.expirationDays).toBe(7);
+    }
+  });
+
+  describe("Title constraints (5–80 chars)", () => {
+    it("rejects title with fewer than 5 characters", () => {
+      const result = listingFormSchema.safeParse({
+        ...validPayload,
+        title: "Sony",
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.flatten().fieldErrors.title?.[0]).toMatch(
+          /at least 5 characters/i
+        );
+      }
+    });
+
+    it("rejects title with more than 80 characters", () => {
+      const overlongTitle = "A".repeat(81);
+      const result = listingFormSchema.safeParse({
+        ...validPayload,
+        title: overlongTitle,
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.flatten().fieldErrors.title?.[0]).toMatch(
+          /cannot exceed 80 characters/i
+        );
+      }
+    });
+
+    it("accepts edge boundary titles (5 chars and 80 chars)", () => {
+      const minTitle = listingFormSchema.safeParse({
+        ...validPayload,
+        title: "Books",
+      });
+      expect(minTitle.success).toBe(true);
+
+      const maxTitle = listingFormSchema.safeParse({
+        ...validPayload,
+        title: "A".repeat(80),
+      });
+      expect(maxTitle.success).toBe(true);
+    });
+  });
+
+  describe("Description constraints (10–1000 chars)", () => {
+    it("rejects description with fewer than 10 characters", () => {
+      const result = listingFormSchema.safeParse({
+        ...validPayload,
+        description: "Too short",
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.flatten().fieldErrors.description?.[0]).toMatch(
+          /at least 10 characters/i
+        );
+      }
+    });
+
+    it("rejects description exceeding 1000 characters", () => {
+      const overlongDesc = "x".repeat(1001);
+      const result = listingFormSchema.safeParse({
+        ...validPayload,
+        description: overlongDesc,
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.flatten().fieldErrors.description?.[0]).toMatch(
+          /cannot exceed 1000 characters/i
+        );
+      }
+    });
+  });
+
+  describe("Category Enum Validation", () => {
+    it("accepts all defined categories", () => {
+      for (const cat of LISTING_CATEGORIES) {
+        const result = listingFormSchema.safeParse({
+          ...validPayload,
+          category: cat,
+        });
+        expect(result.success).toBe(true);
+      }
+    });
+
+    it("rejects undefined or invalid categories", () => {
+      const result = listingFormSchema.safeParse({
+        ...validPayload,
+        category: "IllegalCategory" as unknown as ListingFormValues["category"],
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("Price & PriceMinor Conversion", () => {
+    it("rejects zero or negative price", () => {
+      const zeroResult = listingFormSchema.safeParse({
+        ...validPayload,
+        price: 0,
+      });
+      expect(zeroResult.success).toBe(false);
+
+      const negativeResult = listingFormSchema.safeParse({
+        ...validPayload,
+        price: -50,
+      });
+      expect(negativeResult.success).toBe(false);
+    });
+
+    it("rejects prices with more than 2 decimal places", () => {
+      const result = listingFormSchema.safeParse({
+        ...validPayload,
+        price: 19.999,
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.flatten().fieldErrors.price?.[0]).toMatch(
+          /cannot have more than 2 decimal places/i
+        );
+      }
+    });
+
+    it("converts price into integer priceMinor (paisa/cents) accurately", () => {
+      const input = toCreateListingInput(
+        {
+          ...validPayload,
+          price: 18500.5,
+        },
+        "0x1111111111111111111111111111111111111111"
+      );
+
+      expect(input.price).toBe(18500.5);
+      expect(input.priceMinor).toBe(1850050);
+      expect(input.currency).toBe("INR");
+      expect(input.seller).toBe("0x1111111111111111111111111111111111111111");
+    });
+  });
+
+  describe("City Privacy & Validation (Coarse public city, no street addresses)", () => {
+    it("accepts valid broad city names", () => {
+      const cities = ["Mumbai", "Bengaluru", "New Delhi", "Pune", "Kolkata", "San Francisco"];
+      for (const city of cities) {
+        const result = listingFormSchema.safeParse({
+          ...validPayload,
+          city,
+        });
+        expect(result.success).toBe(true);
+      }
+    });
+
+    it("rejects city containing numbers or postal codes", () => {
+      const result = listingFormSchema.safeParse({
+        ...validPayload,
+        city: "Mumbai 400001",
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.flatten().fieldErrors.city?.[0]).toMatch(
+          /do not include numbers/i
+        );
+      }
+    });
+
+    it("rejects city containing specific street address keywords", () => {
+      const invalidAddresses = [
+        "221B Baker Street",
+        "Flat 402 MG Road",
+        "Park Avenue Building",
+        "Sector 5 Plot 12",
+        "Door 14 Lane 3",
+      ];
+
+      for (const addr of invalidAddresses) {
+        const result = listingFormSchema.safeParse({
+          ...validPayload,
+          city: addr,
+        });
+        expect(result.success).toBe(false);
+      }
+    });
+  });
+
+  describe("Image URL Validation (HTTPS Required)", () => {
+    it("accepts valid https image URLs", () => {
+      const validUrls = [
+        "https://images.unsplash.com/photo-1",
+        "https://example.com/item.png",
+        "https://cdn.freshmarket.io/products/headphones.jpg",
+      ];
+
+      for (const url of validUrls) {
+        const result = listingFormSchema.safeParse({
+          ...validPayload,
+          imageUrl: url,
+        });
+        expect(result.success).toBe(true);
+      }
+    });
+
+    it("rejects insecure HTTP, non-URL or non-HTTP protocols", () => {
+      const invalidUrls = [
+        "not-a-url",
+        "http://insecure.example.com/item.png",
+        "ftp://example.com/item.png",
+        "/local/path/image.png",
+        "javascript:alert(1)",
+      ];
+
+      for (const url of invalidUrls) {
+        const result = listingFormSchema.safeParse({
+          ...validPayload,
+          imageUrl: url,
+        });
+        expect(result.success).toBe(false);
+      }
+    });
+  });
+
+  describe("Expiration Days Validation", () => {
+    it("accepts all permitted expiration periods (3, 7, 14, 30 days)", () => {
+      for (const days of EXPIRATION_DAYS_OPTIONS) {
+        const result = listingFormSchema.safeParse({
+          ...validPayload,
+          expirationDays: days,
+        });
+        expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.data.expirationDays).toBe(days);
+        }
+      }
+    });
+
+    it("rejects non-standard expiration intervals", () => {
+      const invalidDays = [1, 5, 10, 60, 365];
+      for (const days of invalidDays) {
+        const result = listingFormSchema.safeParse({
+          ...validPayload,
+          expirationDays: days as unknown as ListingFormValues["expirationDays"],
+        });
+        expect(result.success).toBe(false);
+      }
+    });
+  });
+
+  describe("Output Shape: CreateListingInput ready for Arkiv Repository", () => {
+    it("produces a complete CreateListingInput object", () => {
+      const seller = "0xAbCd1234567890AbCd1234567890AbCd12345678" as const;
+      const output = toCreateListingInput(validPayload, seller);
+
+      expect(output).toEqual({
+        title: "Sony WH-1000XM5 Noise Canceling Headphones",
+        description: "Gently used headphones with original carry case and cables. Working perfectly.",
+        category: "Electronics",
+        price: 18500,
+        priceMinor: 1850000,
+        currency: "INR",
+        city: "Mumbai",
+        imageUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e",
+        expirationDays: 7,
+        seller,
+      });
+    });
+  });
+});
