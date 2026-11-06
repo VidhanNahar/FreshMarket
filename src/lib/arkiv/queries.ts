@@ -6,6 +6,8 @@ import { ARKIV_RABDI_CHAIN_ID } from "./chain";
 /** Shared prefix lets successful writes refresh catalog, seller inventory and detail caches. */
 export const listingKeys = {
   all: ["arkiv-listings", ARKIV_RABDI_CHAIN_ID] as const,
+  catalog: (filters: Pick<ListingFilters, "category" | "city"> = {}) =>
+    [...listingKeys.all, "catalog", { ...filters }] as const,
   search: (filters: ListingFilters = {}) => [...listingKeys.all, "search", {
     ...filters,
     // TanStack hashes keys with JSON.stringify, which cannot serialize bigint.

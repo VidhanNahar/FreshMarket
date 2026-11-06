@@ -26,9 +26,10 @@ describe("Public listing query cache", () => {
     const catalog = listingKeys.search();
     const seller = listingKeys.search({ seller: "0x1234", status: "all" });
     const detail = listingKeys.detail("0xabcd");
-    for (const key of [catalog, seller, detail, ["unrelated"]]) cache.setQueryData(key, []);
+    const discovery = listingKeys.catalog({ city: "Mumbai" });
+    for (const key of [catalog, seller, detail, discovery, ["unrelated"]]) cache.setQueryData(key, []);
     await invalidateListings(cache);
-    for (const key of [catalog, seller, detail]) expect(cache.getQueryState(key)?.isInvalidated).toBe(true);
+    for (const key of [catalog, seller, detail, discovery]) expect(cache.getQueryState(key)?.isInvalidated).toBe(true);
     expect(cache.getQueryState(["unrelated"])?.isInvalidated).toBe(false);
     cache.clear();
   });
