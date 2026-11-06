@@ -19,6 +19,7 @@ export function Marketplace() {
     ) : <>
       {query.resolved.corrected && query.resolved.recognized.length > 0 && <p className="text-sm">Showing results for <strong>{query.resolved.recognized.join(" ")}</strong></p>}
       {query.fallbackCategory && <p className="text-sm">No exact matches nearby. Showing other items in <strong>{categoryLabel(query.fallbackCategory)}</strong>.</p>}
+      {query.truncated && <p className="rounded-lg border border-amber-500/40 p-3 text-sm">Too many listings match to load them all. Showing the first part only. Pick a category or city to see everything relevant.</p>}
       <p role="status" className="text-sm text-muted-foreground">{query.data.length} {query.data.length === 1 ? "listing" : "listings"} found{query.isFetching ? " · Refreshing…" : ""}</p>
       {query.data.length ? <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{query.data.map((listing) => <ListingCard key={listing.id} listing={listing} currentBlock={query.currentBlock} />)}</div> : <div className="rounded-2xl border border-dashed border-black/20 px-6 py-16 text-center"><h2 className="text-xl font-semibold">No listings found</h2><p className="mt-2 text-sm text-muted-foreground">Try another category or city, clear your search, or check back for new items.</p></div>}
     </>}

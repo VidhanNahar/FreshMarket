@@ -6,7 +6,7 @@ import { discoveryQuery, parseDiscoveryFilters, type DiscoveryFilters, type List
 import { CATEGORIES } from "../../../shared/categories";
 
 const field = "w-full rounded-lg border border-black/20 bg-background px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-emerald-600";
-const TOP_LEVEL = CATEGORIES.filter((node) => !node.path.includes("/") && node.path !== "other");
+const TOP_LEVEL = CATEGORIES.filter((node) => !node.path.includes("/"));
 
 export function ListingFilters() {
   const params = useSearchParams();

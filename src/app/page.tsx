@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Clock, ShieldCheck, Share2, CheckCircle2, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -30,16 +30,12 @@ export default function Home() {
           </p>
 
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-            <Link href="/browse">
-              <Button size="lg" className="bg-emerald-700 hover:bg-emerald-800 text-white gap-2 px-6 shadow-md">
-                Browse Marketplace
-                <ArrowRight className="h-4 w-4" />
-              </Button>
+            <Link href="/browse" className={buttonVariants({ size: "lg", className: "bg-emerald-700 hover:bg-emerald-800 text-white gap-2 px-6 shadow-md" })}>
+              Browse Marketplace
+              <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link href="/sell">
-              <Button size="lg" variant="outline" className="border-border hover:bg-muted gap-2 px-6">
-                List an Item
-              </Button>
+            <Link href="/sell" className={buttonVariants({ size: "lg", variant: "outline", className: "border-border hover:bg-muted gap-2 px-6" })}>
+              List an Item
             </Link>
           </div>
 
@@ -165,15 +161,11 @@ export default function Home() {
                 FreshMarket reads from Arkiv Rabdi testnet (Chain ID 7794095) using public client keys, while writes are signed directly by your Web3 wallet. No backend PostgreSQL is required as the authoritative catalog.
               </p>
               <div className="flex items-center gap-3 pt-2">
-                <Link href="/browse">
-                  <Button variant="default" className="bg-emerald-700 hover:bg-emerald-800 text-white">
-                    Explore Listings
-                  </Button>
+                <Link href="/browse" className={buttonVariants({ className: "bg-emerald-700 hover:bg-emerald-800 text-white" })}>
+                  Explore Listings
                 </Link>
-                <Link href="/sell">
-                  <Button variant="outline">
-                    Try Seller Flow
-                  </Button>
+                <Link href="/sell" className={buttonVariants({ variant: "outline" })}>
+                  Try Seller Flow
                 </Link>
               </div>
             </div>

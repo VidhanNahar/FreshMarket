@@ -51,6 +51,15 @@ describe("URL discovery controls", () => {
     await user.click(screen.getByRole("button", { name: "Clear all filters" }));
     expect(mocks.push).toHaveBeenLastCalledWith("/browse", { scroll: false });
   });
+  it("offers every top-level category, including Other", () => {
+    render(<ListingFilters />);
+    expect(screen.getByRole("button", { name: "Other" })).toBeDefined();
+  });
+  it("tells buyers when a huge catalogue was only partly loaded", () => {
+    Object.assign(mocks.listings, { data: [listing], truncated: true });
+    render(<Marketplace />);
+    expect(screen.getByText(/Too many listings match/)).toBeDefined();
+  });
   it("submits trimmed search, city and USDT price range with URL-safe encoding", async () => {
     const user = userEvent.setup();
     render(<ListingFilters />);

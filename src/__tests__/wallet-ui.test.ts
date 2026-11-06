@@ -108,6 +108,13 @@ describe("Phase 1: wallet UI helpers", () => {
   });
 
   describe("getWalletErrorReason", () => {
+    it("explains Arkiv's maximum lifetime when an extension goes too far", async () => {
+      const { InvalidExpiryError } = await import("@arkiv-network/sdk");
+      // The SDK's own wording when extendEntity's deadline is past the chain maximum.
+      const error = new InvalidExpiryError("expiresAt resolves to block 9000000, past block 7884101: the chain's maximum lifetime is 7884000 blocks (about 182 days)");
+      expect(getWalletErrorReason(error)).toBe("Arkiv keeps an entity for at most about 182 days from now. Choose a shorter extension.");
+    });
+
     it("explains an unapproved custom-chain WalletConnect session", () => {
       const reason = getWalletErrorReason({ cause: { message: "Invalid chainId" } });
       expect(reason).toContain("Disconnect FreshMarket");

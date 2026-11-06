@@ -1,4 +1,3 @@
-import { CatalogueReadLimitError } from "../../shared/catalogue-limits";
 import { createReader, portablePrice, readCatalogue, type PortableListing } from "./reader";
 import "./style.css";
 
@@ -45,12 +44,12 @@ async function load() {
   try {
     const result = await readCatalogue(client);
     rows = result.listings;
-    lastSuccess = `Block ${result.block} · ${rows.length} live records · refreshed ${new Date().toLocaleTimeString()}`;
+    lastSuccess = `Block ${result.block} · ${rows.length} live records${result.truncated ? " (read limit reached: showing the first part of a very large catalogue)" : ""} · refreshed ${new Date().toLocaleTimeString()}`;
     status.textContent = lastSuccess;
     render();
-  } catch (error) {
+  } catch {
     // Keep prior data visible, clearly marked as stale; never report a failed RPC as an empty catalogue.
-    status.textContent = `${error instanceof CatalogueReadLimitError ? "Catalogue too large for this demo reader. The operator must narrow its query." : "Arkiv is unavailable or rate limited. Retry refresh."}${lastSuccess ? ` Last successful read: ${lastSuccess}. Displayed records may be stale.` : ""}`;
+    status.textContent = `Arkiv is unavailable or rate limited. Retry refresh.${lastSuccess ? ` Last successful read: ${lastSuccess}. Displayed records may be stale.` : ""}`;
   } finally { busy = false; refresh.disabled = false; grid.setAttribute("aria-busy", "false"); }
 }
 refresh.addEventListener("click", () => void load());

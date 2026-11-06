@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createPublicClient, createWalletClient, ExpirationTime, SchemaMismatchError } from "@arkiv-network/sdk";
+import { createPublicClient, createWalletClient, ExpirationTime } from "@arkiv-network/sdk";
 import {
   custom, decodeAbiParameters, decodeFunctionData, hexToString,
   parseAbi, parseAbiParameters, stringToHex, type Hex,
@@ -194,12 +194,30 @@ describe("Arkiv listing repository reads", () => {
     expect(request).not.toHaveBeenCalled();
   });
 
-  it("propagates RPC and schema failures instead of hiding them as missing listings", async () => {
+  it("propagates RPC failures but treats old v1 or foreign entities as unavailable", async () => {
     const { repository, request } = reader(null);
     request.mockRejectedValue(new Error("RPC unavailable"));
     await expect(repository.getById(entityKey)).rejects.toThrow("RPC unavailable");
-    request.mockResolvedValue({ ...rpcEntity(), attributes: [] });
-    await expect(repository.getById(entityKey)).rejects.toBeInstanceOf(SchemaMismatchError);
+    // A link shared before the v2 migration points at a freshmarket.listings (v1) entity.
+    const v1 = { ...rpcEntity(), attributes: [{ name: "arkiv.schema", type: "str", value: "freshmarket.listings" }, { name: "category", type: "str", value: "Furniture" }] };
+    request.mockResolvedValue(v1);
+    expect(await repository.getById(entityKey)).toBeNull();
+  });
+
+  it("drops third-party category paths that only share a prefix with the requested branch", async () => {
+    const spoofed = rpcEntity();
+    spoofed.attributes.find((attribute) => attribute.name === "categoryPath")!.value = "furniture/tablesXYZ";
+    const { repository } = reader({ data: [spoofed, rpcEntity()], blockNumber: "0x64" });
+    expect(await repository.search({ categoryPaths: ["furniture/tables"] })).toHaveLength(1);
+    expect((await repository.searchCatalogue({ categoryPaths: ["furniture/tables"] })).listings).toHaveLength(1);
+  });
+
+  it("returns a truncated catalogue instead of failing when a flood of entities exceeds the read limit", async () => {
+    const { repository, request } = reader({ data: Array.from({ length: 100 }, () => rpcEntity()), blockNumber: "0x64" });
+    const page = await repository.searchCatalogue();
+    expect(page.truncated).toBe(true);
+    expect(page.listings.length).toBeGreaterThan(0);
+    expect(request).toHaveBeenCalledTimes(101);
   });
 
   it("combines schema, status, visibility, category, city and real owner filters with explicit pagination", async () => {

@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { resolveImageSource } from "../../shared/media";
 import { isCategoryPath } from "../../shared/categories";
+import { squash } from "../../shared/search";
+
+// Non-Latin brands can be under 64 characters yet over Arkiv's 128-byte str limit.
+const fitsSearchKey = (value: string) => new TextEncoder().encode(squash(value)).length <= 128;
 import {
   LISTING_CONDITIONS,
   LISTING_FULFILMENTS,
@@ -66,8 +70,10 @@ export const listingFormSchema = z.object({
   categoryPath: z.string().refine(isCategoryPath, "Please select a valid category"),
 
   // Optional search keys; stored lowercase without spaces, so they must fit 128 bytes.
-  brand: z.string().trim().max(64, "Brand cannot exceed 64 characters"),
-  model: z.string().trim().max(64, "Model cannot exceed 64 characters"),
+  brand: z.string().trim().max(64, "Brand cannot exceed 64 characters")
+    .refine(fitsSearchKey, "Brand is too long once stored (128 UTF-8 bytes)"),
+  model: z.string().trim().max(64, "Model cannot exceed 64 characters")
+    .refine(fitsSearchKey, "Model is too long once stored (128 UTF-8 bytes)"),
 
   condition: z.enum(LISTING_CONDITIONS, { message: "Please select the item condition" }),
   fulfilment: z.enum(LISTING_FULFILMENTS, { message: "Choose local pickup or shipping" }),

@@ -2,7 +2,8 @@
 
 /** Lowercase, Unicode-normalized words separated by single spaces. */
 export function normalizeText(value: string): string {
-  return value.normalize("NFKC").toLocaleLowerCase("en-US").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+  // Keep combining marks (\p{M}): Devanagari and other Indic vowel signs are marks, not letters.
+  return value.normalize("NFKC").toLocaleLowerCase("en-US").replace(/[^\p{L}\p{M}\p{N}]+/gu, " ").trim();
 }
 
 /** normalizeText without spaces, so "Dog-Toy" and "dog toy" compare equal to "dogtoy". */

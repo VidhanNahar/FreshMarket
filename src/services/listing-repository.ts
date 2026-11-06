@@ -1,6 +1,7 @@
 import {
   ExpirationTime,
   NoEntityFoundError,
+  SchemaMismatchError,
   addr,
   str,
   u64,
@@ -45,6 +46,7 @@ export interface ListingRepository {
   getById(id: string): Promise<Listing | null>;
   search(filters?: ListingFilters): Promise<Listing[]>;
   searchAll(filters?: Omit<ListingFilters, "limit" | "offset">): Promise<Listing[]>;
+  searchCatalogue(filters?: Omit<ListingFilters, "limit" | "offset">): Promise<CataloguePage>;
   searchOwned(seller: Hex): Promise<Listing[]>;
   updateListing(id: string, changes: ListingEdits, wallet: ListingMutationClient): Promise<ListingMutationReceipt>;
   updateStatus(id: string, status: ListingStatus, wallet: ListingMutationClient): Promise<ListingMutationReceipt>;
@@ -53,6 +55,12 @@ export interface ListingRepository {
 }
 
 type ListingRow = FullRow<typeof listingSchema>;
+
+/** Public browse results; truncated when the read limit stopped the scan early. */
+export interface CataloguePage {
+  listings: Listing[];
+  truncated: boolean;
+}
 
 /** Decodes the media JSON list, keeping only references every reader can render safely. */
 function decodeMedia(value: Hex): string[] {
@@ -99,6 +107,15 @@ function mapEntityToListing(row: ListingRow): Listing | null {
     createdAtBlock: row.$createdAt,
     expiresAtBlock: row.$expiresAt,
   };
+}
+
+/**
+ * Arkiv's startsWith has no path boundary: "pets/dogs" also matches a third-party
+ * "pets/dogsXYZ". Keep only the category itself and its real descendants.
+ */
+function inCategories(listing: Listing, paths: readonly string[] | undefined): boolean {
+  if (!paths?.length) return true;
+  return paths.some((path) => listing.categoryPath === path || listing.categoryPath.startsWith(`${path}/`));
 }
 
 // Application lengths use JS string code units. str() separately enforces UTF-8 byte limits.
@@ -225,14 +242,15 @@ export class ArkivListingRepository implements ListingRepository {
     return walletClient.createEntity(listingSchema, values, { expiration });
   }
 
-  /** Missing, deleted and expired entities return null; RPC and schema errors propagate. */
+  /** Missing, deleted, expired and non-v2 entities return null; RPC errors propagate. */
   async getById(id: string): Promise<Listing | null> {
     try {
       const client = this.publicClient ?? getArkivPublicClient();
       // The Hex assertion only satisfies TS; the SDK still validates the key's 32-byte shape.
       return mapEntityToListing(await client.getEntity(id as Hex, listingSchema));
     } catch (error) {
-      if (error instanceof NoEntityFoundError) return null;
+      // Old v1 links and entities of other schemas are not v2 listings: show "not available".
+      if (error instanceof NoEntityFoundError || error instanceof SchemaMismatchError) return null;
       throw error;
     }
   }
@@ -244,34 +262,49 @@ export class ArkivListingRepository implements ListingRepository {
    */
   async search(filters: ListingFilters = {}): Promise<Listing[]> {
     const { rows } = await this.searchRows(filters);
-    return rows.map(mapEntityToListing).filter((listing) => listing !== null);
+    return rows.map(mapEntityToListing).filter((listing): listing is Listing => listing !== null && inCategories(listing, filters.categoryPaths));
   }
 
   /** Fetch every page matching the indexed filters; text ranking happens on this narrowed set. */
   async searchAll(filters: Omit<ListingFilters, "limit" | "offset"> = {}): Promise<Listing[]> {
-    return this.readAll(filters);
+    return (await this.readAll(filters)).listings;
+  }
+
+  /**
+   * Public browse. Anyone can write this schema tag for free on testnet, so a flood of
+   * entities must not take browsing offline: past the read limit, return what was read.
+   */
+  async searchCatalogue(filters: Omit<ListingFilters, "limit" | "offset"> = {}): Promise<CataloguePage> {
+    return this.readAll(filters, true);
   }
 
   async searchOwned(seller: Hex): Promise<Listing[]> {
-    return this.readAll({ seller, status: "all", visibility: "all" });
+    // ownedBy restricts this to the seller's own entities, so other writers cannot flood it.
+    return (await this.readAll({ seller, status: "all", visibility: "all" })).listings;
   }
 
-  private async readAll(filters: ListingFilters): Promise<Listing[]> {
+  private async readAll(filters: ListingFilters, partial: true): Promise<CataloguePage>;
+  private async readAll(filters: ListingFilters, partial?: false): Promise<CataloguePage>;
+  private async readAll(filters: ListingFilters, partial = false): Promise<CataloguePage> {
     const listings = new Map<string, Listing>();
     const started = performance.now();
+    const limitReached = () => {
+      if (!partial) throw new CatalogueReadLimitError();
+      return { listings: [...listings.values()], truncated: true };
+    };
     for (let offset = 0; ; offset += 100) {
-      if (offset > MAX_CATALOGUE_MATCHES || performance.now() - started > CATALOGUE_READ_BUDGET_MS) throw new CatalogueReadLimitError();
+      if (offset > MAX_CATALOGUE_MATCHES || performance.now() - started > CATALOGUE_READ_BUDGET_MS) return limitReached();
       const { rows, covered } = await this.searchRows({ ...filters, limit: offset === MAX_CATALOGUE_MATCHES ? 1 : 100, offset });
       if (offset === MAX_CATALOGUE_MATCHES) {
-        if (covered) throw new CatalogueReadLimitError();
-        return [...listings.values()];
+        if (covered) return limitReached();
+        return { listings: [...listings.values()], truncated: false };
       }
       for (const row of rows) {
         const listing = mapEntityToListing(row);
-        if (listing) listings.set(listing.id, listing);
+        if (listing && inCategories(listing, filters.categoryPaths)) listings.set(listing.id, listing);
       }
       // Skipped schema rows still consume node offsets and must not end pagination.
-      if (covered < 100) return [...listings.values()];
+      if (covered < 100) return { listings: [...listings.values()], truncated: false };
     }
   }
 

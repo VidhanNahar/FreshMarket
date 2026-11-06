@@ -7,7 +7,7 @@ import { useListing, useListings } from "@/hooks/useListings";
 import { fixtureListing as listing } from "./fixtures/listing";
 import { invalidateListings, listingKeys } from "@/lib/arkiv/queries";
 
-const mocks = vi.hoisted(() => ({ searchAll: vi.fn(), getById: vi.fn(), getBlockNumber: vi.fn() }));
+const mocks = vi.hoisted(() => ({ searchCatalogue: vi.fn(), getById: vi.fn(), getBlockNumber: vi.fn() }));
 vi.mock("@/services/listing-repository", () => ({ listingRepository: mocks }));
 vi.mock("@/lib/arkiv/chain", () => ({ ARKIV_RABDI_CHAIN_ID: 7794095, getArkivPublicClient: () => mocks }));
 const filters = { q: "", category: "furniture", city: "Mumbai", condition: "" as const, fulfilment: "" as const, minPrice: "", maxPrice: "", sort: "newest" as const };
@@ -20,7 +20,7 @@ function wrapper() {
 afterEach(cleanup);
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.searchAll.mockResolvedValue([listing]);
+  mocks.searchCatalogue.mockResolvedValue({ listings: [listing], truncated: false });
   mocks.getById.mockResolvedValue(listing);
   mocks.getBlockNumber.mockResolvedValue(100n);
 });
@@ -42,21 +42,21 @@ describe("public listing hooks", () => {
     const wrap = ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
     const catalog = renderHook(() => useListings(filters), { wrapper: wrap });
     await waitFor(() => expect(catalog.result.current.isSuccess).toBe(true));
-    mocks.searchAll.mockResolvedValueOnce([{ ...listing, title: "Updated desk" }]);
+    mocks.searchCatalogue.mockResolvedValueOnce({ listings: [{ ...listing, title: "Updated desk" }], truncated: false });
     await act(() => invalidateListings(client));
     await waitFor(() => expect(catalog.result.current.data[0].title).toBe("Updated desk"));
-    expect(mocks.searchAll).toHaveBeenCalledTimes(2);
+    expect(mocks.searchCatalogue).toHaveBeenCalledTimes(2);
     client.setQueryData(listingKeys.detail(listing.id), listing);
     const detail = renderHook(() => useListing(listing.id), { wrapper: wrap });
     expect(detail.result.current.data).toEqual(listing);
     expect(mocks.getById).not.toHaveBeenCalled();
   });
   it("queries indexed category/city without a wallet, then text-matches the cached candidates", async () => {
-    mocks.searchAll.mockResolvedValue([listing, { ...listing, id: "expired", expiresAtBlock: 99n }]);
+    mocks.searchCatalogue.mockResolvedValue({ listings: [listing, { ...listing, id: "expired", expiresAtBlock: 99n }], truncated: false });
     const { result, rerender } = renderHook((q: string) => useListings({ ...filters, q }), { initialProps: "desk", wrapper: wrapper() });
     await waitFor(() => expect(result.current.currentBlock).toBe(100n));
     await waitFor(() => expect(result.current.data).toEqual([listing]));
-    expect(mocks.searchAll).toHaveBeenCalledWith({ categoryPaths: ["furniture/tables"], city: "Mumbai" });
+    expect(mocks.searchCatalogue).toHaveBeenCalledWith({ categoryPaths: ["furniture/tables"], city: "Mumbai" });
     rerender("missing");
     await waitFor(() => expect(result.current.data).toEqual([]));
   });
