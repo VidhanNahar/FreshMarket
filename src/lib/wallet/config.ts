@@ -1,5 +1,6 @@
 import { getDefaultConfig } from "@rainbow-me/rainbowkit";
 import { http } from "wagmi";
+import { mainnet } from "wagmi/chains";
 import { rabdiWalletChain } from "@/lib/arkiv/chain";
 
 /**
@@ -12,9 +13,15 @@ export const WALLETCONNECT_PROJECT_ID =
 export const wagmiConfig = getDefaultConfig({
   appName: "FreshMarket",
   projectId: WALLETCONNECT_PROJECT_ID,
-  chains: [rabdiWalletChain],
+  // WalletConnect wallets may not know Rabdi until wallet_addEthereumChain.
+  // Offer a standard chain so the session can approve a namespace through
+  // which Wagmi can send the add/switch request for the custom network.
+  // Start new sessions on Ethereum; preserve Rabdi when already connected there.
+  // Marketplace guards require Rabdi before writes.
+  chains: [mainnet, rabdiWalletChain],
   transports: {
     [rabdiWalletChain.id]: http(),
+    [mainnet.id]: http(),
   },
   ssr: true,
 });

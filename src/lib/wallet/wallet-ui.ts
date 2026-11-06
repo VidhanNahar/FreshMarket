@@ -132,6 +132,10 @@ export function getWalletErrorReason(error: unknown): string {
   const { message, code } = collectWalletError(error);
   const lower = message.toLowerCase();
 
+  if (lower.includes("invalid chainid") || lower.includes("chain is not approved")) {
+    return "Your wallet session has not approved Arkiv Rabdi. Disconnect FreshMarket in your wallet, add the Rabdi network, then reconnect. If your mobile wallet does not support custom networks, use MetaMask or Rabby in your browser.";
+  }
+
   if (
     code === 4001 ||
     code === "ACTION_REJECTED" ||

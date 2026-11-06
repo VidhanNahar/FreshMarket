@@ -6,7 +6,6 @@ import { WagmiProvider } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RainbowKitProvider, lightTheme } from "@rainbow-me/rainbowkit";
 import { wagmiConfig } from "@/lib/wallet/config";
-import { rabdiWalletChain } from "@/lib/arkiv/chain";
 import { WalletConnectionEffects } from "@/components/wallet/WalletConnectionEffects";
 
 interface Web3ProviderProps {
@@ -31,7 +30,6 @@ export function Web3Provider({ children }: Web3ProviderProps) {
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider
-          initialChain={rabdiWalletChain}
           theme={lightTheme({
             accentColor: "#059669", // emerald-600
             accentColorForeground: "white",
