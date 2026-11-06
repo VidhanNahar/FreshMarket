@@ -2,3 +2,7 @@ out/
 cache/
 broadcast/*/31337/
 .env
+# Keep only run-latest.json per chain as deployment evidence; timestamped copies and locks are noise.
+broadcast/**/run-[0-9]*.json
+broadcast/**/*.lock
+broadcast/**/dry-run/

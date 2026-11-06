@@ -97,11 +97,12 @@ To run the end-to-end flow on a local fork (no keys, no testnet funds): start `a
 
 ## Live evidence
 
-Only real, confirmed transactions belong here. These remain **outstanding**; none has been recorded yet.
+Only real, confirmed transactions belong here. The contract is deployed and verified; the payment, refund and release are still **outstanding**. The deploy record is [`contracts/broadcast/DeployFreshPay.s.sol/1874/run-latest.json`](../contracts/broadcast/DeployFreshPay.s.sol/1874/run-latest.json).
 
 | Item | Value |
 | --- | --- |
-| FreshPay contract (verified) | _not deployed yet_ |
+| FreshPay contract (verified) | [`0x2D67Ed6aA929B1Dbc28370AEe3e23AD56277657F`](https://explorer.testnet.whitechain.io/address/0x2D67Ed6aA929B1Dbc28370AEe3e23AD56277657F) · 10-minute hold (`releaseDelay = 600`) · official test USDT |
+| Deployment transaction | [`0x2b440f05…22f2`](https://explorer.testnet.whitechain.io/tx/0x2b440f05c829f5929dcc8e50444d52e0082c207ec5218dcf6f65d730e84522f2), block 12407705 |
 | Test payment in official USDT (`0xcedfB56113143d55b2358b8CFbB0dEB5Ad2f55a7`) | _pending_ |
 | Partial refund | _pending_ |
 | Buyer release | _pending_ |
