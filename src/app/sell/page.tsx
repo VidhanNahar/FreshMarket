@@ -111,10 +111,33 @@ export default function SellPage() {
   });
 
   // useWatch subscribes to preview fields without useForm.watch's compiler limitation.
-  const [watchedTitle, watchedPrice, watchedCategory, watchedCity,
-    watchedImageUrl, watchedExpirationDays, watchedDescription, watchedCondition] = useWatch({
+  const [
+    watchedTitle,
+    watchedPrice,
+    watchedCategory,
+    watchedCity,
+    watchedImageUrl,
+    watchedExpirationDays,
+    watchedDescription,
+    watchedCondition,
+    watchedBrand,
+    watchedModel,
+    watchedFulfilment,
+  ] = useWatch({
     control,
-    name: ["title", "price", "categoryPath", "city", "imageUrl", "expirationDays", "description", "condition"],
+    name: [
+      "title",
+      "price",
+      "categoryPath",
+      "city",
+      "imageUrl",
+      "expirationDays",
+      "description",
+      "condition",
+      "brand",
+      "model",
+      "fulfilment",
+    ],
   });
   // Suggest a category from the title so sellers do not default to "Other".
   const suggestedCategory = suggestCategory(watchedTitle || "");
@@ -647,6 +670,11 @@ export default function SellPage() {
               <CardTitle className="text-base font-semibold text-foreground line-clamp-1 mt-1">
                 {watchedTitle?.trim() || "Item title will appear here..."}
               </CardTitle>
+              {(watchedBrand || watchedModel) && (
+                <p className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">
+                  {[watchedBrand && `Brand: ${watchedBrand}`, watchedModel && `Model: ${watchedModel}`].filter(Boolean).join(" · ")}
+                </p>
+              )}
             </CardHeader>
 
             <CardContent className="space-y-3 pb-4">
@@ -657,7 +685,9 @@ export default function SellPage() {
               <div className="pt-2 border-t border-border/40 flex items-center justify-between text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span>{watchedCity?.trim() || "City location"} · {CONDITION_LABELS[watchedCondition] ?? "Condition"}</span>
+                  <span>
+                    {watchedCity?.trim() || "City location"} · {CONDITION_LABELS[watchedCondition] ?? "Condition"} · {FULFILMENT_LABELS[watchedFulfilment] ?? "Delivery"}
+                  </span>
                 </div>
                 <div className="flex items-center gap-1 font-mono text-[11px]">
                   <Wallet className="h-3 w-3 text-muted-foreground" />

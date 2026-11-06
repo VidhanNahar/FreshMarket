@@ -180,7 +180,7 @@ export default function Home() {
 
             <div className="w-full md:w-auto p-6 rounded-xl border border-border bg-card/60 font-mono text-xs text-muted-foreground space-y-2 shadow-sm">
               <div className="text-emerald-500 font-semibold">Arkiv Entity Architecture</div>
-              <div>Schema: <span className="text-foreground">freshmarket.listings</span></div>
+              <div>Schema: <span className="text-foreground">freshmarket.listings.v2</span></div>
               <div>Network: <span className="text-foreground">Arkiv Rabdi (7794095)</span></div>
               <div>Lifecycle: <span className="text-foreground">Available → Reserved → Sold</span></div>
               <div>Expiry: <span className="text-foreground">Default 7 days (Renewable)</span></div>
