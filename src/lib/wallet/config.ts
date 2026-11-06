@@ -16,8 +16,9 @@ export const wagmiConfig = getDefaultConfig({
   // WalletConnect wallets may not know Rabdi until wallet_addEthereumChain.
   // Offer a standard chain so the session can approve a namespace through
   // which Wagmi can send the add/switch request for the custom network.
-  // Rabdi stays first/default; marketplace guards still require its chain ID.
-  chains: [rabdiWalletChain, mainnet],
+  // Start new sessions on Ethereum; preserve Rabdi when already connected there.
+  // Marketplace guards require Rabdi before writes.
+  chains: [mainnet, rabdiWalletChain],
   transports: {
     [rabdiWalletChain.id]: http(),
     [mainnet.id]: http(),

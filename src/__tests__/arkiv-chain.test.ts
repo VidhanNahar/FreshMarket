@@ -23,10 +23,11 @@ describe("Phase 1: Arkiv Rabdi Network & Web3 Configuration", () => {
 
   it("initializes Wagmi configuration with Rabdi chain", () => {
     expect(wagmiConfig).toBeDefined();
-    expect(wagmiConfig.chains[0].id).toBe(7794095);
+    expect(wagmiConfig.chains.some((chain) => chain.id === 7794095)).toBe(true);
     // A standard chain lets WalletConnect establish a session before Rabdi
     // has been added to the wallet.
     expect(wagmiConfig.chains.some((chain) => chain.id === 1)).toBe(true);
+    expect(wagmiConfig.chains[0].id).toBe(1);
   });
 
   it("exports working Arkiv Public Client with query capabilities", () => {
