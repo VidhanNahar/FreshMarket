@@ -9,7 +9,7 @@ npm ci
 npm run build:storefront
 ```
 
-The deployable artifact is `public/storefront/`. Upload its contents to a static host; no Next.js backend, wallet provider, FreshMarket API, or browser storage is required. The source depends only on the Arkiv SDK, Viem and Vite; it imports no files from FreshMarket's `src/`. This repository uses the root lockfile for reproducible dependencies.
+The deployable artifact is `public/storefront/`. Upload its contents to a static host; no Next.js backend, wallet provider, FreshMarket API, or browser storage is required. The source depends on the Arkiv SDK, Viem, Vite, and the pure public media rules in `shared/media.ts`; it imports no files from FreshMarket's `src/`. This repository uses the root lockfile for reproducible dependencies.
 
 For a reader access key, set `VITE_ARKIV_ACCESS_KEY` in the root `.env.local` or build environment. It is embedded in the public bundle and must be origin restricted to the independent host. Leaving it empty uses the heavily rate-limited public endpoint. Rebuild to change the key.
 

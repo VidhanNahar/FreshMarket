@@ -1,210 +1,92 @@
-# 🌿 FreshMarket
+# FreshMarket
 
-> **A wallet-owned, portable second-hand marketplace with time-limited listings.**  
-> Built from scratch for **ETHGlobal Mumbai 2026** targeting **Arkiv — Build on Arkiv (From Scratch)**.
+**Publish once. Sell locally. Let stale listings expire.**
 
----
+FreshMarket is a wallet-owned second-hand marketplace prototype on Arkiv Rabdi. Sellers publish public, time-limited listings and independently control available, reserved and sold status. Buyers browse without connecting a wallet. SECOND LOOK is an independently buildable reader for the same public entities, showing that the catalog belongs to the seller's data contract rather than a private marketplace database.
 
-## 📌 Problem & Promise
+The demo story is a laptop listing: publish once in FreshMarket, read the same entity key in SECOND LOOK, change its price/status, and let a short-lived test listing expire without a central deletion cron. **Sold is a status, not deletion, expiry, payment or an atomic reservation.**
 
-Traditional second-hand marketplaces (like Craigslist, OLX, Facebook Marketplace) suffer from three critical problems:
-1. **Accumulation of Outdated / Ghost Listings:** Old listings sit indefinitely even after an item is long gone.
-2. **Platform Walled Gardens:** Sellers must manually duplicate and maintain their listings across multiple fragmented platforms.
-3. **Availability Trust Issues:** Centralized platforms have no transparent proof of when an item was published, reserved, or edited.
+## Current verification and live status
 
-### The FreshMarket Promise
-- **Seller-Owned Listings:** Every listing is an onchain Arkiv entity cryptographically owned by the seller's wallet.
-- **Automatic Expiration:** Listings expire at their deadline (default 7 days) and automatically drop out of active discovery unless renewed by the seller.
-- **Portable Across Storefronts:** Because listings live in Arkiv's decentralized database, competing or community-run storefronts can query and display the exact same items without platform gatekeeping.
-- **Explicit Lifecycle:** Sellers explicitly toggle item states (`available` → `reserved` → `sold`), providing clear transparency.
+This is a testnet prototype. Automated tests cover SDK encoding, ownership checks, cache rollback, indexing lag, expiry, two-reader portability, media references and upload validation. Live public RPC reads succeeded but returned an empty catalogue at the latest verification. A successful empty query is not evidence of a real write or populated storefront sync.
 
----
+No verified public deployment URL, real writer wallet, real transaction receipt, or live Swarm upload has been recorded. These are outstanding release requirements, not fabricated examples. The exact [evidence log](arkiv/submission-evidence.md), [deployment checklist](arkiv/deployment.md), and [Swarm requirements](arkiv/swarm.md) distinguish code completion from live acceptance.
 
-## 🏗️ Architecture & Boundaries
+## Run locally
 
-```
-FreshMarket
-├── src/
-│   ├── app/                    # Next.js App Router (UI routes & pages)
-│   │   ├── page.tsx            # Landing page with value proposition
-│   │   ├── browse/page.tsx     # Public marketplace discovery (No wallet needed)
-│   │   ├── sell/page.tsx       # Seller listing creation
-│   │   ├── my-listings/page.tsx# Seller lifecycle dashboard (Available/Reserved/Sold)
-│   │   └── listing/[id]/       # Dynamic entity detail view
-│   ├── components/             # Reusable UI & Layout (Navbar, Footer, shadcn)
-│   ├── domain/                 # Listing DTOs, Zod schemas, validation rules
-│   ├── lib/
-│   │   ├── arkiv/              # Rabdi chain config, public client, schema & queries
-│   │   └── utils.ts            # Tailwind styling utilities
-│   └── services/               # Repository interfaces (ArkivListingRepository)
-```
+Use Node.js 22.14+ (or a current supported Node release) and npm.
 
-### Network & Clients
-- **Network:** Arkiv Rabdi Testnet (Chain ID `7794095`)
-- **Public Read Client:** Reads active listings using restricted access key (safe for browser).
-- **Wallet Client:** Signs transactions with connected user wallet via Wagmi & RainbowKit (no private keys exposed).
-
----
-
-## 🛠️ Tech Stack
-
-| Layer | Choice |
-| :--- | :--- |
-| **Framework** | Next.js 16 (App Router), React 19, TypeScript |
-| **Styling** | Tailwind CSS v4, shadcn/ui, Lucide Icons |
-| **Decentralized Database** | `@arkiv-network/sdk`, Arkiv Rabdi Testnet |
-| **Web3 & Wallet** | Wagmi v2, Viem v2, RainbowKit v2 |
-| **Data Fetching & Cache** | TanStack React Query v5 |
-| **Testing** | Vitest with React plugin |
-
----
-
-## 👥 Team
-
-- **Vidhan Nahar** ([@VidhanNahar](https://github.com/VidhanNahar)) — Arkiv integration, repository architecture, and resilience testing.
-- **Dhairya** ([@Dhairya0531](https://github.com/Dhairya0531)) — UI flows, seller lifecycle UX, and storefront portability proof.
-
----
-
-## 🚀 Getting Started
-
-### 1. Clone & Install
 ```bash
 git clone https://github.com/VidhanNahar/FreshMarket.git
 cd FreshMarket
-npm install
-```
-
-### 2. Configure Environment
-Copy `.env.example` to `.env.local`:
-```bash
+npm ci
 cp .env.example .env.local
-```
-Add your:
-- `NEXT_PUBLIC_ARKIV_ACCESS_KEY` from [Arkiv Hub](https://hub.arkiv.network/access-keys)
-- `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` from [WalletConnect Cloud](https://cloud.walletconnect.com)
-
-### 3. Run Development Server
-```bash
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) to view FreshMarket.
 
-### 4. Connect a Wallet (Arkiv Rabdi Testnet)
+Replace example values in `.env.local` with real Arkiv access and WalletConnect project IDs. Keep the server-only Swarm configuration empty unless you have a Bee node, valid postage batch and intended upload wallets. Never enter or commit a wallet private key or seed phrase. Origin-restrict public read keys in Arkiv Hub.
 
-FreshMarket uses RainbowKit + Wagmi. The navbar shows a live network status badge and a custom wallet pill.
-
-- **Connect / disconnect:** Use **Connect Wallet** in the navbar. MetaMask, Rabby and WalletConnect-compatible wallets are supported.
-- **Network enforcement:** Only Arkiv Rabdi (chain ID `7794095`) is configured. If the wallet is on another chain, a red banner shows **Wrong network** with a one-click **Switch to Arkiv Rabdi Testnet** button. Wagmi uses `wallet_switchEthereumChain` and `wallet_addEthereumChain`, so the network is added automatically when missing.
-- **Wallet details:** Click the green address pill (`0x1234...5678`) to open the wallet dialog. It shows the full address with **Copy**, the Rabdi balance, faucet instructions and **Disconnect**.
-- **Faucet:** [https://hub.arkiv.network/faucet](https://hub.arkiv.network/faucet) — paste your wallet address and request Rabdi testnet funds.
-- **Low balance:** A warning appears when the Rabdi balance is below `0.001 ETH`. Browsing still works; listing writes may fail until the wallet is funded.
-- **Missing wallet extension:** If no injected wallet is detected, a dismissible banner links to MetaMask and Rabby. WalletConnect (QR) still works.
-- **Rejected requests:** RainbowKit shows connection-rejection errors inside its connect modal. Rejected network switches are caught by FreshMarket and shown as a short toast; the page does not crash.
-
-#### Manual browser-wallet test checklist
-
-This development environment has no browser wallet available to automate, so the following steps must be run manually in Chrome/Brave/Firefox before a demo:
-
-1. Install MetaMask or Rabby and create/import a test wallet.
-2. Start the app, click **Connect Wallet**, and approve the connection.
-3. If prompted, approve adding/switching to Arkiv Rabdi (`7794095`); verify the green `Arkiv Rabdi Testnet · 7794095` badge and the address pill.
-4. Open the address pill → copy the address → open the faucet link and request test funds.
-5. Switch the wallet to another network (for example Sepolia) and confirm the red **Wrong network** banner and one-click switch.
-6. Reject a network switch once and confirm a friendly rejection toast appears.
-7. Click **Disconnect** and confirm the navbar returns to **Connect Wallet**.
-8. In a browser profile without MetaMask/Rabby, confirm the missing-wallet banner appears and browsing still works.
-
-### 5. Run Tests & Build
-```bash
-npm test        # Runs Vitest test suite
-npm run lint    # Runs ESLint checks
-npm run build   # Compiles production build
-```
-
----
-
-## 📄 License
-This project is open-source under the [MIT License](LICENSE).
-
-### Buyer discovery (issues #9 and #10)
-
-- `/browse` reads available, non-expired listings from Arkiv without a wallet. Cards link to `/listing/[id]`, which displays the actual description, image, seller, publication time, expiration block, and Rabdi Explorer record.
-- Category pills apply immediately. Enter a title search and/or an exact, case-sensitive city name and press **Search**. Sort by newest or price; prices are grouped by currency because no exchange-rate conversion is performed.
-- Filters live in `category`, `city`, `q`, and `sort` URL parameters. Shared links, refresh, and browser back/forward restore them. **Clear all filters** returns to `/browse`.
-- Discovery reads all matching pages (100 records per RPC page) before searching titles and sorting. Large catalogues require more RPC requests; configure an origin-restricted Arkiv access key to reduce rate limiting.
-- Expiration time is estimated from the current block and Rabdi's two-second target. When block reads are unavailable, the exact expiration block remains visible. The catalogue refreshes every minute and the block height every five seconds.
-- Failed/missing images have a fallback. Failed reads show a retry action; missing or expired detail records have an unavailable state. The share action uses native sharing when supported, otherwise copies the URL.
-
-Buyer component and hook tests run with `npm test`. To include the opt-in live catalogue read:
+Open http://localhost:3000. `/browse` is wallet free; `/sell` and `/my-listings` use the connected Rabdi wallet. `/storefront` redirects to SECOND LOOK's static artifact. Dev/build scripts generate that artifact automatically.
 
 ```bash
-TEST_ARKIV_DISCOVERY=1 npm test
+npm run lint
+npm test
+npm run build
+npm run start -- --port 3001
+npm run smoke -- http://localhost:3001
 ```
 
-The live test only reads public data. When the catalogue is empty, populated card and detail flows are covered using fixtures rather than creating onchain records.
+Production builds explicitly use Next.js Webpack for reproducibility in this environment; development remains on Turbopack.
 
-## Issues #7 and #8: publishing and public query integration
+## Reproduce the public Arkiv query
 
-The `/sell` page now connects issue #6's validated form to `usePublishListing()` and `ListingPublishDialog`. Form validation and live preview remain in place; successful validation now starts a real wallet write rather than displaying a JSON payload.
+No FreshMarket server or wallet is required:
 
-- `src/hooks/use-publish-listing.ts` adapts `useWalletClient()` to the Arkiv SDK using the same connected provider and account. No frontend private key is used.
-- `src/components/listings/ListingPublishDialog.tsx` shows preparation/signature/pending/read-back states, transaction hash, entity key, creator, expiration block, estimated expiration date, and the public detail link.
-- `src/services/publish-listing.ts` confirms a single create before verifying it through the public read client, with bounded retries for indexing lag.
+```bash
+npm run query:listings
+# With a domain-appropriate access key set in the shell, when applicable:
+NEXT_PUBLIC_ARKIV_ACCESS_KEY=your_real_key npm run query:listings
+```
 
-Repository writes return confirmed metadata through `createWithReceipt()`; `create()` still returns only the entity key for existing callers. Do not add automatic mutation retries. A submitted transaction whose confirmation failed must be inspected in the linked explorer before another create. The seller form blocks resetting unresolved submissions. A confirmed write with delayed indexing retains its receipt and offers **Retry public verification**, which never creates a second entity. Closing the dialog does not cancel or reset the transaction; **View publishing status** reopens it. State is in memory; retain the explorer transaction link before navigating away. Reset the form after a confirmed submission to deliberately create another listing.
+The exact executable source is [scripts/query-listings.mjs](scripts/query-listings.mjs). It defines `freshmarket.listings`, queries available entities with `eq('status', 'available')`, sorts by `$key`, and returns 20 rows. It uses the official SDK's public client and prints bigint amounts/block heights as decimal strings. For direct SDK usage:
 
-### Validation agreement with issue #6
+```ts
+const result = await publicClient.select().from(listingSchema)
+  .where(eq('status', 'available')).orderBy(asc('$key')).limit(20).fetch();
+```
 
-Use HTTPS image URLs without embedded credentials. Title, city and category must fit Arkiv's 128-byte UTF-8 string limit (in addition to title's character limit). Descriptions and image URLs use UTF-8 bytes. The repository accepts free listings; the form may intentionally impose the stricter positive-price rule from #6. Currency amounts use two decimal minor units. The form supplies the seller from the connected account, not from editable input.
+The complete schema, imports and ownership caveats are in [arkiv/schema.md](arkiv/schema.md). Seller inventory also filters indexed seller and actual `$owner`; other writers can copy a public schema tag.
 
-### Public reads and caching
+## Architecture
 
-`useListings(filters)` and `useListing(id)` are exported from `@/hooks/use-listings`. Both use the existing QueryClient provider, a 30-second stale time, and at most two retries for transient network/rate-limit failures. They do not depend on wallet state. Use `getListingReadErrorMessage(error)` for safe user-facing errors; distinguish an empty array or null from a failed read. `useListing` exposes TanStack's `refetch()`; the `/listing/[id]` page now uses this hook and shows loading, unavailable, error, and retry states.
-
-Query wrappers and option builders live in `src/lib/arkiv/queries.ts`. `invalidateListings(queryClient)` refreshes catalog, seller-inventory, and detail queries after a confirmed write. Query keys include the Rabdi chain ID, filters, and decimal strings for bigint price bounds, avoiding JSON hashing errors. Do not persist listing objects with plain `JSON.stringify`: their price and expiration contain bigint values.
-
-`search` supports inclusive `minPriceMinor`/`maxPriceMinor` bounds over indexed `priceMinor`. Bounds use minor units, not display amounts; no exchange-rate conversion occurs across currencies. The default status is `available`; seller history must explicitly request `status: 'all'`. Each query returns one offset page, and expired entities are excluded by Arkiv. An empty page can also reflect incompatible rows being skipped; it is not a total-count API.
-
-### Verification and remaining live acceptance
-
-Automated tests cover real SDK serialization, wallet transport adaptation and network mismatch, single-write/public-read ordering, delayed indexing, rejection, indexed price ranges, cache deduplication, invalidation, and safe error messages. They do not broadcast transactions.
-
-Issue #6's form is integrated. A real connected-wallet write remains a manual acceptance step because this development session has no browser wallet available. No test wallet, transaction hash, or entity key is fabricated here. To finish issue #7's live acceptance:
-
-1. Open `/sell`, connect a funded Rabdi wallet, and publish a listing.
-2. Confirm signature, pending, and verified states. Record the actual wallet, transaction hash, and entity key below.
-3. Open `/listing/<entityKey>` in an incognito window without connecting a wallet and verify the stored details.
-4. Reject a write once; verify no pending hash is shown. Test delayed verification using a network interruption after confirmation, then retry verification without another wallet prompt.
-
-| Live evidence | Value |
+| Layer | Implementation |
 | --- | --- |
-| Network | Arkiv Rabdi, 7794095 |
-| Test wallet | Pending live wallet test |
-| Transaction hash | Pending live wallet test |
-| Entity key | Pending live wallet test |
-| Public read-back / incognito | Pending live wallet test |
+| Main application | Next.js 16, React 19, TypeScript, Tailwind, accessible Base UI dialogs |
+| Wallet | Wagmi, RainbowKit, connected-provider signing; no frontend private key |
+| Public data | Arkiv SDK 1.0.1 contract on Rabdi, chain 7794095; Viem transport |
+| Cache | TanStack Query, shared invalidation, bounded read retries, no automatic wallet-write retry |
+| Independent reader | Static Vite app with its own public SDK client, schema and dark theme |
+| Optional images | Authorized Bee HTTP upload, public bzz reference in Arkiv `imageUrl`, gateway rendering |
+| Tests | Vitest, Testing Library, real SDK serialization with isolated transport fixtures |
 
-Optional read-only live checks (no wallet or transaction is created):
+Swarm file bytes remain separate from Arkiv listing metadata. No FreshMarket Solidity contract or payment mechanism is deployed for this core flow. Rabdi uses test tGLM. Expiry is a block height; countdown time is estimated from the two-second target. The buyer view prunes on confirmed block updates; sold records stay onchain until expiry or explicit deletion.
 
-```bash
-RUN_ARKIV_INTEGRATION=1 npm test -- src/__tests__/arkiv-public-queries.test.ts
-# After recording a real, unexpired entity key:
-RUN_ARKIV_INTEGRATION=1 ARKIV_TEST_ENTITY_KEY=0x... npm test -- src/__tests__/arkiv-public-queries.test.ts
-```
+`npm run build:storefront` generates `public/storefront/` for independent static hosting. SECOND LOOK imports no FreshMarket API/provider/repository and uses no application local storage. Its public media resolution rules live in `shared/media.ts`. See [its README](storefront/README.md).
 
-The catalog check can pass with an empty testnet catalog. Only the entity-key check and the browser-wallet checklist establish public read-back of your actual write.
+## Reproducible demo and limitations
 
-### Seller lifecycle (Phase 4: issues #11–#13)
+Use [the full judge walkthrough](arkiv/portability-demo.md). The seller form offers a reviewable **15-minute expiry demo** preset (450 blocks); publishing still requires wallet approval. Keep actual transaction links before leaving a pending page: transaction locks are currently in memory. Cross-wallet rejection and live expiry observation remain required acceptance evidence.
 
-`/my-listings` now reads every live listing owned by the connected seller, with All Items / Available / Reserved / Sold filters. Sellers can change status, edit price and description, extend the existing expiry by +7/+14/+30 days, and confirm permanent removal. Managing records requires Rabdi; inventory reads still work on another network. Sold items remain stored until their normal expiry or an explicit seller deletion.
+The two-minute script: **0:00–0:20** explain stale listings and repeated catalog entry; **0:20–0:50** publish a laptop and show its actual receipt/key; **0:50–1:15** open SECOND LOOK and compare key/seller; **1:15–1:40** edit price and reserve/sell, refresh the second reader; **1:40–2:00** show the pre-recorded short-lived entity at its confirmed expiration and explain that sold does not delete it. Disclose any sped-up expiry footage and indexing waits; do not imply instant propagation.
 
-Actions show wallet/pending/verification states, optimistic changes with rollback, public-indexing delays, and transaction links. If confirmation is unknown after submission, use **Check transaction status** before another action. Pending locks are in memory; retain the transaction link before leaving the page. Full behavior and the pending live two-wallet acceptance checklist are documented in [arkiv/how-you-use-arkiv.md](arkiv/how-you-use-arkiv.md).
+RPC rate limits, indexing lag and gateway availability can delay reads. Arkiv is public: do not include private contact details in listings. Public upload is restricted to enabled wallets, and postage lifetime limits Swarm persistence. Read [why Arkiv](arkiv/why-arkiv.md), [friction](arkiv/friction.md), [reach](arkiv/reach.md), [usage](arkiv/how-you-use-arkiv.md), and [Swarm integration](arkiv/swarm.md).
 
-### Phases 5–6: expiration, resilience and portable storefront
+## AI assistance and human verification
 
-- Listing cards, details and seller inventory have live countdowns and amber warnings below 24 hours. The seller action becomes **Renew listing** near expiry. Countdown time is an estimate; confirmed blocks and Arkiv queries control expiration. Block height refreshes every five seconds.
-- `/sell` offers **Load 15-minute expiry demo**, a reviewable disposable laptop preset. Publishing still needs a funded Rabdi wallet and your signature. It encodes 450 lifetime blocks and is automatically excluded when the chain deadline arrives.
-- Error boundaries offer recovery for unexpected rendering failures. Known RPC errors retain retry controls; buyer refresh failures preserve and label previously loaded results. Wallet writes are never automatically retried; read-back verification handles indexing lag with bounded backoff.
-- `/storefront` opens SECOND LOOK, a separately built static app with its own Arkiv client, schema declaration and dark theme. It displays the same keys and status changes without FreshMarket's wallet providers, API, or local storage. `npm run dev` and `npm run build` generate its assets automatically; `npm run build:storefront` builds it separately for independent hosting.
-- [Why Arkiv](arkiv/why-arkiv.md), [the judge walkthrough and evidence log](arkiv/portability-demo.md), and [Storefront B deployment instructions](storefront/README.md) document the architecture and honest trade-offs. Live mutation/expiry demonstration evidence remains a separate acceptance step.
+OpenAI Codex assisted implementation, review, debugging, tests, documentation and branch/commit preparation during this development session. The user also supplied a transcript showing Antigravity CLI / Gemini used for issue planning and creation. No Claude contribution or specific human test result is asserted without evidence.
+
+Automated commands and fixture tests are separate from manual verification. Browser automation was unavailable in this session, so mobile/Lighthouse results, real wallet signing, postage acquisition, populated cross-storefront sync and production smoke acceptance are not claimed complete. Team members must personally verify the final deployed demo, confirm their AI-use disclosure and comply with [ETHGlobal's current rules and sponsor requirements](https://ethglobal.com/events/mumbai/prizes) before submission.
+
+## Team and license
+
+Vidhan Nahar and Dhairya. Source: [VidhanNahar/FreshMarket](https://github.com/VidhanNahar/FreshMarket). Open source under the [MIT License](LICENSE).

@@ -33,6 +33,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { SwarmUpload } from "@/components/swarm/SwarmUpload";
+import { imageSource } from "@/lib/swarm/media";
 import { expiryDemoPreset } from "@/domain/expiry-demo";
 import { usePublishListing } from "@/hooks/use-publish-listing";
 import { ListingPublishDialog } from "@/components/listings/ListingPublishDialog";
@@ -78,12 +80,14 @@ export default function SellPage() {
   const { switchChain } = useSwitchChain();
   const { openConnectModal } = useConnectModal();
 
+  const [mediaBusy, setMediaBusy] = useState(false);
   const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
   const publishing = usePublishListing();
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
 
   const {
     register,
+    setValue,
     handleSubmit,
     control,
     reset,
@@ -105,6 +109,7 @@ export default function SellPage() {
   const imageError = Boolean(watchedImageUrl && failedImageUrl === watchedImageUrl);
 
   const onFormSubmit = async (data: ListingFormValues) => {
+    if (mediaBusy) { toast.error("Wait for the image upload to finish."); return; }
     if (!isConnected || !address) {
       toast.error("Please connect your wallet before publishing to Arkiv.");
       openConnectModal?.();
@@ -160,7 +165,7 @@ export default function SellPage() {
       </div>
 
       <div className="mt-5 flex flex-wrap items-center gap-3">
-        <Button type="button" variant="outline" disabled={publishing.isPending || Boolean(publishing.txHash)} onClick={() => {
+        <Button type="button" variant="outline" disabled={mediaBusy || publishing.isPending || Boolean(publishing.txHash)} onClick={() => {
           reset(expiryDemoPreset);
           setFailedImageUrl(null);
           toast.info("15-minute demo preset loaded. Review it before publishing.");
@@ -188,7 +193,7 @@ export default function SellPage() {
             <Button
               type="button"
               onClick={openConnectModal}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 shrink-0 w-full sm:w-auto"
+              className="bg-emerald-700 hover:bg-emerald-800 text-white gap-2 shrink-0 w-full sm:w-auto"
             >
               <Wallet className="h-4 w-4" />
               Connect Wallet
@@ -431,10 +436,12 @@ export default function SellPage() {
                     </p>
                   ) : (
                     <p className="text-[11px] text-muted-foreground">
-                      Public HTTPS image URL. Decentralized Swarm media uploads can be attached in Phase 8.
+                      HTTPS image URL or public bzz:// reference. Uploaded image content is public.
                     </p>
                   )}
                 </div>
+
+                <SwarmUpload onBusyChange={setMediaBusy} onUploaded={(reference) => setValue("imageUrl", reference, { shouldValidate: true, shouldDirty: true })} />
 
                 {/* Description */}
                 <div className="space-y-1.5">
@@ -491,8 +498,8 @@ export default function SellPage() {
                   ) : (
                     <Button
                       type="submit"
-                      disabled={isSubmitting || !publishing.canSubmit}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 w-full sm:w-auto font-medium"
+                      disabled={mediaBusy || isSubmitting || !publishing.canSubmit}
+                      className="bg-emerald-700 hover:bg-emerald-800 text-white gap-2 w-full sm:w-auto font-medium"
                     >
                       <Sparkles className="h-4 w-4" />
                       Publish Listing to Arkiv
@@ -520,10 +527,10 @@ export default function SellPage() {
           <Card className="border-border/60 shadow-md overflow-hidden bg-card transition-all">
             {/* Image Preview Container */}
             <div className="relative aspect-video w-full bg-muted/40 overflow-hidden flex items-center justify-center border-b border-border/40">
-              {watchedImageUrl && !imageError ? (
+              {watchedImageUrl && imageSource(watchedImageUrl) && !imageError ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={watchedImageUrl}
+                  src={imageSource(watchedImageUrl || "") || undefined}
                   alt={watchedTitle || "Product preview"}
                   onError={() => setFailedImageUrl(watchedImageUrl)}
                   className="w-full h-full object-cover transition-opacity duration-300"
@@ -548,7 +555,7 @@ export default function SellPage() {
               </div>
 
               <div className="absolute top-3 right-3">
-                <Badge className="bg-emerald-600/90 hover:bg-emerald-600 text-white text-[11px] backdrop-blur-md shadow-xs">
+                <Badge className="bg-emerald-700/90 hover:bg-emerald-700 text-white text-[11px] backdrop-blur-md shadow-xs">
                   Available
                 </Badge>
               </div>

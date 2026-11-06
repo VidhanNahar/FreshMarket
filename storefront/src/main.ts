@@ -21,6 +21,13 @@ function render() {
   if (!selected.length) grid.append(element("p", "No live listings match this status. Publish on FreshMarket, then refresh here."));
   for (const row of selected) {
     const article = element("article", "");
+    if (row.imageUrl) {
+      const image = element("img", ""); image.src = row.imageUrl; image.alt = row.title; image.loading = "lazy"; image.referrerPolicy = "no-referrer";
+      const timer = setTimeout(() => { image.replaceWith(element("p", "Image unavailable (gateway timeout)")); }, 15_000);
+      image.onload = () => clearTimeout(timer);
+      image.onerror = () => { clearTimeout(timer); image.replaceWith(element("p", "Image unavailable")); };
+      article.append(image);
+    }
     article.append(element("p", `${row.category} / ${row.city}`), element("h2", row.title), element("strong", portablePrice(row.priceMinor, row.currency)));
     const badge = element("span", row.status); badge.className = `badge ${row.status}`;
     article.append(badge, element("h3", "ENTITY KEY"), element("code", row.id), element("h3", "SELLER"), element("code", row.seller), element("p", `Expires at block ${row.expiresAtBlock}`));

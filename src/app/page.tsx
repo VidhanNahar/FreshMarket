@@ -31,7 +31,7 @@ export default function Home() {
 
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <Link href="/browse">
-              <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 px-6 shadow-md">
+              <Button size="lg" className="bg-emerald-700 hover:bg-emerald-800 text-white gap-2 px-6 shadow-md">
                 Browse Marketplace
                 <ArrowRight className="h-4 w-4" />
               </Button>
@@ -166,7 +166,7 @@ export default function Home() {
               </p>
               <div className="flex items-center gap-3 pt-2">
                 <Link href="/browse">
-                  <Button variant="default" className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                  <Button variant="default" className="bg-emerald-700 hover:bg-emerald-800 text-white">
                     Explore Listings
                   </Button>
                 </Link>

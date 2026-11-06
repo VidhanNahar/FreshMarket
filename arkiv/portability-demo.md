@@ -28,10 +28,10 @@
 ```bash
 npm test
 TEST_ARKIV_DISCOVERY=1 npm test -- src/__tests__/listing-discovery-live.test.ts
-npm run build -- --webpack
+npm run build
 ```
 
-The Webpack option is the verified production-build fallback for the development environment's Turbopack CSS-worker port restriction. Both build paths run `prebuild` and package Storefront B first.
+The production script explicitly uses Webpack and runs `prebuild` to package Storefront B first.
 
 ## Evidence log
 

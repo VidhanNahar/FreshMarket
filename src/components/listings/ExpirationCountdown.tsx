@@ -16,5 +16,5 @@ function CountdownAtBlock({ expiresAtBlock, currentBlock }: { expiresAtBlock: bi
   }, []);
   const state = expirationState(expiresAtBlock, currentBlock, elapsed);
   return <span title={`Expiration block ${expiresAtBlock}. Countdown uses Rabdi's two-second target; block confirmation is authoritative.`}
-    className={state.expired ? "font-medium text-gray-500" : state.nearExpiry ? "font-medium text-amber-600" : "text-muted-foreground"}>{state.label}</span>;
+    className={state.expired ? "font-medium text-gray-500" : state.nearExpiry ? "font-medium text-amber-700 dark:text-amber-300" : "text-muted-foreground"}>{state.label}</span>;
 }

@@ -20,6 +20,16 @@ function entity(status = "available", price = "0x1388") {
 }
 
 describe("two independent storefront readers", () => {
+  it("preserves the stored Swarm reference and resolves it independently for media rendering", async () => {
+    const record = entity();
+    record.attributes.find((attribute) => attribute.name === "imageUrl")!.value = stringToHex(`bzz://${"ab".repeat(32)}`);
+    const request = vi.fn(async ({ method }: { method: string }) => method === "eth_blockNumber" ? "0x64" : { data: [record], blockNumber: "0x64" });
+    const a = new ArkivListingRepository(createPublicClient({ chain: rabdiReadChain, transport: custom({ request }, { retryCount: 0 }) }));
+    const b = createPublicClient({ chain: rabdiReadChain, transport: custom({ request }, { retryCount: 0 }) });
+    expect((await a.searchAll())[0].imageUrl).toBe(`bzz://${"ab".repeat(32)}`);
+    expect((await readCatalogue(b)).listings[0].imageUrl).toContain(`/bzz/${"ab".repeat(32)}/`);
+  });
+
   it("reads identical keys and reflects price/status changes and expiry on refresh", async () => {
     let status = "available";
     let price = "0x1388";

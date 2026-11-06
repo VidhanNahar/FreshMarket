@@ -60,7 +60,7 @@ export function WalletButton({ fullWidth = false, className }: WalletButtonProps
                 onClick={openConnectModal}
                 className={cn(
                   base,
-                  "bg-emerald-600 text-white hover:bg-emerald-700"
+                  "bg-emerald-700 text-white hover:bg-emerald-800"
                 )}
               >
                 <Wallet className="h-4 w-4" />

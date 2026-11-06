@@ -1,3 +1,5 @@
+import { resolveImageSource } from "../../shared/media";
+import { hexToString } from "viem";
 import { createPublicClient, defineSchema, str, addr, u64, bytes, type PublicArkivClient } from "@arkiv-network/sdk";
 import { asc } from "@arkiv-network/sdk/query";
 import { rabdi } from "@arkiv-network/sdk/chains";
@@ -9,7 +11,7 @@ export const storefrontSchema = defineSchema("freshmarket.listings", {
   title: str(), description: bytes(), imageUrl: bytes(), currency: str().default("INR"), createdAt: u64(),
 });
 export interface PortableListing {
-  id: string; seller: string; title: string; priceMinor: bigint; currency: string;
+  imageUrl?: string; id: string; seller: string; title: string; priceMinor: bigint; currency: string;
   city: string; category: string; status: "available" | "reserved" | "sold"; expiresAtBlock: bigint;
 }
 export function createReader(accessKey = "") {
@@ -23,7 +25,7 @@ export async function readCatalogue(client: PublicArkivClient): Promise<{ listin
       const status = row.status.value;
       if (!["available", "reserved", "sold"].includes(status) || !isAddressEqual(row.$owner, row.seller.value)) continue;
       if (!/^[A-Z]{3}$/.test(row.currency.value) || new Intl.NumberFormat("en", { style: "currency", currency: row.currency.value }).resolvedOptions().maximumFractionDigits !== 2) continue;
-      records.set(row.$key, { id: row.$key, seller: row.seller.value, title: row.title.value, priceMinor: row.priceMinor.value,
+      records.set(row.$key, { imageUrl: resolveImageSource(hexToString(row.imageUrl.value), import.meta.env?.VITE_SWARM_GATEWAY_URL) ?? undefined, id: row.$key, seller: row.seller.value, title: row.title.value, priceMinor: row.priceMinor.value,
         currency: row.currency.value, city: row.city.value, category: row.category.value, status: status as PortableListing["status"], expiresAtBlock: row.$expiresAt });
     }
     if (page.entities.length < 100) break;

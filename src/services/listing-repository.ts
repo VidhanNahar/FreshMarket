@@ -9,6 +9,7 @@ import {
   type PublicArkivClient,
   type WalletArkivClient,
 } from "@arkiv-network/sdk";
+import { resolveImageSource } from "../../shared/media";
 import { asc, eq, gte, lte } from "@arkiv-network/sdk/query";
 import { hexToString, isAddressEqual, stringToBytes, type Hex } from "viem";
 import { ARKIV_RABDI_CHAIN_ID, getArkivPublicClient } from "@/lib/arkiv/chain";
@@ -170,9 +171,8 @@ export class ArkivListingRepository implements ListingRepository {
     const category = requiredText(input.category, "Category");
     const city = requiredText(input.city, "City");
     const imageUrl = requiredText(input.imageUrl, "Image URL", 2048);
-    const image = new URL(imageUrl);
-    if (image.protocol !== "https:" || image.username || image.password) {
-      throw new Error("Image URL must use HTTPS without credentials");
+    if (!resolveImageSource(imageUrl)) {
+      throw new Error("Image must be an HTTPS URL without credentials or a public bzz:// reference");
     }
     // toPriceMinor always scales by 100, so zero-/three-decimal currencies are incompatible.
     const currency = (input.currency ?? "INR").trim().toUpperCase();
