@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useSyncExternalStore, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useState, useSyncExternalStore } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAccount, useChainId, useSwitchChain } from "wagmi";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
@@ -16,7 +16,6 @@ import {
   MapPin,
   Tag,
   AlertCircle,
-  CheckCircle2,
   Eye,
   RotateCcw,
   Sparkles,
@@ -34,17 +33,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { usePublishListing } from "@/hooks/use-publish-listing";
+import { ListingPublishDialog } from "@/components/listings/ListingPublishDialog";
 import {
   listingFormSchema,
   ListingFormValues,
-  CreateListingInput,
   toCreateListingInput,
   LISTING_CATEGORIES,
   EXPIRATION_DAYS_OPTIONS,
@@ -84,13 +77,14 @@ export default function SellPage() {
   const { switchChain } = useSwitchChain();
   const { openConnectModal } = useConnectModal();
 
-  const [imageError, setImageError] = useState(false);
-  const [submittedPayload, setSubmittedPayload] = useState<CreateListingInput | null>(null);
+  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
+  const publishing = usePublishListing();
+  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
 
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<ListingFormValues>({
@@ -99,21 +93,17 @@ export default function SellPage() {
     mode: "onChange",
   });
 
-  // Watch fields for the live marketplace preview
-  const watchedTitle = watch("title");
-  const watchedPrice = watch("price");
-  const watchedCategory = watch("category");
-  const watchedCity = watch("city");
-  const watchedImageUrl = watch("imageUrl");
-  const watchedExpirationDays = watch("expirationDays");
-  const watchedDescription = watch("description");
+  // useWatch subscribes to preview fields without useForm.watch's compiler limitation.
+  const [watchedTitle, watchedPrice, watchedCategory, watchedCity,
+    watchedImageUrl, watchedExpirationDays, watchedDescription] = useWatch({
+    control,
+    name: ["title", "price", "category", "city", "imageUrl", "expirationDays", "description"],
+  });
 
-  // Reset image error whenever user changes the image URL
-  useEffect(() => {
-    setImageError(false);
-  }, [watchedImageUrl]);
+  // Associate failure with its URL; editing the URL naturally clears the visible error.
+  const imageError = Boolean(watchedImageUrl && failedImageUrl === watchedImageUrl);
 
-  const onFormSubmit = (data: ListingFormValues) => {
+  const onFormSubmit = async (data: ListingFormValues) => {
     if (!isConnected || !address) {
       toast.error("Please connect your wallet before publishing to Arkiv.");
       openConnectModal?.();
@@ -126,14 +116,25 @@ export default function SellPage() {
       return;
     }
 
-    const payload = toCreateListingInput(data, address as `0x${string}`);
-    setSubmittedPayload(payload);
-    toast.success("Listing validated successfully! Ready for Arkiv Rabdi persistence.");
+    // Form validation belongs to #6; the publishing hook owns wallet and public-read states.
+    setPublishDialogOpen(true);
+    try {
+      await publishing.submit(toCreateListingInput(data, address));
+    } catch {
+      // Keep the dialog/transaction hash available even when confirmation fails.
+      // The hook never retries a write automatically.
+    }
   };
 
   const handleReset = () => {
+    // Never discard the only in-memory record of an unresolved submitted transaction.
+    if (publishing.isPending || (publishing.txHash && !publishing.receipt)) {
+      setPublishDialogOpen(true);
+      return;
+    }
+    publishing.reset();
     reset(DEFAULT_FORM_VALUES);
-    setImageError(false);
+    setFailedImageUrl(null);
     toast.info("Form reset to default values.");
   };
 
@@ -420,7 +421,7 @@ export default function SellPage() {
                     </p>
                   ) : (
                     <p className="text-[11px] text-muted-foreground">
-                      Public HTTP/HTTPS image URL. Decentralized Swarm media uploads can be attached in Phase 8.
+                      Public HTTPS image URL. Decentralized Swarm media uploads can be attached in Phase 8.
                     </p>
                   )}
                 </div>
@@ -480,7 +481,7 @@ export default function SellPage() {
                   ) : (
                     <Button
                       type="submit"
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || !publishing.canSubmit}
                       className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 w-full sm:w-auto font-medium"
                     >
                       <Sparkles className="h-4 w-4" />
@@ -514,7 +515,7 @@ export default function SellPage() {
                 <img
                   src={watchedImageUrl}
                   alt={watchedTitle || "Product preview"}
-                  onError={() => setImageError(true)}
+                  onError={() => setFailedImageUrl(watchedImageUrl)}
                   className="w-full h-full object-cover transition-opacity duration-300"
                 />
               ) : (
@@ -587,73 +588,13 @@ export default function SellPage() {
         </div>
       </div>
 
-      {/* Confirmation & Validated Payload Modal (Phase 2 Output Proof) */}
-      <Dialog open={Boolean(submittedPayload)} onOpenChange={(open) => !open && setSubmittedPayload(null)}>
-        <DialogContent className="max-w-xl">
-          <DialogHeader>
-            <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm font-semibold mb-1">
-              <CheckCircle2 className="h-5 w-5" />
-              Form Validated & Ready for Arkiv Write
-            </div>
-            <DialogTitle>Listing Payload Generated (Part 2 Proof)</DialogTitle>
-            <DialogDescription>
-              All client-side Zod constraints passed. Below is the validated <code>CreateListingInput</code> structure ready for <code>ArkivListingRepository.create()</code> in Part 3.
-            </DialogDescription>
-          </DialogHeader>
-
-          {submittedPayload && (
-            <div className="space-y-4">
-              {/* Summary table */}
-              <div className="rounded-lg border border-border/60 bg-muted/20 p-3 text-xs space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Title:</span>
-                  <span className="font-semibold text-foreground text-right">{submittedPayload.title}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Category:</span>
-                  <Badge variant="outline">{submittedPayload.category}</Badge>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Price (Standard / Minor):</span>
-                  <span className="font-mono">
-                    ₹{submittedPayload.price.toLocaleString("en-IN")} ({submittedPayload.priceMinor} {submittedPayload.currency === "INR" ? "paisa" : "cents"})
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">City (Coarse location):</span>
-                  <span>{submittedPayload.city}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Expiration Period:</span>
-                  <span className="font-semibold">{submittedPayload.expirationDays} Days</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Owner Wallet:</span>
-                  <span className="font-mono">{submittedPayload.seller ?? "None"}</span>
-                </div>
-              </div>
-
-              {/* Raw JSON serialization */}
-              <div>
-                <Label className="text-xs text-muted-foreground mb-1 block">Validated JSON Payload:</Label>
-                <pre className="rounded-lg bg-black/90 text-emerald-400 p-3 text-[11px] overflow-x-auto font-mono max-h-48">
-                  {JSON.stringify(submittedPayload, null, 2)}
-                </pre>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <Button
-                  type="button"
-                  onClick={() => setSubmittedPayload(null)}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs"
-                >
-                  Close & Proceed
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Closing status does not cancel the wallet transaction or discard its receipt. */}
+      {publishing.phase !== "idle" && (
+        <Button type="button" variant="outline" className="mt-6" onClick={() => setPublishDialogOpen(true)}>
+          View publishing status
+        </Button>
+      )}
+      <ListingPublishDialog flow={publishing} open={publishDialogOpen} onOpenChange={setPublishDialogOpen} />
     </div>
   );
 }

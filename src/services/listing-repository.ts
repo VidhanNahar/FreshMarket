@@ -9,7 +9,7 @@ import {
   type PublicArkivClient,
   type WalletArkivClient,
 } from "@arkiv-network/sdk";
-import { asc, eq } from "@arkiv-network/sdk/query";
+import { asc, eq, gte, lte } from "@arkiv-network/sdk/query";
 import { hexToString, isAddressEqual, stringToBytes, type Hex } from "viem";
 import { ARKIV_RABDI_CHAIN_ID, getArkivPublicClient } from "@/lib/arkiv/chain";
 import { listingSchema } from "@/lib/arkiv/schema";
@@ -17,6 +17,7 @@ import {
   type Listing,
   type CreateListingInput,
   type ListingFilters,
+  type ListingWriteReceipt,
   isListingStatus,
   toPriceMinor,
 } from "@/domain/listing";
@@ -27,6 +28,7 @@ export type ListingWalletClient = Pick<WalletArkivClient, "account" | "chain" | 
 /** Storage boundary for UI callers: SDK values and transaction receipts stay in this layer. */
 export interface ListingRepository {
   create(input: CreateListingInput, walletClient: ListingWalletClient): Promise<string>;
+  createWithReceipt(input: CreateListingInput, walletClient: ListingWalletClient): Promise<ListingWriteReceipt>;
   getById(id: string): Promise<Listing | null>;
   search(filters?: ListingFilters): Promise<Listing[]>;
   searchAll(filters?: Pick<ListingFilters, "category" | "city">): Promise<Listing[]>;
@@ -88,6 +90,11 @@ export class ArkivListingRepository implements ListingRepository {
    * Resolves to the entity key after SDK confirmation; validation and wallet errors propagate.
    */
   async create(input: CreateListingInput, walletClient: ListingWalletClient): Promise<string> {
+    return (await this.createWithReceipt(input, walletClient)).entityKey;
+  }
+
+  /** Rich write result for publishing UI; create() retains issue #5's entity-key contract. */
+  async createWithReceipt(input: CreateListingInput, walletClient: ListingWalletClient): Promise<ListingWriteReceipt> {
     if (!walletClient || typeof walletClient.createEntity !== "function") {
       throw new Error("An Arkiv wallet client is required to create listings");
     }
@@ -137,8 +144,7 @@ export class ArkivListingRepository implements ListingRepository {
       currency,
       createdAt: u64(Date.now()),
     };
-    const { entityKey } = await walletClient.createEntity(listingSchema, values, { expiration });
-    return entityKey;
+    return walletClient.createEntity(listingSchema, values, { expiration });
   }
 
   /** Missing, deleted and expired entities return null; RPC and schema errors propagate. */
@@ -189,6 +195,13 @@ export class ArkivListingRepository implements ListingRepository {
       query.where(eq("category", filters.category.trim()));
     }
     if (filters.city) query.where(eq("city", filters.city.trim()));
+    // Validate through u64() before querying, including explicit zero for free items.
+    if (filters.minPriceMinor !== undefined && filters.maxPriceMinor !== undefined &&
+        filters.minPriceMinor > filters.maxPriceMinor) {
+      throw new Error("Minimum price cannot exceed maximum price");
+    }
+    if (filters.minPriceMinor !== undefined) query.where(gte("priceMinor", u64(filters.minPriceMinor)));
+    if (filters.maxPriceMinor !== undefined) query.where(lte("priceMinor", u64(filters.maxPriceMinor)));
     if (filters.seller) {
       // A seller attribute alone is forgeable; also require actual entity ownership.
       query.where(eq("seller", addr(filters.seller))).ownedBy(filters.seller);

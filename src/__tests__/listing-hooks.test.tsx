@@ -1,14 +1,15 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, renderHook, waitFor } from "@testing-library/react";
+import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { useListing, useListings } from "@/hooks/useListings";
 import { fixtureListing as listing } from "./fixtures/listing";
+import { invalidateListings, listingKeys } from "@/lib/arkiv/queries";
 
 const mocks = vi.hoisted(() => ({ searchAll: vi.fn(), getById: vi.fn(), getBlockNumber: vi.fn() }));
 vi.mock("@/services/listing-repository", () => ({ listingRepository: mocks }));
-vi.mock("@/lib/arkiv/chain", () => ({ getArkivPublicClient: () => mocks }));
+vi.mock("@/lib/arkiv/chain", () => ({ ARKIV_RABDI_CHAIN_ID: 7794095, getArkivPublicClient: () => mocks }));
 const filters = { category: "Furniture", city: "Mumbai", q: "", sort: "newest" as const };
 function wrapper() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
@@ -25,6 +26,20 @@ beforeEach(() => {
 });
 
 describe("public listing hooks", () => {
+  it("refreshes the catalogue on publishing invalidation and shares verified detail data", async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { gcTime: 0 } } });
+    const wrap = ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+    const catalog = renderHook(() => useListings(filters), { wrapper: wrap });
+    await waitFor(() => expect(catalog.result.current.isSuccess).toBe(true));
+    mocks.searchAll.mockResolvedValueOnce([{ ...listing, title: "Updated desk" }]);
+    await act(() => invalidateListings(client));
+    await waitFor(() => expect(catalog.result.current.data[0].title).toBe("Updated desk"));
+    expect(mocks.searchAll).toHaveBeenCalledTimes(2);
+    client.setQueryData(listingKeys.detail(listing.id), listing);
+    const detail = renderHook(() => useListing(listing.id), { wrapper: wrap });
+    expect(detail.result.current.data).toEqual(listing);
+    expect(mocks.getById).not.toHaveBeenCalled();
+  });
   it("queries category/city without a wallet, then searches and sorts the cached catalogue", async () => {
     mocks.searchAll.mockResolvedValue([listing, { ...listing, id: "expired", expiresAtBlock: 99n }]);
     const { result, rerender } = renderHook((q: string) => useListings({ ...filters, q }), { initialProps: "desk", wrapper: wrapper() });

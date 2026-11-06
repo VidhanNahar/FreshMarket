@@ -3,15 +3,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { listingRepository } from "@/services/listing-repository";
 import { getArkivPublicClient } from "@/lib/arkiv/chain";
+import { listingKeys, listingQueryOptions, listingReadPolicy } from "@/lib/arkiv/queries";
 import { discoverListings, isEntityKey, type DiscoveryFilters } from "@/lib/listing-discovery";
 
 export function useListings(filters: DiscoveryFilters) {
   const query = useQuery({
-    queryKey: ["listings", { category: filters.category, city: filters.city }],
+    ...listingReadPolicy,
+    queryKey: listingKeys.catalog({ category: filters.category, city: filters.city }),
     queryFn: () => listingRepository.searchAll({ category: filters.category, city: filters.city }),
-    staleTime: 30_000,
     refetchInterval: 60_000,
-    retry: 1,
   });
   const block = useRabdiBlock();
   const active = (query.data ?? []).filter((listing) =>
@@ -21,12 +21,9 @@ export function useListings(filters: DiscoveryFilters) {
 
 export function useListing(id: string) {
   return useQuery({
-    queryKey: ["listing", id],
-    queryFn: () => listingRepository.getById(id),
+    ...listingQueryOptions(id),
     enabled: isEntityKey(id),
-    staleTime: 30_000,
     refetchInterval: 60_000,
-    retry: 1,
   });
 }
 

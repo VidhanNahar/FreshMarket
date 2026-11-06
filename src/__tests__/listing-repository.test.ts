@@ -142,6 +142,22 @@ describe("Arkiv listing repository writes", () => {
 });
 
 describe("Arkiv listing repository reads", () => {
+  it("applies inclusive indexed price bounds, including zero", async () => {
+    const { repository, request } = reader({ data: [], blockNumber: "0x64" });
+    expect(await repository.search({ minPriceMinor: 0n, maxPriceMinor: 5000n })).toEqual([]);
+    const query = request.mock.calls[0][0].params[0];
+    expect(query).toContain("priceMinor >= u64(0)");
+    expect(query).toContain("priceMinor <= u64(5000)");
+  });
+
+  it.each([{ minPriceMinor: -1n }, { maxPriceMinor: 2n ** 64n }, { minPriceMinor: 2n, maxPriceMinor: 1n }])(
+    "rejects invalid price ranges before RPC: %#", async (filters) => {
+      const { repository, request } = reader({ data: [], blockNumber: "0x64" });
+      await expect(repository.search(filters)).rejects.toThrow();
+      expect(request).not.toHaveBeenCalled();
+    },
+  );
+
   it("decodes SDK values into a domain listing and preserves expiration as a block height", async () => {
     const { repository } = reader(rpcEntity());
     expect(await repository.getById(entityKey)).toEqual({
