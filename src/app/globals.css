@@ -29,11 +29,14 @@
     --card: #16211a; --card-foreground: #eaf2ec;
     --popover: #16211a; --popover-foreground: #eaf2ec;
     --muted: #202e25; --muted-foreground: #b3c4b8;
-    --primary: #047857; --secondary: #203a29; --secondary-foreground: #dcfce7;
+    --primary: #10b981; --primary-foreground: #04140d; --secondary: #203a29; --secondary-foreground: #dcfce7;
     --accent: #203a29; --accent-foreground: #dcfce7;
     --border: #3b5142; --input: #526b5a; --ring: #6ee7b7; --destructive: #fca5a5;
   }
 }
+html { scroll-behavior: smooth; }
+::selection { background: rgb(16 185 129 / .25); }
+input:focus-visible, textarea:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
 body { background: var(--background); color: var(--foreground); font-family: var(--font-geist-sans), Arial, sans-serif; }
 *, *::before, *::after { min-width: 0; }
 button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }

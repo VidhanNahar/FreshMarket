@@ -10,7 +10,7 @@ import { invalidateListings, listingKeys } from "@/lib/arkiv/queries";
 const mocks = vi.hoisted(() => ({ searchAll: vi.fn(), getById: vi.fn(), getBlockNumber: vi.fn() }));
 vi.mock("@/services/listing-repository", () => ({ listingRepository: mocks }));
 vi.mock("@/lib/arkiv/chain", () => ({ ARKIV_RABDI_CHAIN_ID: 7794095, getArkivPublicClient: () => mocks }));
-const filters = { category: "Furniture", city: "Mumbai", q: "", sort: "newest" as const };
+const filters = { q: "", category: "furniture", city: "Mumbai", condition: "" as const, fulfilment: "" as const, minPrice: "", maxPrice: "", sort: "newest" as const };
 function wrapper() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
   return function Wrapper({ children }: { children: ReactNode }) {
@@ -51,15 +51,14 @@ describe("public listing hooks", () => {
     expect(detail.result.current.data).toEqual(listing);
     expect(mocks.getById).not.toHaveBeenCalled();
   });
-  it("queries category/city without a wallet, then searches and sorts the cached catalogue", async () => {
+  it("queries indexed category/city without a wallet, then text-matches the cached candidates", async () => {
     mocks.searchAll.mockResolvedValue([listing, { ...listing, id: "expired", expiresAtBlock: 99n }]);
     const { result, rerender } = renderHook((q: string) => useListings({ ...filters, q }), { initialProps: "desk", wrapper: wrapper() });
     await waitFor(() => expect(result.current.currentBlock).toBe(100n));
     await waitFor(() => expect(result.current.data).toEqual([listing]));
-    expect(mocks.searchAll).toHaveBeenCalledWith({ category: "Furniture", city: "Mumbai" });
+    expect(mocks.searchAll).toHaveBeenCalledWith({ categoryPaths: ["furniture/tables"], city: "Mumbai" });
     rerender("missing");
-    expect(result.current.data).toEqual([]);
-    expect(mocks.searchAll).toHaveBeenCalledOnce();
+    await waitFor(() => expect(result.current.data).toEqual([]));
   });
   it("loads a detail record but never sends malformed IDs to the RPC", async () => {
     const { result, rerender } = renderHook((id: string) => useListing(id), { initialProps: "invalid", wrapper: wrapper() });

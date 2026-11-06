@@ -1,110 +1,140 @@
-# Arkiv Schema Specification: `freshmarket.listings`
+# Arkiv Schema Specification
 
-- **Version:** 1 (`LISTING_SCHEMA_VERSION`), specification 1.0.0
 - **Network:** Arkiv Rabdi Testnet, chain ID `7794095`
-- **Schema tag:** indexed `arkiv.schema = str('freshmarket.listings')`, written automatically by the SDK
-- **Ownership:** the signing wallet is the entity owner; `seller` must match that owner
+- **Schemas:** `freshmarket.listings.v2` (`LISTING_SCHEMA_VERSION = 2`), `freshmarket.sellers`, `freshmarket.reviews`
+- **Source:** [`src/lib/arkiv/schema.ts`](../src/lib/arkiv/schema.ts); SECOND LOOK declares its own copy in [`storefront/src/reader.ts`](../storefront/src/reader.ts)
+- **Ownership:** the signing wallet is each entity's `$owner`; only it can patch, extend or delete
 
-## Schema and versioning
+Each schema is an SDK convention, not a centrally registered table. The SDK writes an indexed `arkiv.schema` tag and `.from(schema)` filters on it. Anyone can write the same tag, so readers validate every row (see [Reader rules](#reader-rules)). Incompatible changes need a new tag: version 1 (`freshmarket.listings`) used different fields and is no longer read.
 
-The schema is an SDK convention, not a centrally registered table. Any storefront can query it with `@arkiv-network/sdk`. Anyone can also write the same schema tag, so the tag alone does not authenticate a seller. FreshMarket checks `seller` against `$owner` on reads and against the wallet account on creates. Seller searches filter both attributes. Ownership transfers must update `seller` to remain compatible with this contract.
+## Which records live where
 
-`freshmarket.listings` identifies version 1. `LISTING_SCHEMA_VERSION = 1` records that contract in code; the SDK has no separate schema-version option. Incompatible future changes must use a new schema tag (for example `freshmarket.listings.v2`) and an explicit migration/read strategy rather than reinterpret version 1 entities.
-
-## Indexed attributes
-
-| Attribute | SDK type | Encoding / purpose |
+| Record | Where | Why |
 | --- | --- | --- |
-| `seller` | `addr().indexed()` | 20-byte wallet address, supplied as `addr(address)`. Seller discovery; ownership comes from `$owner`. |
-| `category` | `str().indexed()` | Public item category, such as `Electronics` or `Furniture`. |
-| `status` | `str().indexed()` | `available`, `reserved`, or `sold`; the repository validates these values because `str()` does not enforce an enum. |
-| `city` | `str().indexed()` | Public coarse location, such as `Mumbai`; never a private street address. |
-| `priceMinor` | `u64().indexed()` | Unsigned integer minor units, supplied as `u64(...)`; 100 minor units per major unit (paisa/cents). Supports numerical range queries. |
+| Listing, seller directory, review | **Arkiv** | Public, owned by a wallet, filtered by indexed fields, and expiring on their own |
+| Seller name, profile text, verified badge | ENS (Sepolia) | `priya.freshmarket.eth`; verification is a FreshMarket-issued subname the seller cannot edit |
+| Real price, stock, orders, refunds | FreshPay on Whitechain | Money and atomic stock need a contract. Not part of this repository yet |
+| Shipping address, dispute evidence | Private store | Arkiv data is public |
 
-All `str` values have an Arkiv limit of **128 UTF-8 bytes**, independently of JavaScript character counts. The repository trims category, city, and title and validates them with `str()` before writing.
+## `freshmarket.listings.v2`
 
-## Unindexed attributes
+Owner: seller · Expiry: chosen at publish (15-minute demo, 3, 7, 14 or 30 days; default 7), extendable.
 
-These remain public and are selected by reads; unindexed does not mean private. They avoid unnecessary indexes. Arkiv can sort non-byte attributes without indexing them, but only indexed attributes can be used in `where()` filters.
+**Indexed** attributes are the only ones `where()` can filter. Unindexed attributes are still public.
 
-| Attribute | SDK type | Encoding / purpose |
+| Attribute | SDK type | Indexed | Values / encoding |
+| --- | --- | --- | --- |
+| `seller` | `addr` | ✅ | Seller wallet. Must equal `$owner` |
+| `status` | `str` | ✅ | `available` \| `reserved` \| `sold` |
+| `visibility` | `str` | ✅ | `public` (in browse) \| `unlisted` (link only; still public on Arkiv) |
+| `categoryPath` | `str` | ✅ | Path from [`shared/categories.ts`](../shared/categories.ts), e.g. `pets/dogs/toys`. `startsWith` selects a whole branch |
+| `brand` | `str` | ✅ | Search key: lowercase letters/digits only (`Lenovo` → `lenovo`); `""` if none |
+| `model` | `str` | ✅ | Search key (`ThinkPad T14` → `thinkpadt14`); `startsWith` matches `thinkpad` |
+| `condition` | `str` | ✅ | `new` \| `like-new` \| `good` \| `fair` \| `for-parts` |
+| `city` | `str` | ✅ | City key: trimmed, single-spaced, lowercase (`Navi Mumbai` → `navi mumbai`). Coarse city only |
+| `fulfilment` | `str` | ✅ | `pickup` \| `ship` |
+| `priceMinor` | `u64` | ✅ | USDT minor units, 6 decimals (`12.50 USDT` = `12500000`). One currency, so ranges never mix currencies |
+| `title` | `str` | | ≤ 80 characters and ≤ 128 UTF-8 bytes |
+| `description` | `bytes` | | UTF-8 text, ≤ 1,000 characters |
+| `media` | `bytes` | | UTF-8 JSON array of 1–8 references: credential-free `https://` URLs or `bzz://<64-hex>` Swarm references |
+
+Removed from version 1: `category` (replaced by `categoryPath`), `currency` (always USDT), `imageUrl` (now `media`), `createdAt` (use system `$createdAt`, a block height).
+
+13 attributes plus the schema tag, under Arkiv's limit of 32. All `str` values are capped at 128 UTF-8 bytes; the repository validates byte lengths separately from character counts.
+
+## `freshmarket.sellers`
+
+Owner: seller · Expiry: 180 days (`ExpirationTime.fromDays(180)`; Arkiv's maximum lifetime is about 182 days).
+
+| Attribute | SDK type | Indexed | Values |
+| --- | --- | --- | --- |
+| `ensName` | `str` | ✅ | `priya.freshmarket.eth`. Written only if it already resolves to the signing wallet |
+| `sellerType` | `str` | ✅ | `individual` \| `business` (self-declared; the verified badge comes from ENS) |
+
+A public directory keyed by ENS name. Display name, avatar and bio live in the seller's ENS records, so they are not stored twice. Readers keep the newest record per `$owner`.
+
+## `freshmarket.reviews`
+
+Owner: buyer · Expiry: 180 days, so reputation is a trailing six-month window.
+
+| Attribute | SDK type | Indexed | Values |
+| --- | --- | --- | --- |
+| `seller` | `addr` | ✅ | Seller being reviewed |
+| `orderId` | `u64` | ✅ | FreshPay order on Whitechain: the proof of purchase |
+| `sellerRating` | `u64` | | 1–5 |
+| `itemRating` | `u64` | | 1–5 |
+| `text` | `bytes` | | UTF-8, ≤ 2,000 characters |
+
+A review counts only if the FreshPay order names the reviewer (`$owner`) as buyer and this `seller`, and its state is `Released` or `Refunded` (a refund does not erase a review). Readers keep the newest review per (buyer, order). Until FreshPay is deployed, reviews are read as unverified and rating summaries count none of them.
+
+## Which index answers which search
+
+Every browse search adds `status = available` and `visibility = public`.
+
+| Search | Example | Arkiv condition |
 | --- | --- | --- |
-| `title` | `str()` | Required short title, at most 80 JavaScript string code units **and** 128 UTF-8 bytes. |
-| `description` | `bytes()` | Required UTF-8 text, at most 1,000 JavaScript string code units. Encode with `stringToBytes`, decode with `hexToString`. |
-| `imageUrl` | `bytes()` | Required HTTPS URL without embedded credentials, at most 2,048 JavaScript string code units. Same UTF-8 encoding as description. |
-| `currency` | `str().default('INR')` | Three-letter currency code, normalized to uppercase; writes require two-decimal minor units, such as INR/USD. Display only; no custody. |
-| `createdAt` | `u64()` | Seller-supplied Unix **milliseconds**, supplied as `u64(Date.now())`. Display metadata, not proof of publication time. |
+| Category branch | Pets › Dogs | `startsWith('categoryPath', 'pets/dogs')` |
+| By meaning, spacing, typos | `dogtoy`, `dog toy`, `dgo toy` | Query → `pets/dogs/toys` via `shared/categories.ts` → `startsWith` |
+| Ambiguous word | `toy` | `or(startsWith(… 'pets/dogs/toys'), startsWith(… 'pets/cats/toys'), startsWith(… 'kids/toys'))` |
+| Brand or model | `lenovo`, `iphone13` | `or(eq('brand', key), startsWith('model', key))` |
+| City | Mumbai | `eq('city', 'mumbai')` |
+| Price range | 5–20 USDT | `gte/lte('priceMinor', u64(…))` |
+| Condition, delivery | Like new, pickup | `eq('condition', …)`, `eq('fulfilment', …)` |
+| A seller's store | | `eq('seller', addr(…))` + `.ownedBy(…)` |
+| A Safe Deal / detail link | `/listing/0x…` | `getEntity($key)` |
+| Seller by ENS name | `priya.freshmarket.eth` | `eq('ensName', …)` on `freshmarket.sellers`, then ENS forward resolution |
+| Seller's reviews | | `eq('seller', addr(…))` on `freshmarket.reviews` |
 
-Descriptions and image URLs use `bytes()` because normal descriptions and URLs can exceed Arkiv's 128-byte `str` limit. Each `bytes` value can hold up to 128 KiB, sharing a 128 KiB entity budget in SDK 1.0.1; these application limits stay well within that budget. They are unindexed attributes, not a separate JSON payload.
+Words left over after category and brand/model resolution (`red`, `barely used`) are matched in the reader against title, description, brand and model, over the already-narrowed candidates. Matching ignores spacing, accepts prefixes and tolerates one typo per word (`latpop` → `laptop`). If a single-category search finds nothing, the reader retries one level up (`pets/dogs/toys` → `pets/dogs`) and labels the result. Fully typo-tolerant free-text search over millions of listings needs a separate, rebuildable search index; Arkiv stays the source of truth.
 
-The SDK reads each attribute as a typed wrapper: for example, `row.title.value`, `row.priceMinor.value`, and `hexToString(row.description.value)`. System fields such as `$key`, `$owner`, and `$expiresAt` are direct values.
+## Reader rules
 
-The application accepts non-negative prices (including free listings), rounds to the nearest minor unit, and rejects amounts whose minor-unit integer exceeds JavaScript's safe integer range. Storage is `uint64`. Price formatting preserves fractions and uses bigint arithmetic to avoid losing large integer digits.
+- A listing is dropped unless `seller == $owner` and every enum (`status`, `visibility`, `condition`, `fulfilment`) is a known value. Media references that are not safe `https://` or `bzz://` values are discarded.
+- Unknown `categoryPath` values from other writers are shown as stored, not rejected.
+- A seller name is shown only if `getEnsAddress(ensName)` returns the seller's wallet (ENSv2 Universal Resolver `0xeEeEEEeE14D718C2B47D9923Deab1335E144EeEe` on Sepolia). A verified badge requires `<label>.verified.freshmarket.eth` to resolve to the same wallet.
+- Price filters are inclusive USDT minor units.
 
-## Repository contract
+## Queries
 
 ```ts
-interface ListingRepository {
-  create(input: CreateListingInput, walletClient: ListingWalletClient): Promise<string>;
-  getById(id: string): Promise<Listing | null>;
-  search(filters?: ListingFilters): Promise<Listing[]>;
-}
+import { addr, u64 } from '@arkiv-network/sdk';
+import { asc, eq, lte, or, startsWith } from '@arkiv-network/sdk/query';
+import { listingSchema } from '@/lib/arkiv/schema';
+
+// "dogtoy" in Mumbai under 10 USDT: one indexed query, no client-side scan.
+const dogToys = await publicClient.select().from(listingSchema)
+  .where(eq('status', 'available'))
+  .where(eq('visibility', 'public'))
+  .where(startsWith('categoryPath', 'pets/dogs/toys'))
+  .where(eq('city', 'mumbai'))
+  .where(lte('priceMinor', u64(10_000_000n)))
+  .orderBy(asc('$key')).limit(20).fetch();
+
+// Brand or model lookup.
+const thinkpads = await publicClient.select().from(listingSchema)
+  .where(or(eq('brand', 'thinkpad'), startsWith('model', 'thinkpad')))
+  .limit(20).fetch();
+
+// Seller inventory, including reserved/sold and unlisted items.
+const sellerListings = await publicClient.select().from(listingSchema)
+  .where(eq('seller', addr(sellerAddress)))
+  .ownedBy(sellerAddress)
+  .orderBy(asc('$key')).limit(20).fetch();
 ```
 
-`create` returns the entity key after the SDK confirms the write. Pass an Arkiv wallet client from `createWalletClient`, configured with the connected account and Rabdi chain; a plain Wagmi/Viem wallet client does not expose `createEntity`. For an injected browser wallet, use its provider via Viem's `custom(provider)` transport. No private key is required in frontend code.
+Run the same query without the app: `npm run query:listings` (add `CATEGORY=pets/dogs` to filter a branch).
 
-`getById` returns `null` for missing, deleted, or expired entities and incompatible seller/status metadata. Invalid IDs, transport failures, and schema mismatches propagate as errors rather than being hidden as missing listings. Searches skip schema mismatches (SDK default), invalid lifecycle states, and seller/owner mismatches.
+`search()` returns one page (default 20, SDK range 1–100) in ascending key order. `searchAll()` pages through every match for the indexed filters, bounded by `MAX_CATALOGUE_MATCHES` and a time budget. Offsets count rows the SDK skips as schema mismatches, so a page can hold fewer listings than requested.
 
 ## Expiration and lifecycle
 
-Creates explicitly default to:
+Creates use `ExpirationTime.fromDays(n)`; listings default to 7 days. **`$expiresAt` is a block height, not a Unix timestamp**; wall-clock estimates use Rabdi's two-second block target. `$createdAt` and `$updatedAt` are also block heights.
 
-```ts
-{ expiration: ExpirationTime.fromDays(7) }
-```
+Expired entities disappear from queries. Reserved and sold are explicit status changes, not expiry. Extending an entity sets a new deadline: FreshMarket reads the current `$expiresAt` and calls `extendEntity` with `ExpirationTime.atBlock(current + additionalBlocks)`.
 
-An explicit lifetime must be positive and fit SDK/protocol bounds. The SDK resolves durations to block lifetimes. **`$expiresAt` is a bigint block height, not a Unix timestamp**; the domain exposes it as `expiresAtBlock`. Converting it to a date requires chain block timing and is an estimate. The SDK's system `$createdAt` and `$updatedAt` are also block heights, distinct from the application `createdAt` attribute.
+## Privacy
 
-Expired entities disappear from active queries. Reservation and sale are explicit seller status changes, not expiration. Reserved/sold entities remain queryable until expiration or deletion; seller history uses `status: 'all'`. The protocol restricts mutations to the owner by default. Future lifecycle methods can use SDK `patchEntity`, `extendEntity`, and `deleteEntity`; they are outside issue #5's create/read/search interface. An extension requests a later deadline or minimum lifetime from the current block, not an unconditional addition to the old deadline.
-
-## Queries and pagination
-
-```ts
-import { addr } from '@arkiv-network/sdk';
-import { asc, eq } from '@arkiv-network/sdk/query';
-import { listingSchema } from '@/lib/arkiv/schema';
-
-const activeListings = await publicClient
-  .select()
-  .from(listingSchema)
-  .where(eq('status', 'available'))
-  .orderBy(asc('$key'))
-  .limit(20)
-  .offset(0)
-  .fetch();
-
-// No status filter: includes available, reserved, and sold entities.
-const sellerListings = await publicClient
-  .select()
-  .from(listingSchema)
-  .where(eq('seller', addr(sellerAddress)))
-  .ownedBy(sellerAddress)
-  .orderBy(asc('$key'))
-  .limit(20)
-  .fetch();
-```
-
-`search()` defaults to `status: 'available'`, a page size of 20, offset 0, and ascending entity-key order. Set `status: 'all'` to omit the status filter. Category, city, seller, and status filters combine with AND. The SDK validates limits (1–100) and non-negative safe-integer offsets, including explicitly supplied zero values.
-
-One search returns one page, not the whole catalog. Offsets count matching entities even when the SDK or repository drops incompatible rows, so pages can contain fewer listings than requested. A stable key sort keeps pages ordered while data stays unchanged; concurrent writes/expiry can still shift offset pages.
-
-## Privacy and references
-
-Arkiv entities and their unindexed content are public. FreshMarket's structured fields contain only coarse location and public listing details. Free-text fields cannot guarantee absence of private information; sellers must not enter street addresses, phone numbers, credentials, or private contact details.
+Arkiv entities and their unindexed content are public, including unlisted listings. Listings carry only a coarse city. Sellers must not enter street addresses, phone numbers or contact details in free text. Swarm files are public too; encrypted key-bearing references are rejected.
 
 - [Official Arkiv documentation](https://docs.arkiv.network/)
 - [Arkiv TypeScript SDK source](https://github.com/Arkiv-Network/arkiv-sdk-js) (implementation checked against installed SDK 1.0.1)
-
-## Public media references (Phase 8)
-
-`imageUrl` remains UTF-8 bytes. It accepts either a credential-free HTTPS URL or `bzz://` followed by a public unencrypted 64-hex Swarm reference. Readers resolve that reference through their own network-matched gateway. The value stored on Arkiv is the immutable reference, not the local blob URL, upload credential or postage signing key. Swarm files and Arkiv metadata are public. Encrypted key-bearing references are intentionally rejected.

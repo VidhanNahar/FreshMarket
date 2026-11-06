@@ -1,13 +1,15 @@
 import { z } from "zod";
 import { resolveImageSource } from "../../shared/media";
+import { isCategoryPath } from "../../shared/categories";
 import {
-  LISTING_CATEGORIES,
-  type ListingCategory,
+  LISTING_CONDITIONS,
+  LISTING_FULFILMENTS,
+  LISTING_VISIBILITIES,
+  PRICE_DECIMALS,
   type CreateListingInput,
-  toPriceMinor,
 } from "./listing";
 
-export { LISTING_CATEGORIES, type ListingCategory, type CreateListingInput };
+export type { CreateListingInput };
 
 export const DEMO_EXPIRATION_DAYS = 15 / (24 * 60);
 export const EXPIRATION_DAYS_OPTIONS = [DEMO_EXPIRATION_DAYS, 3, 7, 14, 30] as const;
@@ -61,9 +63,15 @@ export const listingFormSchema = z.object({
     .min(10, "Description must be at least 10 characters")
     .max(1000, "Description cannot exceed 1000 characters"),
 
-  category: z.enum(LISTING_CATEGORIES, {
-    message: "Please select a valid category",
-  }),
+  categoryPath: z.string().refine(isCategoryPath, "Please select a valid category"),
+
+  // Optional search keys; stored lowercase without spaces, so they must fit 128 bytes.
+  brand: z.string().trim().max(64, "Brand cannot exceed 64 characters"),
+  model: z.string().trim().max(64, "Model cannot exceed 64 characters"),
+
+  condition: z.enum(LISTING_CONDITIONS, { message: "Please select the item condition" }),
+  fulfilment: z.enum(LISTING_FULFILMENTS, { message: "Choose local pickup or shipping" }),
+  visibility: z.enum(LISTING_VISIBILITIES, { message: "Choose public or unlisted" }),
 
   price: z
     .number({ message: "Price must be a valid number" })
@@ -72,15 +80,10 @@ export const listingFormSchema = z.object({
     .refine(
       (val) => {
         const parts = val.toString().split(".");
-        return parts.length === 1 || parts[1].length <= 2;
+        return parts.length === 1 || parts[1].length <= PRICE_DECIMALS;
       },
-      { message: "Price cannot have more than 2 decimal places" }
+      { message: `Price cannot have more than ${PRICE_DECIMALS} decimal places` }
     ),
-
-  currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/, "Use a three-letter currency code")
-    .refine((currency) => /^[A-Z]{3}$/.test(currency) && new Intl.NumberFormat("en", {
-      style: "currency", currency,
-    }).resolvedOptions().maximumFractionDigits === 2, "Currency must use two decimal minor units"),
 
   city: z
     .string({ message: "City is required" })
@@ -120,13 +123,16 @@ export function toCreateListingInput(
     seller,
     title: values.title.trim(),
     description: values.description.trim(),
-    category: values.category,
+    categoryPath: values.categoryPath,
+    brand: values.brand.trim(),
+    model: values.model.trim(),
+    condition: values.condition,
+    fulfilment: values.fulfilment,
+    visibility: values.visibility,
     price: Number(values.price),
-    // Preview metadata only: the repository independently derives the onchain price from price.
-    priceMinor: Number(toPriceMinor(Number(values.price))),
-    currency: values.currency || "INR",
     city: values.city.trim(),
-    imageUrl: values.imageUrl.trim(),
+    // The form takes one image; the Arkiv media list supports up to MAX_MEDIA_ITEMS.
+    media: [values.imageUrl.trim()],
     expirationDays: Number(values.expirationDays),
   };
 }

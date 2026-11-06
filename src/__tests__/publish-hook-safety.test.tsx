@@ -22,7 +22,7 @@ describe("publication reset safety", () => {
   it("does not let reset discard an unconfirmed submitted hash or enable duplicate creation", async () => {
     mocks.publish.mockImplementation(async () => { mocks.submitted?.(listing.id as `0x${string}`); throw new Error("offline after submission"); });
     const { result } = setup();
-    const input = { ...expiryDemoPreset, seller: listing.seller };
+    const input = { ...expiryDemoPreset, media: [expiryDemoPreset.imageUrl], seller: listing.seller };
     await act(async () => { await expect(result.current.submit(input)).rejects.toThrow(); });
     expect(result.current.txHash).toBe(listing.id);
     act(() => result.current.reset());
@@ -35,7 +35,7 @@ describe("publication reset safety", () => {
     const receipt = { entityKey: listing.id, txHash: listing.id, expiresAt: listing.expiresAtBlock };
     mocks.publish.mockImplementation(async (_input, _wallet, confirmed) => { confirmed(receipt); return { receipt, listing }; });
     const { result } = setup();
-    await act(async () => { await result.current.submit({ ...expiryDemoPreset, seller: listing.seller }); });
+    await act(async () => { await result.current.submit({ ...expiryDemoPreset, media: [expiryDemoPreset.imageUrl], seller: listing.seller }); });
     expect(result.current.phase).toBe("verified");
     act(() => result.current.reset());
     expect(result.current.phase).toBe("idle");

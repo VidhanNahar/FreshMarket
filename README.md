@@ -48,11 +48,14 @@ npm run query:listings
 NEXT_PUBLIC_ARKIV_ACCESS_KEY=your_real_key npm run query:listings
 ```
 
-The exact executable source is [scripts/query-listings.mjs](scripts/query-listings.mjs). It defines `freshmarket.listings`, queries available entities with `eq('status', 'available')`, sorts by `$key`, and returns 20 rows. It uses the official SDK's public client and prints bigint amounts/block heights as decimal strings. For direct SDK usage:
+The exact executable source is [scripts/query-listings.mjs](scripts/query-listings.mjs). It defines `freshmarket.listings.v2`, queries available public entities with `eq('status', 'available')` and `eq('visibility', 'public')`, optionally narrows to a category branch with `startsWith('categoryPath', …)` (`CATEGORY=pets/dogs npm run query:listings`), sorts by `$key`, and returns 20 rows. It uses the official SDK's public client and prints bigint amounts/block heights as decimal strings. For direct SDK usage:
 
 ```ts
+// "dogtoy" in Mumbai: the category resolver turns the query into one indexed filter.
 const result = await publicClient.select().from(listingSchema)
-  .where(eq('status', 'available')).orderBy(asc('$key')).limit(20).fetch();
+  .where(eq('status', 'available')).where(eq('visibility', 'public'))
+  .where(startsWith('categoryPath', 'pets/dogs/toys')).where(eq('city', 'mumbai'))
+  .orderBy(asc('$key')).limit(20).fetch();
 ```
 
 The complete schema, imports and ownership caveats are in [arkiv/schema.md](arkiv/schema.md). Seller inventory also filters indexed seller and actual `$owner`; other writers can copy a public schema tag.
@@ -66,7 +69,7 @@ The complete schema, imports and ownership caveats are in [arkiv/schema.md](arki
 | Public data | Arkiv SDK 1.0.1 contract on Rabdi, chain 7794095; Viem transport |
 | Cache | TanStack Query, shared invalidation, bounded read retries, no automatic wallet-write retry |
 | Independent reader | Static Vite app with its own public SDK client, schema and dark theme |
-| Optional images | Authorized Bee HTTP upload, public bzz reference in Arkiv `imageUrl`, gateway rendering |
+| Optional images | Manual Swarm Gateway upload or HTTPS photo link, public bzz references in the Arkiv `media` list, gateway rendering |
 | Tests | Vitest, Testing Library, real SDK serialization with isolated transport fixtures |
 
 Swarm file bytes remain separate from Arkiv listing metadata. No FreshMarket Solidity contract or payment mechanism is deployed for this core flow. Rabdi uses test tGLM. Expiry is a block height; countdown time is estimated from the two-second target. The buyer view prunes on confirmed block updates; sold records stay onchain until expiry or explicit deletion.

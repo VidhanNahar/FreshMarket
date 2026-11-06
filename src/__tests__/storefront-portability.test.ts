@@ -9,13 +9,14 @@ const key = `0x${"ab".repeat(32)}`;
 const seller = "0x1111111111111111111111111111111111111111";
 function entity(status = "available", price = "0x1388") {
   return { key, owner: seller, creator: seller, createdAt: "0x64", updatedAt: "0x64", expiresAt: "0x96", creationFlags: 0, attributes: [
-    { name: "arkiv.schema", type: "str", value: "freshmarket.listings" },
-    { name: "seller", type: "addr", value: seller }, { name: "category", type: "str", value: "Electronics" },
-    { name: "city", type: "str", value: "Mumbai" }, { name: "status", type: "str", value: status },
-    { name: "priceMinor", type: "u64", value: price }, { name: "currency", type: "str", value: "INR" },
+    { name: "arkiv.schema", type: "str", value: "freshmarket.listings.v2" },
+    { name: "seller", type: "addr", value: seller }, { name: "status", type: "str", value: status },
+    { name: "visibility", type: "str", value: "public" }, { name: "categoryPath", type: "str", value: "electronics/computers/laptops" },
+    { name: "brand", type: "str", value: "lenovo" }, { name: "model", type: "str", value: "thinkpadt14" },
+    { name: "condition", type: "str", value: "good" }, { name: "city", type: "str", value: "mumbai" },
+    { name: "fulfilment", type: "str", value: "pickup" }, { name: "priceMinor", type: "u64", value: price },
     { name: "title", type: "str", value: "Portable laptop" }, { name: "description", type: "bytes", value: stringToHex("Test laptop description") },
-    { name: "imageUrl", type: "bytes", value: stringToHex("https://example.com/laptop.png") },
-    { name: "createdAt", type: "u64", value: "0x18bcfe56800" },
+    { name: "media", type: "bytes", value: stringToHex(JSON.stringify(["https://example.com/laptop.png"])) },
   ] };
 }
 
@@ -34,11 +35,11 @@ describe("two independent storefront readers", () => {
 
   it("preserves the stored Swarm reference and resolves it independently for media rendering", async () => {
     const record = entity();
-    record.attributes.find((attribute) => attribute.name === "imageUrl")!.value = stringToHex(`bzz://${"ab".repeat(32)}`);
+    record.attributes.find((attribute) => attribute.name === "media")!.value = stringToHex(JSON.stringify([`bzz://${"ab".repeat(32)}`]));
     const request = vi.fn(async ({ method }: { method: string }) => method === "eth_blockNumber" ? "0x64" : { data: [record], blockNumber: "0x64" });
     const a = new ArkivListingRepository(createPublicClient({ chain: rabdiReadChain, transport: custom({ request }, { retryCount: 0 }) }));
     const b = createPublicClient({ chain: rabdiReadChain, transport: custom({ request }, { retryCount: 0 }) });
-    expect((await a.searchAll())[0].imageUrl).toBe(`bzz://${"ab".repeat(32)}`);
+    expect((await a.searchAll())[0].media).toEqual([`bzz://${"ab".repeat(32)}`]);
     expect((await readCatalogue(b)).listings[0].imageUrl).toContain(`/bzz/${"ab".repeat(32)}/`);
   });
 
@@ -67,7 +68,9 @@ describe("two independent storefront readers", () => {
     block = "0x96";
     expect((await readCatalogue(b)).listings).toEqual([]);
     expect(await a.searchAll()).toEqual([]);
-    expect(portablePrice(10001n, "INR")).toBe("₹100.01");
+    expect(portablePrice(100_010_000n)).toBe("100.01 USDT");
+    // Both readers agree on category labels through the shared tree.
+    expect((await readCatalogue(b)).listings).toEqual([]);
   });
   it("rejects forged sellers and prunes expired cached rows using the confirmed block", async () => {
     const forged = entity(); forged.owner = "0x2222222222222222222222222222222222222222";

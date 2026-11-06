@@ -8,11 +8,14 @@ import { Marketplace } from "@/components/listings/Marketplace";
 import { ListingDetail } from "@/components/listings/ListingDetail";
 import { fixtureListing as listing } from "./fixtures/listing";
 
-const mocks = vi.hoisted(() => ({
+const { noCorrection, mocks } = vi.hoisted(() => {
+  const noCorrection = { categoryPaths: [], textWords: [], recognized: [], corrected: false };
+  return { noCorrection, mocks: {
   params: "", push: vi.fn(), refetch: vi.fn(), success: vi.fn(), error: vi.fn(),
-  listings: { data: [] as unknown[], isPending: false, isError: false, isFetching: false, currentBlock: 100n },
+  listings: { data: [] as unknown[], isPending: false, isError: false, isFetching: false, currentBlock: 100n, resolved: noCorrection, fallbackCategory: undefined as string | undefined },
   detail: { data: null as unknown, isPending: false, isError: false },
-}));
+} };
+});
 vi.mock("@/hooks/use-seller-identity", () => ({ useSellerIdentity: () => ({ data: null, isError: false, isFetching: false }) }));
 vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams(mocks.params), useRouter: () => ({ push: mocks.push }) }));
 vi.mock("@/hooks/useListings", () => ({
@@ -25,32 +28,39 @@ afterEach(cleanup);
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.params = "";
-  mocks.listings = { data: [], isPending: false, isError: false, isFetching: false, currentBlock: 100n };
+  mocks.listings = { data: [], isPending: false, isError: false, isFetching: false, currentBlock: 100n, resolved: noCorrection, fallbackCategory: undefined };
   mocks.detail = { data: listing, isPending: false, isError: false };
 });
 
 describe("URL discovery controls", () => {
   it("restores shared filters, applies category/sort, and clears everything", async () => {
     const user = userEvent.setup();
-    mocks.params = "category=Books&city=Mumbai&q=desk&sort=price-asc";
+    mocks.params = "category=pets%2Fdogs&city=Mumbai&q=desk&sort=price-asc";
     render(<ListingFilters />);
-    expect((screen.getByLabelText("Search title") as HTMLInputElement).value).toBe("desk");
-    expect((screen.getByLabelText("City (exact match)") as HTMLInputElement).value).toBe("Mumbai");
-    expect(screen.getByRole("button", { name: "Books" }).getAttribute("aria-pressed")).toBe("true");
+    expect((screen.getByLabelText("Search") as HTMLInputElement).value).toBe("desk");
+    expect((screen.getByLabelText("City") as HTMLInputElement).value).toBe("Mumbai");
+    expect(screen.getByRole("button", { name: "Pets" }).getAttribute("aria-pressed")).toBe("true");
+    expect((screen.getByLabelText("Subcategory") as HTMLSelectElement).value).toBe("pets/dogs");
+    await user.selectOptions(screen.getByLabelText("Subcategory"), "pets/dogs/toys");
+    expect(mocks.push).toHaveBeenLastCalledWith("/browse?q=desk&category=pets%2Fdogs%2Ftoys&city=Mumbai&sort=price-asc", { scroll: false });
     await user.click(screen.getByRole("button", { name: "Electronics" }));
-    expect(mocks.push).toHaveBeenLastCalledWith("/browse?category=Electronics&city=Mumbai&q=desk&sort=price-asc", { scroll: false });
+    expect(mocks.push).toHaveBeenLastCalledWith("/browse?q=desk&category=electronics&city=Mumbai&sort=price-asc", { scroll: false });
+    await user.selectOptions(screen.getByLabelText("Condition"), "like-new");
+    expect(mocks.push).toHaveBeenLastCalledWith("/browse?q=desk&category=pets%2Fdogs&city=Mumbai&condition=like-new&sort=price-asc", { scroll: false });
     await user.selectOptions(screen.getByLabelText("Sort by"), "price-desc");
-    expect(mocks.push).toHaveBeenLastCalledWith("/browse?category=Books&city=Mumbai&q=desk&sort=price-desc", { scroll: false });
+    expect(mocks.push).toHaveBeenLastCalledWith("/browse?q=desk&category=pets%2Fdogs&city=Mumbai&sort=price-desc", { scroll: false });
     await user.click(screen.getByRole("button", { name: "Clear all filters" }));
     expect(mocks.push).toHaveBeenLastCalledWith("/browse", { scroll: false });
   });
-  it("submits trimmed title and city with URL-safe encoding", async () => {
+  it("submits trimmed search, city and USDT price range with URL-safe encoding", async () => {
     const user = userEvent.setup();
     render(<ListingFilters />);
-    await user.type(screen.getByLabelText("Search title"), "phone & case");
-    await user.type(screen.getByLabelText("City (exact match)"), " New Delhi ");
+    await user.type(screen.getByLabelText("Search"), "phone & case");
+    await user.type(screen.getByLabelText("City"), " New Delhi ");
+    await user.type(screen.getByLabelText("Min USDT"), "5");
+    await user.type(screen.getByLabelText("Max USDT"), "20");
     await user.click(screen.getByRole("button", { name: "Search" }));
-    expect(mocks.push).toHaveBeenCalledWith("/browse?city=New+Delhi&q=phone+%26+case", { scroll: false });
+    expect(mocks.push).toHaveBeenCalledWith("/browse?q=phone+%26+case&city=New+Delhi&minPrice=5&maxPrice=20", { scroll: false });
   });
 });
 

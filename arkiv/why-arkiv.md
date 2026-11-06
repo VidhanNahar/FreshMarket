@@ -14,7 +14,7 @@ flowchart LR
 
 ## Two clients, one public contract
 
-FreshMarket's repository and Storefront B's `storefront/src/reader.ts` independently query the public `freshmarket.listings` schema. Storefront B has its own schema declaration, public client, transport, rendering and refresh loop. It imports no FreshMarket repository, hooks, provider or API. It has no wallet and requires no local storage. Its generated HTML/CSS/JS can be hosted on another static host without Next.js.
+FreshMarket's repository and Storefront B's `storefront/src/reader.ts` independently query the public `freshmarket.listings.v2` schema. Storefront B has its own schema declaration, public client, transport, rendering and refresh loop. It imports no FreshMarket repository, hooks, provider or API. It has no wallet and requires no local storage. Its generated HTML/CSS/JS can be hosted on another static host without Next.js.
 
 Matching schema tags alone do not prove trustworthy provenance: anyone can use the same tag. Both readers require the indexed seller to match Arkiv's actual entity owner. Entity keys and seller addresses stay visible so the demo can establish that both interfaces read the same record. This proves portable data; it does not prove marketplace moderation or item authenticity.
 

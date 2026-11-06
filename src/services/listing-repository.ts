@@ -11,7 +11,7 @@ import {
 } from "@arkiv-network/sdk";
 import { MAX_CATALOGUE_MATCHES, CATALOGUE_READ_BUDGET_MS, CatalogueReadLimitError } from "../../shared/catalogue-limits";
 import { resolveImageSource } from "../../shared/media";
-import { asc, eq, gte, lte } from "@arkiv-network/sdk/query";
+import { asc, eq, gte, lte, or, startsWith } from "@arkiv-network/sdk/query";
 import { hexToString, isAddressEqual, stringToBytes, type Hex } from "viem";
 import { ARKIV_RABDI_CHAIN_ID, getArkivPublicClient } from "@/lib/arkiv/chain";
 import { listingSchema } from "@/lib/arkiv/schema";
@@ -21,14 +21,36 @@ import {
   type ListingFilters,
   type ListingWriteReceipt,
   type ListingStatus,
+  type ListingCondition,
+  type ListingFulfilment,
+  type ListingVisibility,
+  MAX_MEDIA_ITEMS,
+  isListingCondition,
+  isListingFulfilment,
   isListingStatus,
+  isListingVisibility,
+  toCityKey,
   toPriceMinor,
+  toSearchKey,
 } from "@/domain/listing";
+import { isCategoryPath } from "../../shared/categories";
 
 // Accept an Arkiv SDK client, not an unextended Wagmi/Viem wallet client.
 export type ListingWalletClient = Pick<WalletArkivClient, "account" | "chain" | "createEntity">;
 export type ListingMutationClient = Pick<WalletArkivClient, "account" | "chain" | "patchEntity" | "extendEntity" | "deleteEntity">;
-export type ListingEdits = { priceMinor?: bigint; description?: string };
+export type ListingEdits = {
+  priceMinor?: bigint;
+  description?: string;
+  title?: string;
+  categoryPath?: string;
+  brand?: string;
+  model?: string;
+  condition?: ListingCondition;
+  fulfilment?: ListingFulfilment;
+  visibility?: ListingVisibility;
+  city?: string;
+  media?: string[];
+};
 export type ListingMutationReceipt = { entityKey: Hex; txHash: Hex; expiresAt?: bigint };
 
 /** Storage boundary for UI callers: SDK values and transaction receipts stay in this layer. */
@@ -37,7 +59,7 @@ export interface ListingRepository {
   createWithReceipt(input: CreateListingInput, walletClient: ListingWalletClient): Promise<ListingWriteReceipt>;
   getById(id: string): Promise<Listing | null>;
   search(filters?: ListingFilters): Promise<Listing[]>;
-  searchAll(filters?: Pick<ListingFilters, "category" | "city">): Promise<Listing[]>;
+  searchAll(filters?: Omit<ListingFilters, "limit" | "offset">): Promise<Listing[]>;
   searchOwned(seller: Hex): Promise<Listing[]>;
   updateListing(id: string, changes: ListingEdits, wallet: ListingMutationClient): Promise<ListingMutationReceipt>;
   updateStatus(id: string, status: ListingStatus, wallet: ListingMutationClient): Promise<ListingMutationReceipt>;
@@ -47,38 +69,50 @@ export interface ListingRepository {
 
 type ListingRow = FullRow<typeof listingSchema>;
 
+/** Decodes the media JSON list, keeping only references every reader can render safely. */
+function decodeMedia(value: Hex): string[] {
+  try {
+    const parsed: unknown = JSON.parse(hexToString(value));
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((item): item is string => typeof item === "string" && resolveImageSource(item) !== null)
+      .slice(0, MAX_MEDIA_ITEMS);
+  } catch {
+    return [];
+  }
+}
+
 /**
  * Unwraps a schema-checked SDK row into the application model.
  * The schema tag is public: other writers can claim it or forge a seller attribute,
- * so invalid lifecycle states and seller/owner mismatches are excluded from reads.
+ * so invalid enum values and seller/owner mismatches are excluded from reads.
  */
 function mapEntityToListing(row: ListingRow): Listing | null {
   const status = row.status.value;
-  if (!isListingStatus(status) || !isAddressEqual(row.seller.value, row.$owner)) {
+  const visibility = row.visibility.value;
+  const condition = row.condition.value;
+  const fulfilment = row.fulfilment.value;
+  if (!isListingStatus(status) || !isListingVisibility(visibility) || !isListingCondition(condition) ||
+      !isListingFulfilment(fulfilment) || !row.categoryPath.value || !isAddressEqual(row.seller.value, row.$owner)) {
     return null;
   }
-  // Only the application timestamp becomes a number; preserve expiry and price as bigint.
-  if (row.createdAt.value > 8_640_000_000_000_000n) return null;
-  // Public writers can reuse our schema tag with unsupported display values.
-  if (!/^[A-Z]{3}$/.test(row.currency.value)) return null;
-  if (new Intl.NumberFormat("en", {
-    style: "currency", currency: row.currency.value,
-  }).resolvedOptions().maximumFractionDigits !== 2) return null;
-
   return {
     id: row.$key,
     seller: row.seller.value,
+    owner: row.$owner,
+    status,
+    visibility,
+    categoryPath: row.categoryPath.value,
+    brand: row.brand.value,
+    model: row.model.value,
+    condition,
+    city: row.city.value,
+    fulfilment,
+    priceMinor: row.priceMinor.value,
     title: row.title.value,
     description: hexToString(row.description.value),
-    priceMinor: row.priceMinor.value,
-    currency: row.currency.value,
-    category: row.category.value,
-    city: row.city.value,
-    imageUrl: hexToString(row.imageUrl.value),
-    status,
-    createdAt: Number(row.createdAt.value),
+    media: decodeMedia(row.media.value),
+    createdAtBlock: row.$createdAt,
     expiresAtBlock: row.$expiresAt,
-    owner: row.$owner,
   };
 }
 
@@ -110,11 +144,41 @@ export class ArkivListingRepository implements ListingRepository {
   }
 
   async updateListing(id: string, changes: ListingEdits, wallet: ListingMutationClient): Promise<ListingMutationReceipt> {
-    if (changes.priceMinor === undefined && changes.description === undefined) throw new Error("No listing changes supplied");
-    const set = {
-      ...(changes.priceMinor !== undefined ? { priceMinor: u64(changes.priceMinor) } : {}),
-      ...(changes.description !== undefined ? { description: stringToBytes(requiredText(changes.description, "Description", 1000)) } : {}),
-    };
+    const hasChanges = Object.values(changes).some((v) => v !== undefined);
+    if (!hasChanges) throw new Error("No listing changes supplied");
+    const set: Record<string, unknown> = {};
+    if (changes.priceMinor !== undefined) set.priceMinor = u64(changes.priceMinor);
+    if (changes.description !== undefined) set.description = stringToBytes(requiredText(changes.description, "Description", 1000));
+    if (changes.title !== undefined) set.title = str(requiredText(changes.title, "Title", 80));
+    if (changes.categoryPath !== undefined) {
+      if (!isCategoryPath(changes.categoryPath)) throw new Error("Choose a category from the FreshMarket category list");
+      set.categoryPath = str(changes.categoryPath);
+    }
+    if (changes.brand !== undefined) set.brand = str(toSearchKey(changes.brand));
+    if (changes.model !== undefined) set.model = str(toSearchKey(changes.model));
+    if (changes.condition !== undefined) {
+      if (!isListingCondition(changes.condition)) throw new Error("Invalid item condition");
+      set.condition = str(changes.condition);
+    }
+    if (changes.fulfilment !== undefined) {
+      if (!isListingFulfilment(changes.fulfilment)) throw new Error("Choose local pickup or shipping");
+      set.fulfilment = str(changes.fulfilment);
+    }
+    if (changes.visibility !== undefined) {
+      if (!isListingVisibility(changes.visibility)) throw new Error("Invalid listing visibility");
+      set.visibility = str(changes.visibility);
+    }
+    if (changes.city !== undefined) set.city = str(toCityKey(requiredText(changes.city, "City")));
+    if (changes.media !== undefined) {
+      const media = changes.media.map((reference) => reference.trim()).filter(Boolean);
+      if (!media.length || media.length > MAX_MEDIA_ITEMS) throw new Error(`Add between 1 and ${MAX_MEDIA_ITEMS} images`);
+      for (const reference of media) {
+        if (reference.length > 2048 || !resolveImageSource(reference)) {
+          throw new Error("Images must be HTTPS URLs without credentials or public bzz:// references");
+        }
+      }
+      set.media = stringToBytes(JSON.stringify(media));
+    }
     await this.ownedListing(id, wallet);
     return wallet.patchEntity(listingSchema, id as Hex, { set });
   }
@@ -169,33 +233,39 @@ export class ArkivListingRepository implements ListingRepository {
     const expiration = ExpirationTime.fromDays(expirationDays);
     const title = requiredText(input.title, "Title", 80);
     const description = requiredText(input.description, "Description", 1000);
-    const category = requiredText(input.category, "Category");
-    const city = requiredText(input.city, "City");
-    const imageUrl = requiredText(input.imageUrl, "Image URL", 2048);
-    if (!resolveImageSource(imageUrl)) {
-      throw new Error("Image must be an HTTPS URL without credentials or a public bzz:// reference");
-    }
-    // toPriceMinor always scales by 100, so zero-/three-decimal currencies are incompatible.
-    const currency = (input.currency ?? "INR").trim().toUpperCase();
-    if (!/^[A-Z]{3}$/.test(currency) || new Intl.NumberFormat("en", {
-      style: "currency", currency,
-    }).resolvedOptions().maximumFractionDigits !== 2) {
-      throw new Error("Currency must be a three-letter code with two decimal minor units");
+    const categoryPath = requiredText(input.categoryPath, "Category");
+    if (!isCategoryPath(categoryPath)) throw new Error("Choose a category from the FreshMarket category list");
+    const city = toCityKey(requiredText(input.city, "City"));
+    const brand = toSearchKey(input.brand ?? "");
+    const model = toSearchKey(input.model ?? "");
+    if (!isListingCondition(input.condition)) throw new Error("Invalid item condition");
+    if (!isListingFulfilment(input.fulfilment)) throw new Error("Choose local pickup or shipping");
+    const visibility = input.visibility ?? "public";
+    if (!isListingVisibility(visibility)) throw new Error("Invalid listing visibility");
+    const media = (input.media ?? []).map((reference) => reference.trim()).filter(Boolean);
+    if (!media.length || media.length > MAX_MEDIA_ITEMS) throw new Error(`Add between 1 and ${MAX_MEDIA_ITEMS} images`);
+    for (const reference of media) {
+      if (reference.length > 2048 || !resolveImageSource(reference)) {
+        throw new Error("Images must be HTTPS URLs without credentials or public bzz:// references");
+      }
     }
 
     // The SDK infers bare bigint as u256, so u64 columns need explicit u64() wrappers.
     // Long text uses UTF-8 bytes; mapEntityToListing reverses that encoding on reads.
     const values: CreateEntityValues<typeof listingSchema> = {
       seller,
-      category: str(category),
       status: "available",
+      visibility: str(visibility),
+      categoryPath: str(categoryPath),
+      brand: str(brand),
+      model: str(model),
+      condition: str(input.condition),
       city: str(city),
+      fulfilment: str(input.fulfilment),
       priceMinor: u64(toPriceMinor(input.price)),
       title: str(title),
       description: stringToBytes(description),
-      imageUrl: stringToBytes(imageUrl),
-      currency,
-      createdAt: u64(Date.now()),
+      media: stringToBytes(JSON.stringify(media)),
     };
     return walletClient.createEntity(listingSchema, values, { expiration });
   }
@@ -222,13 +292,13 @@ export class ArkivListingRepository implements ListingRepository {
     return rows.map(mapEntityToListing).filter((listing) => listing !== null);
   }
 
-  /** Fetch every matching page before client-side title search and price sorting. */
-  async searchAll(filters: Pick<ListingFilters, "category" | "city"> = {}): Promise<Listing[]> {
+  /** Fetch every page matching the indexed filters; text ranking happens on this narrowed set. */
+  async searchAll(filters: Omit<ListingFilters, "limit" | "offset"> = {}): Promise<Listing[]> {
     return this.readAll(filters);
   }
 
   async searchOwned(seller: Hex): Promise<Listing[]> {
-    return this.readAll({ seller, status: "all" });
+    return this.readAll({ seller, status: "all", visibility: "all" });
   }
 
   private async readAll(filters: ListingFilters): Promise<Listing[]> {
@@ -258,10 +328,25 @@ export class ArkivListingRepository implements ListingRepository {
       if (!isListingStatus(status)) throw new Error("Invalid listing status");
       query.where(eq("status", status));
     }
-    if (filters.category && filters.category !== "All Items") {
-      query.where(eq("category", filters.category.trim()));
+    const visibility = filters.visibility ?? "public";
+    if (visibility !== "all") {
+      if (!isListingVisibility(visibility)) throw new Error("Invalid listing visibility");
+      query.where(eq("visibility", visibility));
     }
-    if (filters.city) query.where(eq("city", filters.city.trim()));
+    const categories = (filters.categoryPaths ?? []).map((path) => path.trim()).filter(Boolean);
+    if (categories.length === 1) query.where(startsWith("categoryPath", categories[0]));
+    else if (categories.length > 1) query.where(or(...categories.map((path) => startsWith("categoryPath", path))));
+    const key = filters.brandOrModel ? toSearchKey(filters.brandOrModel) : "";
+    if (key) query.where(or(eq("brand", key), startsWith("model", key)));
+    if (filters.city) query.where(eq("city", toCityKey(filters.city)));
+    if (filters.condition) {
+      if (!isListingCondition(filters.condition)) throw new Error("Invalid item condition");
+      query.where(eq("condition", filters.condition));
+    }
+    if (filters.fulfilment) {
+      if (!isListingFulfilment(filters.fulfilment)) throw new Error("Invalid fulfilment option");
+      query.where(eq("fulfilment", filters.fulfilment));
+    }
     // Validate through u64() before querying, including explicit zero for free items.
     if (filters.minPriceMinor !== undefined && filters.maxPriceMinor !== undefined &&
         filters.minPriceMinor > filters.maxPriceMinor) {
