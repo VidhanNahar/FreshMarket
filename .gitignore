@@ -45,3 +45,6 @@ next-env.d.ts
 
 # Generated standalone Storefront B assets
 /public/storefront/
+
+# ENS registration commit secret (scripts/register-ens-parent.mjs)
+ens/.pending-registration.json

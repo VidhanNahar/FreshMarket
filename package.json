@@ -13,7 +13,8 @@
     "query:listings": "node scripts/query-listings.mjs",
     "smoke": "node scripts/smoke.mjs",
     "verify:ens": "node scripts/verify-ens.mjs",
-    "test:ens-live": "ENS_LIVE_TESTS=1 vitest run src/__tests__/ens-delegation-live.test.ts"
+    "test:ens-live": "ENS_LIVE_TESTS=1 vitest run src/__tests__/ens-delegation-live.test.ts",
+    "ens:register": "node scripts/register-ens-parent.mjs"
   },
   "dependencies": {
     "@arkiv-network/sdk": "^1.0.1",
