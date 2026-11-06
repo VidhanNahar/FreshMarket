@@ -33,7 +33,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { SwarmUpload } from "@/components/swarm/SwarmUpload";
 import { imageSource } from "@/lib/swarm/media";
 import { expiryDemoPreset } from "@/domain/expiry-demo";
 import { usePublishListing } from "@/hooks/use-publish-listing";
@@ -94,17 +93,16 @@ export default function SellPage() {
   const { switchChain } = useSwitchChain();
   const { openConnectModal } = useConnectModal();
 
-  const [mediaBusy, setMediaBusy] = useState(false);
   const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
   const publishing = usePublishListing();
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
 
   const {
     register,
-    setValue,
     handleSubmit,
     control,
     reset,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<ListingFormValues>({
     resolver: zodResolver(listingFormSchema),
@@ -128,7 +126,6 @@ export default function SellPage() {
   const imageError = Boolean(watchedImageUrl && failedImageUrl === watchedImageUrl);
 
   const onFormSubmit = async (data: ListingFormValues) => {
-    if (mediaBusy) { toast.error("Wait for the image upload to finish."); return; }
     if (!isConnected || !address) {
       toast.error("Please connect your wallet before publishing to Arkiv.");
       openConnectModal?.();
@@ -153,7 +150,6 @@ export default function SellPage() {
 
   const handleReset = () => {
     // Never discard the only in-memory record of an unresolved submitted transaction.
-    if (mediaBusy) { toast.info("Wait for the image upload to finish before resetting."); return; }
     if (publishing.isPending || (publishing.txHash && !publishing.receipt)) {
       setPublishDialogOpen(true);
       return;
@@ -185,7 +181,7 @@ export default function SellPage() {
       </div>
 
       <div className="mt-5 flex flex-wrap items-center gap-3">
-        <Button type="button" variant="outline" disabled={mediaBusy || publishing.isPending || Boolean(publishing.txHash)} onClick={() => {
+        <Button type="button" variant="outline" disabled={publishing.isPending || Boolean(publishing.txHash)} onClick={() => {
           reset(expiryDemoPreset);
           setFailedImageUrl(null);
           toast.info("15-minute demo preset loaded. Review it before publishing.");
@@ -479,34 +475,44 @@ export default function SellPage() {
                 </div>
                 <p className="text-[11px] text-muted-foreground -mt-3">Unlisted hides the item from FreshMarket browse. Arkiv data stays public to anyone who queries it.</p>
 
+                <section aria-label="Upload your photo" className="space-y-3 rounded-xl border border-dashed border-border p-4">
+                  <p className="text-sm font-semibold">Add your product photo</p>
+                  <ol className="list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
+                    <li>Open Swarm Gateway and upload your photo there.</li>
+                    <li>Copy the photo’s download URL or Swarm reference.</li>
+                    <li>Return here, paste it below, and check the live preview before publishing.</li>
+                  </ol>
+                  <a href="https://gateway.ethswarm.org/" target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 underline dark:text-emerald-400">
+                    Upload photo to Swarm (opens in a new tab)
+                  </a>
+                  <p className="text-xs text-muted-foreground">Already have a direct HTTPS photo link? Paste it below.</p>
+                </section>
+
                 {/* Image URL */}
                 <div className="space-y-1.5">
                   <Label htmlFor="imageUrl" className="text-sm font-semibold flex items-center gap-1">
                     <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                    Product Image URL <span className="text-rose-500">*</span>
+                    Photo URL or Swarm reference <span className="text-rose-500">*</span>
                   </Label>
                   <Input
                     id="imageUrl"
-                    disabled={mediaBusy}
-                    type="url"
-                    placeholder="https://images.unsplash.com/photo-1505740420928-5e560c06d30e"
+                    type="text"
+                    placeholder="https://…/bzz/…/ or bzz://…"
                     {...register("imageUrl")}
                     aria-invalid={Boolean(errors.imageUrl)}
-                    aria-describedby={errors.imageUrl ? "imageUrl-error" : undefined}
+                    aria-describedby={errors.imageUrl ? "imageUrl-help imageUrl-error" : "imageUrl-help"}
                   />
-                  {errors.imageUrl ? (
+                  <p id="imageUrl-help" className="text-[11px] text-muted-foreground">
+                    Paste the Swarm Gateway share link or a direct HTTPS photo link, or add bzz:// before the 64-character Swarm reference. Photos are public.
+                  </p>
+                  {errors.imageUrl && (
                     <p id="imageUrl-error" className="text-xs text-rose-500 flex items-center gap-1 mt-1">
                       <AlertCircle className="h-3 w-3 shrink-0" />
                       {errors.imageUrl.message}
                     </p>
-                  ) : (
-                    <p className="text-[11px] text-muted-foreground">
-                      HTTPS image URL or public bzz:// reference. Uploaded image content is public.
-                    </p>
                   )}
                 </div>
-
-                <SwarmUpload onBusyChange={setMediaBusy} onUploaded={(reference) => setValue("imageUrl", reference, { shouldValidate: true, shouldDirty: true })} />
 
                 {/* Description */}
                 <div className="space-y-1.5">
@@ -563,7 +569,7 @@ export default function SellPage() {
                   ) : (
                     <Button
                       type="submit"
-                      disabled={mediaBusy || isSubmitting || !publishing.canSubmit}
+                      disabled={isSubmitting || !publishing.canSubmit}
                       className="bg-emerald-700 hover:bg-emerald-800 text-white gap-2 w-full sm:w-auto font-medium"
                     >
                       <Sparkles className="h-4 w-4" />

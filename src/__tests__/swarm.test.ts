@@ -35,9 +35,16 @@ async function request(patch: Record<string, string> = {}, body = image) {
 }
 
 describe("Swarm media reference contract", () => {
+  it("renders copied Swarm viewer links as direct images, including existing listings", () => {
+    expect(resolveImageSource(`https://gateway.ethswarm.org/access/${reference}`)).toBe(`https://api.gateway.ethswarm.org/bzz/${reference}/`);
+    expect(resolveImageSource(`https://gateway.testnet.ethswarm.org/access/${reference}/photo.png`)).toBe(`https://api.gateway.testnet.ethswarm.org/bzz/${reference}/photo.png`);
+    expect(resolveImageSource(`https://gateway.ethswarm.org/bzz/${reference}/`)).toBe(`https://api.gateway.ethswarm.org/bzz/${reference}/`);
+    expect(resolveImageSource(`https://example.com/access/${reference}`)).toBe(`https://example.com/access/${reference}`);
+    expect(resolveImageSource(`https://gateway.ethswarm.org/access/${"ab".repeat(64)}`)).toBeNull();
+  });
   it("resolves immutable public references and preserves legacy HTTPS images", () => {
     expect(swarmReference(`bzz://${reference.toUpperCase()}`)).toBe(reference);
-    expect(resolveImageSource(`bzz://${reference}`)).toBe(`https://api.gateway.testnet.ethswarm.org/bzz/${reference}/`);
+    expect(resolveImageSource(`bzz://${reference}`)).toBe(`https://api.gateway.ethswarm.org/bzz/${reference}/`);
     expect(resolveImageSource("https://example.com/desk.png")).toBe("https://example.com/desk.png");
     for (const value of ["javascript:alert(1)", "http://example.com/x", `bzz://${"a".repeat(128)}`, "bzz://not-a-reference", "https://user:secret@example.com/image"]) expect(resolveImageSource(value)).toBeNull();
   });

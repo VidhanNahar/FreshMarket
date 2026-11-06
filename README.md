@@ -69,7 +69,7 @@ The complete schema, imports and ownership caveats are in [arkiv/schema.md](arki
 | Public data | Arkiv SDK 1.0.1 contract on Rabdi, chain 7794095; Viem transport |
 | Cache | TanStack Query, shared invalidation, bounded read retries, no automatic wallet-write retry |
 | Independent reader | Static Vite app with its own public SDK client, schema and dark theme |
-| Optional images | Authorized Bee HTTP upload, public bzz references in the Arkiv `media` list, gateway rendering |
+| Optional images | Manual Swarm Gateway upload or HTTPS photo link, public bzz references in the Arkiv `media` list, gateway rendering |
 | Tests | Vitest, Testing Library, real SDK serialization with isolated transport fixtures |
 
 Swarm file bytes remain separate from Arkiv listing metadata. No FreshMarket Solidity contract or payment mechanism is deployed for this core flow. Rabdi uses test tGLM. Expiry is a block height; countdown time is estimated from the two-second target. The buyer view prunes on confirmed block updates; sold records stay onchain until expiry or explicit deletion.

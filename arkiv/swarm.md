@@ -1,5 +1,15 @@
 # Swarm image integration
 
+## Seller photo flow
+
+The seller form links to https://gateway.ethswarm.org/ in a new tab. Upload a photo there, copy its direct HTTPS download URL or public Swarm reference, then paste it into FreshMarket. Prefix a bare 64-hex reference with `bzz://`. Check the live preview before publishing; publishing stores the reference in Arkiv, not the image bytes.
+
+This manual flow needs no FreshMarket Bee upload credentials or upload-state Redis. The default read gateway is mainnet (`https://api.gateway.ethswarm.org`). Set both `NEXT_PUBLIC_SWARM_GATEWAY_URL` and `VITE_SWARM_GATEWAY_URL` to that value for mainnet references and restart/rebuild both readers. Existing testnet references still require a testnet read gateway.
+
+## Optional direct-upload implementation
+
+The server upload route and supporting component remain available in the codebase but are not used by the seller form. The setup below applies only when enabling that optional integration.
+
 ## What is implemented
 
 FreshMarket stores public PNG/JPEG/WebP files on Swarm and stores their immutable `bzz://<64-hex-reference>` in the Arkiv entity's `media` list (UTF-8 JSON bytes). Legacy credential-free HTTPS URLs still work. Encrypted 128-hex references are rejected: they can contain decryption keys and must not be published as plain Arkiv metadata.
