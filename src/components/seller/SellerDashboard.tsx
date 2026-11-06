@@ -39,8 +39,8 @@ import { ListingImage } from "@/components/listings/ListingImage";
 import { ListingGridSkeleton, ListingStatus as StatusBadge } from "@/components/listings/ListingCard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
-const button = "rounded-lg border border-black/20 px-3 py-2 text-sm font-medium hover:border-emerald-600 disabled:cursor-not-allowed disabled:opacity-50";
-const field = "mt-1 w-full rounded-lg border border-black/20 bg-background px-3 py-2";
+const button = "rounded-lg border border-input px-3 py-2 text-sm font-medium hover:border-emerald-600 disabled:cursor-not-allowed disabled:opacity-50";
+const field = "mt-1 w-full rounded-lg border border-input bg-background px-3 py-2";
 type ActionDialog = { listing: Listing; kind: "edit" | "extend" | "delete" };
 
 export function SellerDashboard() {
@@ -67,7 +67,7 @@ export function SellerDashboard() {
     setDialog({ listing, kind });
   }
 
-  if (!isConnected || !address) return <div className="space-y-4 rounded-2xl border border-black/10 p-8 text-center"><h2 className="text-xl font-semibold">Connect your seller wallet</h2><p>Connect a wallet to view and manage its listings.</p><button type="button" className={button} onClick={openConnectModal}>Connect wallet</button></div>;
+  if (!isConnected || !address) return <div className="space-y-4 rounded-2xl border border-border p-8 text-center"><h2 className="text-xl font-semibold">Connect your seller wallet</h2><p>Connect a wallet to view and manage its listings.</p><button type="button" className={button} onClick={openConnectModal}>Connect wallet</button></div>;
 
   return <div className="mt-8 space-y-6">
     <p className="break-all font-mono text-xs">Seller: {address}</p>
@@ -82,7 +82,7 @@ export function SellerDashboard() {
     </div>}
     <div role="group" aria-label="Listing status" className="flex flex-wrap gap-2">{(["all", ...LISTING_STATUSES] as const).map((status) => <button type="button" key={status} aria-pressed={tab === status} className={`${button} capitalize ${tab === status ? "bg-emerald-700 text-white" : ""}`} onClick={() => setTab(status)}>{status === "all" ? "All Items" : status} ({listings.filter((listing) => status === "all" || listing.status === status).length})</button>)}</div>
     <button type="button" className={button} disabled={query.isFetching || actions.isPending} onClick={() => void query.refetch()}>Refresh listings</button>
-    {query.isPending ? <ListingGridSkeleton /> : query.isError ? <div role="alert"><p>{getListingReadErrorMessage(query.error)}</p><button type="button" className={`${button} mt-3`} onClick={() => void query.refetch()}>Retry</button></div> : !shown.length ? <div className="rounded-2xl border border-dashed border-black/20 p-10 text-center"><h2 className="text-xl font-semibold">{listings.length ? "No listings in this status" : "No listings yet"}</h2><Link href="/sell" className="mt-3 inline-block text-emerald-700 dark:text-emerald-400 underline">Create your first listing</Link></div> : <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">{shown.map((listing) => <article key={listing.id} aria-label={listing.title} className="overflow-hidden rounded-2xl border border-black/10">
+    {query.isPending ? <ListingGridSkeleton /> : query.isError ? <div role="alert"><p>{getListingReadErrorMessage(query.error)}</p><button type="button" className={`${button} mt-3`} onClick={() => void query.refetch()}>Retry</button></div> : !shown.length ? <div className="rounded-2xl border border-dashed border-input p-10 text-center"><h2 className="text-xl font-semibold">{listings.length ? "No listings in this status" : "No listings yet"}</h2><Link href="/sell" className="mt-3 inline-block text-emerald-700 dark:text-emerald-400 underline">Create your first listing</Link></div> : <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">{shown.map((listing) => <article key={listing.id} aria-label={listing.title} className="overflow-hidden rounded-2xl border border-border">
       <ListingImage src={listing.media[0] ?? ""} title={listing.title} />
       <div className="space-y-4 p-5"><div className="flex items-start justify-between gap-2"><Link href={`/listing/${listing.id}`} className="font-semibold hover:underline">{listing.title}</Link><StatusBadge status={listing.status} /></div><p className="text-xl font-bold">{formatPrice(listing.priceMinor)}</p>{listing.visibility === "unlisted" && <p className="text-xs text-muted-foreground">Unlisted: only people with the link see it in FreshMarket.</p>}<p className="text-xs"><ExpirationCountdown expiresAtBlock={listing.expiresAtBlock} currentBlock={block.data} /></p>
         <div className="flex flex-wrap gap-2">{LISTING_STATUSES.filter((status) => status !== listing.status).map((status) => <button type="button" key={status} disabled={disabled} className={`${button} capitalize`} onClick={() => void actions.run(listing, { kind: "status", status })}>Mark as {status}</button>)}
