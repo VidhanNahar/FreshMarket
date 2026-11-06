@@ -13,6 +13,8 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "public/storefront/**",
+    // Foundry project: Solidity sources and vendored libraries (forge-std, OpenZeppelin).
+    "contracts/**",
   ]),
 ]);
 

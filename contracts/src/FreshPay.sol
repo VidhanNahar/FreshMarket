@@ -73,7 +73,6 @@ contract FreshPay is ReentrancyGuard {
     error UnexpectedTransferAmount(uint256 received);
     error UnknownOrder(uint64 orderId);
     error InvalidState(State state);
-    error NotBuyer();
     error NotMerchant();
     error ReleaseNotDue(uint64 releaseAfter);
     error RefundExceedsPayment(uint256 refundable);

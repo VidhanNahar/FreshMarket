@@ -3,6 +3,8 @@ import { http } from "wagmi";
 import { mainnet, sepolia } from "wagmi/chains";
 import { rabdiWalletChain } from "@/lib/arkiv/chain";
 import { ensConfig } from "@/lib/ens/config";
+import { whitechainSepolia } from "@/freshpay/chain";
+import { freshPayConfig } from "@/lib/freshpay/config";
 
 /**
  * WalletConnect Project ID from environment.
@@ -19,12 +21,14 @@ export const wagmiConfig = getDefaultConfig({
   // which Wagmi can send the add/switch request for the custom network.
   // Start new sessions on Ethereum; preserve Rabdi when already connected there.
   // Marketplace guards require Rabdi before writes.
-  chains: [mainnet, rabdiWalletChain, sepolia],
+  chains: [mainnet, rabdiWalletChain, sepolia, whitechainSepolia],
   transports: {
     [rabdiWalletChain.id]: http(),
     [mainnet.id]: http(),
     // ENS actions select this chain explicitly; Arkiv's transport and initial session stay intact.
     [sepolia.id]: http(ensConfig.rpcUrl),
+    // Checkout pages select Whitechain explicitly for USDT payments; no other page switches to it.
+    [whitechainSepolia.id]: http(freshPayConfig.rpcUrl),
   },
   ssr: true,
 });

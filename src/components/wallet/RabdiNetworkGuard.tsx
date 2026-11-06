@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore, useState } from "react";
 import { usePathname } from "next/navigation";
-import { isEnsPage } from "@/lib/ens/config";
+import { pageNetwork } from "@/lib/wallet/page-networks";
 import { useAccount, useBalance, useChainId, useSwitchChain } from "wagmi";
 import { toast } from "sonner";
 import { AlertTriangle, Droplets, RefreshCw, Wallet, X } from "lucide-react";
@@ -75,8 +75,8 @@ export function RabdiNetworkGuard() {
     },
   });
 
-  // ENS setup deliberately uses Sepolia. Do not compete with its explicit network controls.
-  if (!mounted || isEnsPage(pathname)) return null;
+  // ENS setup uses Sepolia and checkout uses Whitechain. Do not compete with their network controls.
+  if (!mounted || pageNetwork(pathname) !== "rabdi") return null;
 
   async function handleSwitch() {
     try {

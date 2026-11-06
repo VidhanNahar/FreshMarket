@@ -45,6 +45,7 @@ const KNOWN_CHAIN_NAMES: Record<number, string> = {
   8453: "Base",
   42161: "Arbitrum One",
   11155111: "Sepolia",
+  1874: "Whitechain Sepolia",
   [RABDI_CHAIN_ID]: RABDI_CHAIN_NAME,
 };
 
