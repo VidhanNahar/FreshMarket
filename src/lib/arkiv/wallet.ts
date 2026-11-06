@@ -25,7 +25,16 @@ export async function createListingWalletClient(wallet: WalletClient, events: Wa
     transport: custom({
       request: async (args) => {
         const sending = args.method === "eth_sendTransaction" || args.method === "eth_sendRawTransaction";
-        if (sending) events.onSignatureRequested?.();
+        if (sending) {
+          // A wallet can switch accounts/networks while ownership reads or gas estimation run.
+          const currentChain = await wallet.transport.request({ method: "eth_chainId" }, { retryCount: 0 });
+          const accounts = await wallet.transport.request({ method: "eth_accounts" }, { retryCount: 0 });
+          if (Number(currentChain) !== ARKIV_RABDI_CHAIN_ID) throw new Error("Switch your wallet to Arkiv Rabdi");
+          if (!Array.isArray(accounts) || typeof accounts[0] !== "string" || accounts[0].toLowerCase() !== wallet.account!.address.toLowerCase()) {
+            throw new Error("Wallet account changed. Reconnect and try again.");
+          }
+          events.onSignatureRequested?.();
+        }
         const result = await wallet.transport.request(args, { retryCount: 0 });
         if (sending) events.onSubmitted?.(result as Hex);
         return result;

@@ -194,3 +194,9 @@ RUN_ARKIV_INTEGRATION=1 ARKIV_TEST_ENTITY_KEY=0x... npm test -- src/__tests__/ar
 ```
 
 The catalog check can pass with an empty testnet catalog. Only the entity-key check and the browser-wallet checklist establish public read-back of your actual write.
+
+### Seller lifecycle (Phase 4: issues #11–#13)
+
+`/my-listings` now reads every live listing owned by the connected seller, with All Items / Available / Reserved / Sold filters. Sellers can change status, edit price and description, extend the existing expiry by +7/+14/+30 days, and confirm permanent removal. Managing records requires Rabdi; inventory reads still work on another network. Sold items remain stored until their normal expiry or an explicit seller deletion.
+
+Actions show wallet/pending/verification states, optimistic changes with rollback, public-indexing delays, and transaction links. If confirmation is unknown after submission, use **Check transaction status** before another action. Pending locks are in memory; retain the transaction link before leaving the page. Full behavior and the pending live two-wallet acceptance checklist are documented in [arkiv/how-you-use-arkiv.md](arkiv/how-you-use-arkiv.md).

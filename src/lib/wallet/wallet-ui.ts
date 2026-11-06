@@ -132,6 +132,12 @@ export function getWalletErrorReason(error: unknown): string {
   const { message, code } = collectWalletError(error);
   const lower = message.toLowerCase();
 
+  if (lower.includes("unauthorized") || lower.includes("notowner") || /is owned by.*not /.test(lower) || lower.includes("not the owner") || lower.includes("only the listing owner")) {
+    return "Only the listing owner can change or delete this item. Connect the seller wallet and try again.";
+  }
+  if (lower.includes("account changed")) return "Your wallet account changed. Reconnect the seller wallet and try again.";
+  if (lower.includes("expired") || lower.includes("listing is missing")) return "This listing is no longer available. Refresh your listings.";
+
   if (lower.includes("invalid chainid") || lower.includes("chain is not approved")) {
     return "Your wallet session has not approved Arkiv Rabdi. Disconnect FreshMarket in your wallet, add the Rabdi network, then reconnect. If your mobile wallet does not support custom networks, use MetaMask or Rabby in your browser.";
   }
@@ -167,6 +173,8 @@ export function getWalletErrorReason(error: unknown): string {
   ) {
     return "Arkiv Rabdi is not added to your wallet. Approve the network request to continue.";
   }
+
+  if (lower.includes("arkiv rabdi")) return "Connect the seller wallet on Arkiv Rabdi before changing this listing.";
 
   return DEFAULT_WALLET_ERROR;
 }

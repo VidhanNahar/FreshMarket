@@ -18,12 +18,16 @@ import {
   type CreateListingInput,
   type ListingFilters,
   type ListingWriteReceipt,
+  type ListingStatus,
   isListingStatus,
   toPriceMinor,
 } from "@/domain/listing";
 
 // Accept an Arkiv SDK client, not an unextended Wagmi/Viem wallet client.
 export type ListingWalletClient = Pick<WalletArkivClient, "account" | "chain" | "createEntity">;
+export type ListingMutationClient = Pick<WalletArkivClient, "account" | "chain" | "patchEntity" | "extendEntity" | "deleteEntity">;
+export type ListingEdits = { priceMinor?: bigint; description?: string };
+export type ListingMutationReceipt = { entityKey: Hex; txHash: Hex; expiresAt?: bigint };
 
 /** Storage boundary for UI callers: SDK values and transaction receipts stay in this layer. */
 export interface ListingRepository {
@@ -32,6 +36,11 @@ export interface ListingRepository {
   getById(id: string): Promise<Listing | null>;
   search(filters?: ListingFilters): Promise<Listing[]>;
   searchAll(filters?: Pick<ListingFilters, "category" | "city">): Promise<Listing[]>;
+  searchOwned(seller: Hex): Promise<Listing[]>;
+  updateListing(id: string, changes: ListingEdits, wallet: ListingMutationClient): Promise<ListingMutationReceipt>;
+  updateStatus(id: string, status: ListingStatus, wallet: ListingMutationClient): Promise<ListingMutationReceipt>;
+  extendExpiry(id: string, additionalDays: number, wallet: ListingMutationClient): Promise<ListingMutationReceipt>;
+  deleteListing(id: string, wallet: ListingMutationClient): Promise<ListingMutationReceipt>;
 }
 
 type ListingRow = FullRow<typeof listingSchema>;
@@ -84,6 +93,49 @@ function requiredText(value: string, field: string, maxLength?: number): string 
 export class ArkivListingRepository implements ListingRepository {
   // Inject a client for isolated tests; normal callers lazily use the shared read client.
   constructor(private readonly publicClient?: PublicArkivClient) {}
+
+  private async ownedListing(id: string, wallet: ListingMutationClient): Promise<Listing> {
+    if (!wallet?.account || wallet.chain?.id !== ARKIV_RABDI_CHAIN_ID) {
+      throw new Error("Connect a wallet on Arkiv Rabdi before managing listings");
+    }
+    const listing = await this.getById(id);
+    if (!listing) throw new Error("Listing is missing, expired, or incompatible");
+    if (!isAddressEqual(wallet.account.address, listing.seller) ||
+        !isAddressEqual(wallet.account.address, listing.owner)) {
+      throw new Error("Unauthorized: only the listing owner can change this listing");
+    }
+    return listing;
+  }
+
+  async updateListing(id: string, changes: ListingEdits, wallet: ListingMutationClient): Promise<ListingMutationReceipt> {
+    if (changes.priceMinor === undefined && changes.description === undefined) throw new Error("No listing changes supplied");
+    const set = {
+      ...(changes.priceMinor !== undefined ? { priceMinor: u64(changes.priceMinor) } : {}),
+      ...(changes.description !== undefined ? { description: stringToBytes(requiredText(changes.description, "Description", 1000)) } : {}),
+    };
+    await this.ownedListing(id, wallet);
+    return wallet.patchEntity(listingSchema, id as Hex, { set });
+  }
+
+  async updateStatus(id: string, status: ListingStatus, wallet: ListingMutationClient): Promise<ListingMutationReceipt> {
+    if (!isListingStatus(status)) throw new Error("Invalid listing status");
+    await this.ownedListing(id, wallet);
+    // Status changes never delete the record or change its expiry.
+    return wallet.patchEntity(listingSchema, id as Hex, { set: { status } });
+  }
+
+  async extendExpiry(id: string, additionalDays: number, wallet: ListingMutationClient): Promise<ListingMutationReceipt> {
+    if (![7, 14, 30].includes(additionalDays)) throw new Error("Choose 7, 14, or 30 additional days");
+    const listing = await this.ownedListing(id, wallet);
+    const extraBlocks = ExpirationTime.fromDays(additionalDays).minLifetime;
+    return wallet.extendEntity({ entityKey: id as Hex,
+      expiration: ExpirationTime.atBlock(listing.expiresAtBlock + extraBlocks) });
+  }
+
+  async deleteListing(id: string, wallet: ListingMutationClient): Promise<ListingMutationReceipt> {
+    await this.ownedListing(id, wallet);
+    return wallet.deleteEntity({ entityKey: id as Hex });
+  }
 
   /**
    * Validates form values and asks the connected Arkiv wallet to create the entity.
@@ -171,6 +223,14 @@ export class ArkivListingRepository implements ListingRepository {
 
   /** Fetch every matching page before client-side title search and price sorting. */
   async searchAll(filters: Pick<ListingFilters, "category" | "city"> = {}): Promise<Listing[]> {
+    return this.readAll(filters);
+  }
+
+  async searchOwned(seller: Hex): Promise<Listing[]> {
+    return this.readAll({ seller, status: "all" });
+  }
+
+  private async readAll(filters: ListingFilters): Promise<Listing[]> {
     const listings = new Map<string, Listing>();
     for (let offset = 0; ; offset += 100) {
       const rows = await this.searchRows({ ...filters, limit: 100, offset });
