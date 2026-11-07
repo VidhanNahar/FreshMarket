@@ -184,13 +184,11 @@ Full Arkiv walkthrough: [arkiv/portability-demo.md](arkiv/portability-demo.md).
 - Order webhooks are implemented and tested (`TEST_REPORT.md`) but not running on the live deployment, which has no Redis state store configured. Run them locally with `npm run freshpay:webhooks`.
 - Not audited for production. See [SECURITY.md](SECURITY.md).
 
-## How we used AI
+## AI attribution
 
-- **OpenAI Codex:** implementation, review, debugging, tests and documentation for the Arkiv marketplace, SECOND LOOK, Swarm and ENS phases.
-- **Antigravity CLI / Gemini:** planning and writing GitHub issues.
-- **Claude Code (Claude Opus 5.5):** the FreshPay contract and tests, checkout SDK and widget, checkout pages, webhooks, reviews, and documentation, including this README and the `arkiv/` judging files.
+We used AI as an engineering assistant for implementation drafts, test generation, debugging and documentation—not as a substitute for verification. The team defined the product and acceptance criteria, reviewed and integrated the changes, controlled the project wallets, and authorized every live test run and deployment.
 
-Commits prepared with Claude Code carry a `Co-Authored-By` trailer. The team chose the product and scope and signed every live transaction from its own wallets. Every result claimed in this repository comes from a command you can rerun or a transaction you can look up.
+The detailed [AI attribution](AI_ATTRIBUTION.md) names the tools, the specific files and areas they assisted, and how the resulting work was checked. AI-assisted commits also retain their available `Co-Authored-By` trailers. No result is accepted merely because an AI produced it: the claims in this README are backed by reproducible tests or linked onchain transactions.
 
 ## Team and license
 
