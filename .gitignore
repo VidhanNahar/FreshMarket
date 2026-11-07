@@ -48,3 +48,6 @@ next-env.d.ts
 
 # ENS registration commit secret (scripts/register-ens-parent.mjs)
 ens/.pending-registration.json
+
+# Live demo run: generated seller key and evidence (scripts in src/__tests__/live-demo-flow.test.ts)
+.live-demo/
