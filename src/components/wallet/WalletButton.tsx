@@ -14,6 +14,17 @@ import {
 import { cn } from "@/lib/utils";
 import { shortenAddress } from "@/lib/wallet/wallet-ui";
 import { WalletSummary } from "./WalletSummary";
+import { useSellerIdentity } from "@/hooks/use-seller-identity";
+
+/** The wallet's verified ENS name (e.g. alice.freshmarket.eth), else its short address. */
+function AccountLabel({ address }: { address: string }) {
+  const identity = useSellerIdentity(address);
+  // Keep the last verified name during the 60 s refresh (no flicker); drop it if a check fails.
+  const name = !identity.isError ? identity.data?.name : undefined;
+  return name
+    ? <span className="max-w-[14rem] truncate text-xs font-semibold sm:text-sm" title={address}>{name}</span>
+    : <span className="font-mono text-xs sm:text-sm">{shortenAddress(address)}</span>;
+}
 
 interface WalletButtonProps {
   /** Stretch to the container width (used in the mobile menu). */
@@ -26,7 +37,7 @@ interface WalletButtonProps {
  *
  * - Disconnected: opens the RainbowKit connect modal.
  * - Connected on an unsupported chain: opens the chain modal to switch.
- * - Connected on Rabdi: shows the truncated address and opens the
+ * - Connected: shows the wallet's verified ENS name (or truncated address) and opens the
  *   detailed wallet dialog (copy, balance, faucet, disconnect).
  */
 export function WalletButton({ fullWidth = false, className }: WalletButtonProps) {
@@ -102,9 +113,7 @@ export function WalletButton({ fullWidth = false, className }: WalletButtonProps
                 className="inline-block h-2 w-2 rounded-full bg-emerald-500"
                 aria-hidden="true"
               />
-              <span className="font-mono text-xs sm:text-sm">
-                {shortenAddress(account.address)}
-              </span>
+              <AccountLabel address={account.address} />
               <ChevronDown
                 className="h-3.5 w-3.5 text-muted-foreground"
                 aria-hidden="true"
