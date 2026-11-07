@@ -5,7 +5,8 @@ import { useState } from "react";
 import { FreshPayCheckout, whitechainTxUrl, type VerifiedPayment } from "@/freshpay";
 
 const FRESHPAY = process.env.NEXT_PUBLIC_FRESHPAY_ADDRESS as `0x${string}`;
-const MERCHANT = process.env.NEXT_PUBLIC_FRESHPAY_DEMO_MERCHANT as `0x${string}`;
+// Demo merchant: the alice.freshmarket.eth wallet unless a deployment sets its own.
+const MERCHANT = (process.env.NEXT_PUBLIC_FRESHPAY_DEMO_MERCHANT || "0x2D63097b7d955d487F06523f05676611146CA905") as `0x${string}`;
 
 export default function CheckoutDemo() {
   const [orderId] = useState(() => `freshmarket-demo-${crypto.randomUUID()}`); // Your own order ID

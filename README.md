@@ -6,11 +6,38 @@ FreshMarket is a wallet-owned second-hand marketplace prototype on Arkiv Rabdi. 
 
 The demo story is a laptop listing: publish once in FreshMarket, read the same entity key in SECOND LOOK, change its price/status, and let a short-lived test listing expire without a central deletion cron. **Sold is a status, not deletion, expiry, payment or an atomic reservation.**
 
-## Current verification and live status
+## Live demo and status
 
-This is a testnet prototype. Automated tests cover SDK encoding, ownership checks, cache rollback, indexing lag, expiry, two-reader portability, media references and upload validation. Live public RPC reads succeeded but returned an empty catalogue at the latest verification. A successful empty query is not evidence of a real write or populated storefront sync.
+**Live app:** https://fresh-market-tawny.vercel.app. Storefront B (SECOND LOOK) is at [`/storefront`](https://fresh-market-tawny.vercel.app/storefront), and the reusable checkout widget demo is at [`/checkout-demo`](https://fresh-market-tawny.vercel.app/checkout-demo).
 
-No verified public deployment URL, real writer wallet, real transaction receipt, or live Swarm upload has been recorded. These are outstanding release requirements, not fabricated examples. The exact [evidence log](arkiv/submission-evidence.md), [deployment checklist](arkiv/deployment.md), and [Swarm requirements](arkiv/swarm.md) distinguish code completion from live acceptance.
+This is a testnet prototype on three networks: Arkiv Rabdi (listings, reviews), Ethereum Sepolia (ENSv2 seller identity) and Whitechain Sepolia (USDT checkout). Full results are in [TEST_REPORT.md](TEST_REPORT.md).
+
+### Wallets that wrote our data
+
+| Network | Wallet | What it wrote |
+| --- | --- | --- |
+| Arkiv Rabdi | `0x8221b829d2a7Aa718e7e72D4690f112D4cb39fC8` | Listing [`0x02efe70e…6437`](https://rabdi.explorer.arkiv.network/entity/0x02efe70e7f31a9a8d966a880f4ecdf13066bd91880dbe11a32799e6ff5b46437) (`freshmarket.listings.v2`) |
+| Ethereum Sepolia | `0x2D63097b7d955d487F06523f05676611146CA905` | `freshmarket.eth`, its subname registry, `alice.freshmarket.eth`, records, delegation ([ENS_QUALIFICATION.md](ENS_QUALIFICATION.md)) |
+| Whitechain Sepolia | `0x6b446f7c62c8892a9e830fd4d6daf9943b2609c1` | FreshPay contract [`0x2D67…657F`](https://explorer.testnet.whitechain.io/address/0x2D67Ed6aA929B1Dbc28370AEe3e23AD56277657F), verified ([whitechain/README.md](whitechain/README.md)) |
+
+**One query you can run:** `npm run query:listings` (no wallet, no server) returns the live listing above. Details are in [Reproduce the public Arkiv query](#reproduce-the-public-arkiv-query).
+
+### Sponsor checklist
+
+| Track | Requirement | Status |
+| --- | --- | --- |
+| Arkiv: Build on Arkiv | Writes to the Rabdi testnet with `@arkiv-network/sdk`, and user-facing features read it (browse, detail, Storefront B, reviews) | ✅ |
+| | Writer wallet and a runnable query in the README | ✅ (above) |
+| | `arkiv/schema.md`, `friction.md`, `reach.md`, `why-arkiv.md`, `how-you-use-arkiv.md` | ✅ |
+| | Another wallet can't edit a seller's listing (live check on the real entity) | ✅ [TEST_REPORT.md](TEST_REPORT.md) |
+| ENS: Best Use of ENSv2 | Own subname registry, per-seller Permissioned Resolver, Enhanced Access Control delegation and revocation on Sepolia | ✅ [ENS_QUALIFICATION.md](ENS_QUALIFICATION.md) |
+| | Live demo with real (not hard-coded) data | ✅ `/identity`, `/storefront/settings` |
+| Whitechain: Operate | Verified contract on Whitechain Sepolia | ✅ |
+| | Reusable widget, merchant and customer views | ✅ `/checkout-demo`, `/merchant/payments`, `/receipt/[id]` |
+| | A USDT payment in the main flow, with explorer link | ⏳ needs the official test USDT in a buyer wallet |
+| All | 2–4 minute demo video | ⏳ |
+
+No live Swarm upload has been recorded. The [evidence log](arkiv/submission-evidence.md), [deployment checklist](arkiv/deployment.md) and [Swarm requirements](arkiv/swarm.md) separate finished code from live acceptance.
 
 ## Run locally
 

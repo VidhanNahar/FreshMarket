@@ -4,12 +4,13 @@ This file records missing evidence explicitly rather than inventing a deployed U
 
 | Item | Current state |
 | --- | --- |
-| Public application URL | No verified deployment recorded |
-| Real Rabdi writer wallet | Not supplied/verified; unit-test fixture addresses are not writers |
-| Real creation/status/edit/extension/delete transaction hashes | No live wallet receipts recorded |
-| Real portable entity key | No populated live entity evidence recorded |
-| Wallet-free read checks | Live RPC queries succeeded; catalogue was empty at the most recent check |
-| Two storefront sync | Automated fixture rehearsal passes; populated live sync still requires a wallet-published item |
+| Public application URL | https://fresh-market-tawny.vercel.app (Storefront B at `/storefront`) |
+| Real Rabdi writer wallet | `0x8221b829d2a7Aa718e7e72D4690f112D4cb39fC8` |
+| Real portable entity key | [`0x02efe70e7f31a9a8d966a880f4ecdf13066bd91880dbe11a32799e6ff5b46437`](https://rabdi.explorer.arkiv.network/entity/0x02efe70e7f31a9a8d966a880f4ecdf13066bd91880dbe11a32799e6ff5b46437) ("Iphone-16", available, `$owner` = seller) |
+| Wallet-free read checks | `npm run query:listings` returns the live listing (2026-11-07) |
+| Cross-wallet rejection | Live: another wallet's patch and delete of that entity fail with `NotOwner` at gas estimation, nothing broadcast (`listing-security-live.test.ts`, see [TEST_REPORT.md](../TEST_REPORT.md)) |
+| Real status/edit/extension/delete transaction hashes | Not yet recorded |
+| Two storefront sync | Automated fixture rehearsal passes. Both storefronts read the same live entity key; a recorded side-by-side run is still needed |
 | 15-minute expiry demo | Preset and 450-block encoding tested; live expiration observation not recorded |
 | Swarm upload + reference + postage provenance | Requires Bee endpoint, usable batch and enabled test wallet |
 | Browser/Lighthouse results | Browser automation host unavailable; no Lighthouse score claimed |

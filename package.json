@@ -19,7 +19,8 @@
     "contracts:test": "cd contracts && forge test",
     "contracts:abi": "npm run contracts:build && node scripts/export-freshpay-abi.mjs",
     "contracts:deploy": "cd contracts && forge script script/DeployFreshPay.s.sol:DeployFreshPay --rpc-url whitechain_sepolia --private-key $WHITECHAIN_DEPLOYER_PRIVATE_KEY --broadcast --verify --verifier blockscout --verifier-url https://explorer.testnet.whitechain.io/api/",
-    "freshpay:webhooks": "node scripts/freshpay-webhook-worker.mjs"
+    "freshpay:webhooks": "node scripts/freshpay-webhook-worker.mjs",
+    "verify:ens-delegation": "node scripts/verify-ens-delegation.mjs"
   },
   "dependencies": {
     "@arkiv-network/sdk": "^1.0.1",
