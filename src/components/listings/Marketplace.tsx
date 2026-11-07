@@ -22,7 +22,7 @@ export function Marketplace() {
         <Search aria-hidden="true" className="h-5 w-5 text-muted-foreground" />
         <input key={filters.q} aria-label="Search marketplace" name="q" type="search" defaultValue={filters.q} placeholder="Find your next great thing" className="w-full bg-transparent text-sm outline-none" />
         {Object.entries(filters).filter(([key, value]) => key !== "q" && value).map(([key, value]) => <input key={key} type="hidden" name={key} value={value} />)}
-        <button type="submit" className="text-sm font-semibold text-primary">Search</button>
+        <button type="submit" className="shrink-0 whitespace-nowrap text-sm font-semibold text-primary">Search</button>
       </Form>
       <button type="button" onClick={() => setFiltersOpen(true)} className="flex items-center gap-2 rounded-xl border border-input bg-card px-4 py-3 text-sm font-semibold lg:hidden"><SlidersHorizontal aria-hidden="true" className="h-4 w-4" />Filters</button>
     </div>

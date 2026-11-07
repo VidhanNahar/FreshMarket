@@ -142,7 +142,7 @@ export function StorefrontSettings() {
     {records.data && <>
       <section className={card} aria-label="Storefront identity">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="break-all text-xl font-bold">{records.data.name}</h2>
+          <h2 className="break-words text-xl font-bold">{records.data.name}</h2>
           {records.data.verified
             ? <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300"><BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />Owner = forward address</span>
             : <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-500/15 dark:text-amber-300"><ShieldAlert className="h-3.5 w-3.5" aria-hidden="true" />Not verified</span>}
@@ -166,7 +166,7 @@ export function StorefrontSettings() {
             <thead className="bg-muted text-left text-xs uppercase tracking-wide text-muted-foreground"><tr><th className="px-3 py-2">Key</th><th className="px-3 py-2">Value</th></tr></thead>
             <tbody>{DELEGABLE_TEXT_KEYS.map((key) => <tr key={key} className="border-t border-border">
               <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">{key}</td>
-              <td className="break-all px-3 py-2">{records.data.text[key] || <span className="text-muted-foreground">—</span>}</td>
+              <td className="break-words px-3 py-2">{records.data.text[key] || <span className="text-muted-foreground">—</span>}</td>
             </tr>)}</tbody>
           </table>
         </div>

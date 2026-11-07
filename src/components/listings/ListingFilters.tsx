@@ -39,7 +39,7 @@ export function ListingFilters() {
         <label className="space-y-1 text-sm font-medium">City<input className={field} name="city" defaultValue={filters.city} placeholder="e.g. Mumbai" maxLength={128} /></label>
         <label className="space-y-1 text-sm font-medium">Min {PRICE_CURRENCY}<input className={field} name="minPrice" inputMode="decimal" defaultValue={filters.minPrice} placeholder="0" /></label>
         <label className="space-y-1 text-sm font-medium">Max {PRICE_CURRENCY}<input className={field} name="maxPrice" inputMode="decimal" defaultValue={filters.maxPrice} placeholder="Any" /></label>
-        <button className="min-h-11 rounded-xl bg-emerald-700 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-800" type="submit">Search</button>
+        <button className="min-h-11 shrink-0 whitespace-nowrap rounded-xl bg-emerald-700 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-800" type="submit">Search</button>
       </form>
       <div className="grid gap-4">
         <label className="space-y-1 text-sm font-medium">Condition<select className={field} value={filters.condition} onChange={(event) => update({ condition: event.target.value as DiscoveryFilters["condition"] })}>

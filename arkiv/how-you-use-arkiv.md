@@ -31,13 +31,33 @@ Two entity types on Rabdi (chain `7794095`). Full field list: [schema.md](schema
 
 ## Live evidence on Rabdi
 
-| What | Link or command |
+On 2026-11-07, 17 listings and 4 reviews are live. They were written by these wallets:
+
+| Wallet | Role | What it wrote |
+| --- | --- | --- |
+| `0x8A9a8Ed316F939b5d19Ee6cAa7f0fB56D88E2A30` | Seller (Mumbai) | 6 listings, plus the full lifecycle below |
+| `0x10fE549c8d1d3d4272c8d88aa6b9ffFD23E7aeEB` | Seller (Pune) | 5 listings |
+| `0xC431629995Cc77d29e1629eaFC57222033fBa196` | Seller (Bengaluru) | 5 listings |
+| `0x6b446F7c62C8892a9E830Fd4D6dAf9943b2609C1` | Buyer | 4 reviews, each backed by a FreshPay order |
+| `0x8221b829d2a7Aa718e7e72D4690f112D4cb39fC8` | Seller (first tests) | 9 transactions on 2026-11-06, including the Iphone-16 listing |
+
+One listing, the Lenovo ThinkPad T14 [`0x083dacf1…3d7f`](https://rabdi.explorer.arkiv.network/entity/0x083dacf10fb6869c85d12685194687833265a850d51964d984378c3206be3d7f), went through every operation:
+
+| Step | Transaction |
 | --- | --- |
-| Writer wallet | `0x8221b829d2a7Aa718e7e72D4690f112D4cb39fC8`: 9 transactions (8 creates, 1 patch) on 2026-11-06 |
-| Live listing | [`0x02efe70e…6437`](https://rabdi.explorer.arkiv.network/entity/0x02efe70e7f31a9a8d966a880f4ecdf13066bd91880dbe11a32799e6ff5b46437) ("Iphone-16", created in [`0x994880ef…fa4b`](https://rabdi.explorer.arkiv.network/tx/0x994880efeeedd63bf2671854ee093fb81fb6d25466c77a140ff6fa5fb486fa4b)) |
-| A patch | [`0xda5be436…827f`](https://rabdi.explorer.arkiv.network/tx/0xda5be436ad82c04a5347af15792f01c93df9ba0e4bad301ef191849368c3827f) (entity `0x155b56be…72e7`) |
-| Expiry working | The first listing, created in [`0xd81bfe31…a8fa`](https://rabdi.explorer.arkiv.network/tx/0xd81bfe31c3e8d16ae0ef2f2aeed24dc1fe50d78f0503c2740dbaca78ce92a8fa), has expired and no longer appears in any query |
-| Another wallet can't edit it | `ARKIV_SECURITY_ENTITY_KEY=0x02efe70e7f31a9a8d966a880f4ecdf13066bd91880dbe11a32799e6ff5b46437 npx vitest run src/__tests__/listing-security-live.test.ts`: patch and delete fail with `NotOwner` at gas estimation, and nothing is broadcast |
+| Create | [`0x10f73566…042d`](https://rabdi.explorer.arkiv.network/tx/0x10f735661269ab9621b8e590b52104e1bcf9fc10c7dd2ebe08727635eef4042d) |
+| Edit price | [`0xf14bca0c…82fd`](https://rabdi.explorer.arkiv.network/tx/0xf14bca0cdf41cec4eefb146029feea14609c462ced61add68d4f7c770d0382fd) |
+| Buyer pays 1 USDT on Whitechain (order #1) | [`0x60b575e3…8f83`](https://explorer.testnet.whitechain.io/tx/0x60b575e3f99c97f5a580fc2eabb7a83215cad33e3e42126f0a8c04e3f18e8f83) |
+| Seller marks it reserved | [`0xfce04de6…30d2`](https://rabdi.explorer.arkiv.network/tx/0xfce04de60079dcb75415a779176c147d196bdff00f9833332391acc8fe6930d2) |
+| Seller marks it sold (the deadline doesn't change) | [`0xaa243976…1b49`](https://rabdi.explorer.arkiv.network/tx/0xaa243976eee5246c7a73116ddf32410f325977870cef96bd7ee15dca6b7e1b49) |
+| Seller renews it (`$expiresAt` 616,298 → 918,698) | [`0x4cd16ae8…7816`](https://rabdi.explorer.arkiv.network/tx/0x4cd16ae8a3642fbcd1f142f16ac73b0afe71376298104170a34d01162a3a7816) |
+| Buyer writes a review citing order #1 | [`0x913be9f3…a24e`](https://rabdi.explorer.arkiv.network/tx/0x913be9f34532a1ab9383f01969cf1e78fcf0ac824ab95758b1a377b306b4a24e) |
+
+| Also shown live | Evidence |
+| --- | --- |
+| A 15-minute listing expires on its own | Created in [`0x7f93aa81…a14a`](https://rabdi.explorer.arkiv.network/tx/0x7f93aa811a427f4d8f5297ca517a436d92980a7dd4e12dc7d9347a27e4c7a14a) with `$expiresAt` 314,356. After that block it is gone from every query, with no delete call |
+| Delete | Created in [`0x6c7dec89…cdf7`](https://rabdi.explorer.arkiv.network/tx/0x6c7dec89802930560c5ab7420f937386d3fa231a14e42e9e15147a2c1ca6cdf7), deleted in [`0xdafec1fe…0823`](https://rabdi.explorer.arkiv.network/tx/0xdafec1fe8737bddb4b7184296cf51db7ac1a418ab3072aacc646b19b19d70823) |
+| Another wallet can't edit a listing | `ARKIV_SECURITY_ENTITY_KEY=0x02efe70e7f31a9a8d966a880f4ecdf13066bd91880dbe11a32799e6ff5b46437 npx vitest run src/__tests__/listing-security-live.test.ts`: patch and delete fail with `NotOwner` at gas estimation, and nothing is broadcast |
 | Query it yourself | `npm run query:listings` |
 
 ## Reliability details

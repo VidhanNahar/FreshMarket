@@ -123,7 +123,7 @@ export function StorefrontIdentityManager() {
       <h2 className="text-xl font-semibold">2. Issue a seller storefront subname</h2>
       <p className="text-sm">Prepare a resolver controlled by the seller, then let the parent registry’s authorized issuer register the label. Ordinary sellers do not receive permission to register arbitrary subnames.</p>
       <label className="block text-sm">Storefront handle<input className={field} value={label} onChange={(event) => setLabel(event.target.value)} placeholder="alice" maxLength={32} /></label>
-      <p className="break-all text-sm">Name: {label || "your-handle"}.{ensConfig.parentName || "your-parent.eth"}</p>
+      <p className="break-words text-sm">Name: {label || "your-handle"}.{ensConfig.parentName || "your-parent.eth"}</p>
       <label className="block text-sm">Seller wallet (owns the subname and its records)<input className={field} value={seller} onChange={(event) => setSellerDraft(event.target.value)} placeholder="0x…" /></label>
       <button className={button} disabled={disabled || !label || !seller} onClick={() => void run(async (client) => {
         const salt = BigInt(`0x${Array.from(crypto.getRandomValues(new Uint8Array(16)), (byte) => byte.toString(16).padStart(2, "0")).join("")}`);

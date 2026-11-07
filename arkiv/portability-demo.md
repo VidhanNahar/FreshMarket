@@ -38,9 +38,9 @@ The production script explicitly uses Webpack and runs `prebuild` to package Sto
 | Evidence | Status |
 | --- | --- |
 | Fixture rehearsal: matching keys, price/status changes and expiry | Passes (`storefront-portability.test.ts`) |
-| Real publish | Done: [`0x02efe70e…6437`](https://rabdi.explorer.arkiv.network/entity/0x02efe70e7f31a9a8d966a880f4ecdf13066bd91880dbe11a32799e6ff5b46437), created in [`0x994880ef…fa4b`](https://rabdi.explorer.arkiv.network/tx/0x994880efeeedd63bf2671854ee093fb81fb6d25466c77a140ff6fa5fb486fa4b) |
-| Both readers show the same live key | Done: https://fresh-market-tawny.vercel.app/listing/0x02efe70e7f31a9a8d966a880f4ecdf13066bd91880dbe11a32799e6ff5b46437 and `/storefront` |
-| Real price edit | Done: patch [`0xda5be436…827f`](https://rabdi.explorer.arkiv.network/tx/0xda5be436ad82c04a5347af15792f01c93df9ba0e4bad301ef191849368c3827f) |
-| Real reserved/sold, extension and delete transactions | Not recorded yet |
-| 15-minute listing observed expiring | Not recorded yet |
-| Side-by-side recording | Not recorded yet |
+| Real publish | Done: 17 live listings from 4 wallets. Example: [`0x888bc02c…6887`](https://rabdi.explorer.arkiv.network/entity/0x888bc02cb0f37fc6f6a13c6566f233cd850aae58a00ba73777c4055839156887) (MacBook Air M1) |
+| Both readers show the same live key | Done: https://fresh-market-tawny.vercel.app/listing/0x888bc02cb0f37fc6f6a13c6566f233cd850aae58a00ba73777c4055839156887 and `/storefront` |
+| Real price edit, reserve, sold and renew | Done on the ThinkPad [`0x083dacf1…3d7f`](https://rabdi.explorer.arkiv.network/entity/0x083dacf10fb6869c85d12685194687833265a850d51964d984378c3206be3d7f). Transactions are in [how-you-use-arkiv.md](how-you-use-arkiv.md#live-evidence-on-rabdi) |
+| Real delete | Done: [`0xdafec1fe…0823`](https://rabdi.explorer.arkiv.network/tx/0xdafec1fe8737bddb4b7184296cf51db7ac1a418ab3072aacc646b19b19d70823) |
+| 15-minute listing expiring | Done: created in [`0x7f93aa81…a14a`](https://rabdi.explorer.arkiv.network/tx/0x7f93aa811a427f4d8f5297ca517a436d92980a7dd4e12dc7d9347a27e4c7a14a), absent from queries after block 314,356 |
+| Side-by-side recording | For the demo video |

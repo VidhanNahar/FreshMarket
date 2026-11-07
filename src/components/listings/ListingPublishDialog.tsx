@@ -31,7 +31,7 @@ export function ListingPublishDialog({ flow, open, onOpenChange }: {
             : "Your wallet owns this listing on Arkiv Rabdi."}
         </DialogDescription>
       </DialogHeader>
-      <div role="status" aria-live="polite" className="space-y-3 break-all text-sm">
+      <div role="status" aria-live="polite" className="space-y-3 break-words text-sm">
         {flow.txHash && <p>Transaction: <a className="underline" href={`https://rabdi.explorer.arkiv.network/tx/${flow.txHash}`} target="_blank" rel="noreferrer">{flow.txHash}</a></p>}
         {flow.receipt && <>
           <p>Entity key: <code>{flow.receipt.entityKey}</code></p>

@@ -24,13 +24,15 @@ A seller would, because it removes stale listings and repeated data entry. A buy
 
 | Metric | Value | How to check |
 | --- | --- | --- |
-| Rabdi transactions from our writer wallet | 9 (8 creates, 1 patch) on 2026-11-06 | `curl "https://rabdi.explorer.arkiv.network/api/transactions?address=0x8221b829d2a7Aa718e7e72D4690f112D4cb39fC8"` |
-| Live listings | 1 ([`0x02efe70e…6437`](https://rabdi.explorer.arkiv.network/entity/0x02efe70e7f31a9a8d966a880f4ecdf13066bd91880dbe11a32799e6ff5b46437)). The other 7 are no longer live (expired or removed) | `npm run query:listings` |
+| Live listings | 17 across 7 categories and 4 cities (Mumbai, Pune, Bengaluru, Ahmedabad) | `npm run query:listings` |
+| Wallets that wrote to Arkiv | 5 (4 sellers, 1 buyer) | [how-you-use-arkiv.md](how-you-use-arkiv.md#live-evidence-on-rabdi) |
+| Real USDT orders on Whitechain | 4, all released, one partly refunded | `/receipt/1` to `/receipt/4` on the live app |
+| Buyer reviews on Arkiv | 4, each tied to a FreshPay order | Any listing page from those sellers |
 | Apps reading the same entities | 2 (FreshMarket and SECOND LOOK) | Open the same key in `/listing/<key>` and `/storefront` |
 | Networks in one flow | 3: Arkiv (listings, reviews), Sepolia ENS (seller names), Whitechain (USDT checkout) | [TEST_REPORT.md](../TEST_REPORT.md) |
-| Automated tests | 362 passing, plus live checks on Rabdi, Sepolia and a Whitechain fork | [TEST_REPORT.md](../TEST_REPORT.md) |
+| Automated tests | 363 passing, plus live checks on Rabdi, Sepolia and Whitechain | [TEST_REPORT.md](../TEST_REPORT.md) |
 
-We don't have real users yet. Everything above was written by the team during the event.
+We don't have real users yet. Every listing, order and review above was created by the team's own test wallets during the event.
 
 ## After Mumbai
 

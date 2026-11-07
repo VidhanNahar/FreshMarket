@@ -97,15 +97,18 @@ To run the end-to-end flow on a local fork (no keys, no testnet funds): start `a
 
 ## Live evidence
 
-Only real, confirmed transactions belong here. The contract is deployed and verified; the payment, refund and release are still **outstanding**. The deploy record is [`contracts/broadcast/DeployFreshPay.s.sol/1874/run-latest.json`](../contracts/broadcast/DeployFreshPay.s.sol/1874/run-latest.json).
+Only real, confirmed transactions belong here. The deploy record is [`contracts/broadcast/DeployFreshPay.s.sol/1874/run-latest.json`](../contracts/broadcast/DeployFreshPay.s.sol/1874/run-latest.json).
 
 | Item | Value |
 | --- | --- |
 | FreshPay contract (verified) | [`0x2D67Ed6aA929B1Dbc28370AEe3e23AD56277657F`](https://explorer.testnet.whitechain.io/address/0x2D67Ed6aA929B1Dbc28370AEe3e23AD56277657F) · 10-minute hold (`releaseDelay = 600`) · official test USDT |
 | Deployment transaction | [`0x2b440f05…22f2`](https://explorer.testnet.whitechain.io/tx/0x2b440f05c829f5929dcc8e50444d52e0082c207ec5218dcf6f65d730e84522f2), block 12407705 |
-| Test payment in official USDT (`0xcedfB56113143d55b2358b8CFbB0dEB5Ad2f55a7`) | _pending_ |
-| Partial refund | _pending_ |
-| Buyer release | _pending_ |
+| Buyer gets official test USDT (`0xcedfB56113143d55b2358b8CFbB0dEB5Ad2f55a7`) by swapping WBT on Uniswap | [`0x7dd74183…db9d`](https://explorer.testnet.whitechain.io/tx/0x7dd741830d54cb09c68e88f6ccad251fcb32859c0c24f7ca54bd1e902babdb9d) |
+| Approve the exact amount | [`0xf5cc0e12…eb39`](https://explorer.testnet.whitechain.io/tx/0xf5cc0e128cbc204002193d22f1f706dfbf548b210b4a6dc59f5b653859beeb39) |
+| Payment: order #1, 1 USDT for the ThinkPad listing `0x083dacf1…3d7f` | [`0x60b575e3…8f83`](https://explorer.testnet.whitechain.io/tx/0x60b575e3f99c97f5a580fc2eabb7a83215cad33e3e42126f0a8c04e3f18e8f83) (block 12417241) |
+| Partial refund of 0.25 USDT | [`0xe82b9f82…9217`](https://explorer.testnet.whitechain.io/tx/0xe82b9f82b924867142affc311798eedf46d649f5efc27707a42812fddf259217) |
+| Release to the seller | [`0xe3da5141…973c`](https://explorer.testnet.whitechain.io/tx/0xe3da51417f1997f2986d609becbcf228b5478555d15fc650ab8679d19e88973c) |
+| Orders #2–#4 (dog toys, backpack, teddy bear), each paid and released | See `/receipt/2`, `/receipt/3`, `/receipt/4` on the live app |
 
 ## Limitations
 

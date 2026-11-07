@@ -15,7 +15,8 @@ Built from scratch at ETHGlobal Mumbai 2026.
 | App | https://fresh-market-tawny.vercel.app |
 | Browse (no wallet) | [`/browse`](https://fresh-market-tawny.vercel.app/browse) |
 | Second storefront (SECOND LOOK) | [`/storefront`](https://fresh-market-tawny.vercel.app/storefront) |
-| Live listing | [`/listing/0x02efe70e…6437`](https://fresh-market-tawny.vercel.app/listing/0x02efe70e7f31a9a8d966a880f4ecdf13066bd91880dbe11a32799e6ff5b46437) |
+| Live listing | [`/listing/0x888bc02c…6887`](https://fresh-market-tawny.vercel.app/listing/0x888bc02cb0f37fc6f6a13c6566f233cd850aae58a00ba73777c4055839156887) (MacBook Air M1, with a verified buyer review of this seller) |
+| A paid order | [`/receipt/1`](https://fresh-market-tawny.vercel.app/receipt/1) |
 | Reusable USDT checkout widget | [`/checkout-demo`](https://fresh-market-tawny.vercel.app/checkout-demo) |
 
 It runs on three testnets: Arkiv Rabdi (listings, reviews), Ethereum Sepolia (ENSv2 seller names) and Whitechain Sepolia (USDT checkout).
@@ -24,9 +25,11 @@ It runs on three testnets: Arkiv Rabdi (listings, reviews), Ethereum Sepolia (EN
 
 | Network | Wallet | What it wrote |
 | --- | --- | --- |
-| Arkiv Rabdi (7794095) | `0x8221b829d2a7Aa718e7e72D4690f112D4cb39fC8` | 9 transactions (8 creates, 1 patch), including the live listing [`0x02efe70e…6437`](https://rabdi.explorer.arkiv.network/entity/0x02efe70e7f31a9a8d966a880f4ecdf13066bd91880dbe11a32799e6ff5b46437) (`freshmarket.listings.v2`) |
+| Arkiv Rabdi (7794095) | `0x8A9a8Ed316F939b5d19Ee6cAa7f0fB56D88E2A30`, `0x10fE549c8d1d3d4272c8d88aa6b9ffFD23E7aeEB`, `0xC431629995Cc77d29e1629eaFC57222033fBa196` | 16 listings (`freshmarket.listings.v2`) and their edits, status changes, renewal and delete |
+| Arkiv Rabdi | `0x6b446F7c62C8892a9E830Fd4D6dAf9943b2609C1` | 4 buyer reviews (`freshmarket.reviews`) |
+| Arkiv Rabdi | `0x8221b829d2a7Aa718e7e72D4690f112D4cb39fC8` | First test listings, including Iphone-16 [`0x02efe70e…6437`](https://rabdi.explorer.arkiv.network/entity/0x02efe70e7f31a9a8d966a880f4ecdf13066bd91880dbe11a32799e6ff5b46437) |
 | Ethereum Sepolia | `0x2D63097b7d955d487F06523f05676611146CA905` | `freshmarket.eth`, its subname registry, `alice.freshmarket.eth`, records and delegation ([ENS_QUALIFICATION.md](ENS_QUALIFICATION.md)) |
-| Whitechain Sepolia | `0x6b446f7c62c8892a9e830fd4d6daf9943b2609c1` | FreshPay contract [`0x2D67…657F`](https://explorer.testnet.whitechain.io/address/0x2D67Ed6aA929B1Dbc28370AEe3e23AD56277657F), verified ([whitechain/README.md](whitechain/README.md)) |
+| Whitechain Sepolia | `0x6b446f7c62c8892a9e830fd4d6daf9943b2609c1` | FreshPay contract [`0x2D67…657F`](https://explorer.testnet.whitechain.io/address/0x2D67Ed6aA929B1Dbc28370AEe3e23AD56277657F) (verified) and 4 USDT orders as the buyer ([whitechain/README.md](whitechain/README.md#live-evidence)) |
 
 ## One query you can run
 
@@ -59,7 +62,7 @@ More queries (category, brand, city, price range, a seller's store) are in [arki
 | Arkiv + Swarm bonus | Images stored on Swarm, `bzz://` reference in a live listing | ⏳ code done, no live upload yet ([arkiv/swarm.md](arkiv/swarm.md)) |
 | ENS: Best Use of ENSv2 | Own subname registry, per-seller Permissioned Resolver, delegation and revocation on Sepolia | ✅ [ENS_QUALIFICATION.md](ENS_QUALIFICATION.md) |
 | Whitechain: Operate | Verified contract, reusable widget, merchant and customer views | ✅ `/checkout-demo`, `/merchant/payments`, `/receipt/[id]` |
-| | A live USDT payment with an explorer link | ⏳ needs the official test USDT in a buyer wallet |
+| | A live USDT payment with an explorer link | ✅ order #1 [`0x60b575e3…8f83`](https://explorer.testnet.whitechain.io/tx/0x60b575e3f99c97f5a580fc2eabb7a83215cad33e3e42126f0a8c04e3f18e8f83), plus partial refund and release |
 | All | 2–4 minute demo video | ⏳ |
 
 ## How it works

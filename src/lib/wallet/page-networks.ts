@@ -13,6 +13,14 @@ export function isWhitechainPage(pathname: string | null | undefined): boolean {
   return WHITECHAIN_PAGES.some((page) => path === page || path.startsWith(`${page}/`));
 }
 
+/** Pages that write to Arkiv. Every other Rabdi page only reads, so any wallet network works there. */
+export const ARKIV_WRITE_PAGES = ["/sell", "/my-listings"] as const;
+
+/** True when the wallet must be on this page's network: Arkiv writes, ENS setup and payments. */
+export function pageNeedsWalletNetwork(pathname: string | null | undefined): boolean {
+  return pageNetwork(pathname) !== "rabdi" || (ARKIV_WRITE_PAGES as readonly string[]).includes(pathname ?? "");
+}
+
 export function pageNetwork(pathname: string | null | undefined): PageNetwork {
   if (isEnsPage(pathname)) return "sepolia";
   if (isWhitechainPage(pathname)) return "whitechain";

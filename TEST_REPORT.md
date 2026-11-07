@@ -6,7 +6,7 @@ Run on 2026-11-07 against `main` at `35e8d62` plus the Phase 11 changes in the s
 
 | Suite | Command | Network | Result |
 | --- | --- | --- | --- |
-| Unit and component tests | `npm test` | Mocked transports | **362 passed**, 12 opt-in live tests skipped |
+| Unit and component tests | `npm test` | Mocked transports | **363 passed**, 13 opt-in live tests skipped |
 | Lint, type check, production build | `npm run lint`, `npx tsc --noEmit`, `npm run build` | — | Pass |
 | FreshPay contract | `npm run contracts:test` | Local EVM | **21 passed** (unit and fuzz) |
 | FreshPay against the official USDT | `forge test --root contracts --match-contract Fork` | Whitechain Sepolia fork | **1 passed** |
@@ -32,7 +32,10 @@ Run on 2026-11-07 against `main` at `35e8d62` plus the Phase 11 changes in the s
 
 Each chain uses its own read client (`getArkivPublicClient`, `ensPublicClient`, `whitechainPublicClient`). None reads Wagmi's active chain, so a wallet network switch or one RPC outage cannot change another chain's reads.
 
+## Live run on real testnets
+
+`LIVE_DEMO_BUYER_KEY=… npx vitest run src/__tests__/live-demo-flow.test.ts` ran the whole flow on Rabdi and Whitechain Sepolia on 2026-11-07: create, edit, pay 1 USDT, reserve, partial refund, release, sold, renew, review, a 15-minute listing that expired, and a create-then-delete. Every transaction is listed in [arkiv/how-you-use-arkiv.md](arkiv/how-you-use-arkiv.md#live-evidence-on-rabdi) and [whitechain/README.md](whitechain/README.md#live-evidence).
+
 ## Not covered
 
-- **Live USDT settlement on Whitechain Sepolia.** It is proven on a fork with the official token. No live payment yet: it needs the official test USDT in a buyer wallet.
 - **Browser and wallet UI.** Real MetaMask prompts, mobile layouts and Lighthouse scores were not automated.

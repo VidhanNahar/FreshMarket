@@ -19,6 +19,8 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock("wagmi", () => ({ useAccount: () => mocks.account, useSwitchChain: () => ({ switchChainAsync: mocks.switchChain, isPending: false }) }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock("@tanstack/react-query", async (original) => ({ ...await original<typeof import("@tanstack/react-query")>(), useQuery: () => ({ data: order }) }));
+vi.mock("@/hooks/useListings", () => ({ useListing: (id: string) => ({ data: id ? { id, title: "Lenovo ThinkPad T14" } : undefined, isPending: false }) }));
 vi.mock("@/hooks/use-reviews", () => ({
   useSellerReviews: () => ({ data: mocks.reviews, isPending: false, isError: false }),
   useWriteReview: () => ({ ...mocks.write, submit: mocks.submit }),
@@ -33,6 +35,14 @@ describe("Seller reviews", () => {
     expect(screen.queryByText("fake")).toBeNull();
     expect(screen.getByText(/1 review is hidden/)).toBeTruthy();
     expect(screen.getByRole("link", { name: "verified purchase, order #7" }).getAttribute("href")).toBe("/receipt/7");
+  });
+
+  it("names the item each review was written about", () => {
+    mocks.reviews = [review({})];
+    const { rerender } = render(<SellerReviews seller={seller} />);
+    expect(screen.getByRole("link", { name: "Lenovo ThinkPad T14" }).getAttribute("href")).toBe(`/listing/${order.ref}`);
+    rerender(<SellerReviews seller={seller} listingId={order.ref} />);
+    expect(screen.getByText("Review of this item")).toBeTruthy();
   });
 
   it("explains how reviews start when there are none", () => {

@@ -46,11 +46,14 @@ body { background: var(--background); color: var(--foreground); font-family: var
 .display-title { font-size: clamp(3rem, 8vw, 7.25rem); line-height: .9; letter-spacing: -.065em; font-weight: 780; }
 .editorial-rule { border-color: color-mix(in srgb, var(--foreground) 16%, transparent); }
 *, *::before, *::after { min-width: 0; }
+/* A button never gets narrower than its longest word, so labels wrap between words, not inside them. */
+button, [role="button"] { min-width: auto; }
 button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 button:focus-visible, a:focus-visible, select:focus-visible { outline: 3px solid var(--ring); outline-offset: 3px; }
 button:not(:disabled), select { cursor: pointer; }
 button:disabled { cursor: not-allowed; }
-main { overflow-wrap: anywhere; }
+/* break-word only splits a word that would overflow (long hashes, URLs); it never squeezes short labels. */
+main { overflow-wrap: break-word; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }

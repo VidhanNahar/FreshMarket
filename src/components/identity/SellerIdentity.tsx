@@ -10,7 +10,7 @@ export function SellerIdentity({ address, profile = false }: { address: `0x${str
   const identity = !query.isFetching && !query.isError ? query.data : null;
   return <span className={`inline-flex min-w-0 ${profile ? "flex-col items-start gap-2" : "items-center gap-1"}`}>
     <span title={address} className="inline-flex min-w-0 items-center gap-1">
-      <span className="break-all">{identity?.name ?? shortenAddress(address)}</span>
+      <span className="break-words">{identity?.name ?? shortenAddress(address)}</span>
       {identity && <BadgeCheck className="h-4 w-4 shrink-0 text-[#2f6fed]" role="img" aria-label="Sepolia ENS name, owner and forward address verified" />}
     </span>
     {profile && <>

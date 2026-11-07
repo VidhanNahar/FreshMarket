@@ -109,7 +109,8 @@ describe("Phase 11: each page asks for the chain it needs", () => {
   it("names the network each page needs in the navbar badge", () => {
     const cases: [string, number, string][] = [
       ["/browse", 7794095, "Arkiv Rabdi Testnet · 7794095"],
-      ["/browse", 1874, "Switch to Arkiv Rabdi Testnet"],
+      ["/browse", 1874, "Whitechain Sepolia"],
+      ["/sell", 1874, "Switch to Arkiv Rabdi Testnet"],
       ["/merchant/payments", 7794095, "Switch to Whitechain Sepolia"],
       ["/merchant/payments", 1874, "Whitechain Sepolia · 1874"],
       ["/identity", 11155111, "Ethereum Sepolia · 11155111"],

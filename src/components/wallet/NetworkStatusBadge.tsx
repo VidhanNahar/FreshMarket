@@ -2,7 +2,7 @@
 
 import { useAccount, useChainId } from "wagmi";
 import { usePathname } from "next/navigation";
-import { PAGE_NETWORKS, pageNetwork } from "@/lib/wallet/page-networks";
+import { PAGE_NETWORKS, pageNeedsWalletNetwork, pageNetwork } from "@/lib/wallet/page-networks";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { describeChain } from "@/lib/wallet/wallet-ui";
@@ -10,11 +10,13 @@ import { describeChain } from "@/lib/wallet/wallet-ui";
 /**
  * Compact live network indicator for the navbar.
  * Shows the network the current page needs (Rabdi, Sepolia for ENS, Whitechain for
- * checkout) when disconnected, and the actual wallet network once connected.
+ * checkout) when disconnected, and the actual wallet network once connected. Read-only pages
+ * (browse, listing detail, SECOND LOOK) work on any network, so they never ask for a switch.
  */
 export function NetworkStatusBadge({ className }: { className?: string }) {
   const { isConnected } = useAccount();
-  const required = PAGE_NETWORKS[pageNetwork(usePathname())];
+  const pathname = usePathname();
+  const required = PAGE_NETWORKS[pageNetwork(pathname)];
   const chainId = useChainId();
   const onRequired = chainId === required.chainId;
   const requiredName = required.name;
@@ -31,6 +33,15 @@ export function NetworkStatusBadge({ className }: { className?: string }) {
       >
         <span className="inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground" aria-hidden="true" />
         {requiredName}
+      </Badge>
+    );
+  }
+
+  if (!pageNeedsWalletNetwork(pathname) && !onRequired) {
+    return (
+      <Badge variant="outline" className={cn("hidden whitespace-nowrap border-border/60 text-muted-foreground lg:inline-flex", className)}>
+        <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
+        {describeChain(chainId)}
       </Badge>
     );
   }
