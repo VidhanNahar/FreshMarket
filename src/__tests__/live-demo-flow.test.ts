@@ -16,6 +16,10 @@ import { describe, expect, it } from "vitest";
 import { createWalletClient as createArkivWalletClient } from "@arkiv-network/sdk";
 import { createPublicClient, createWalletClient, erc20Abi, http, parseEther, type Hex } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
+import { rabdi } from "@arkiv-network/sdk/chains";
+
+// The public Rabdi endpoint is heavily rate limited; use the project's access key when present.
+try { process.loadEnvFile(".env.local"); } catch { /* optional */ }
 
 const buyerKey = process.env.LIVE_DEMO_BUYER_KEY as Hex | undefined;
 const FRESHPAY = "0x2D67Ed6aA929B1Dbc28370AEe3e23AD56277657F" as const;
@@ -48,17 +52,27 @@ describe.skipIf(!buyerKey)("live demo: Arkiv + FreshPay + reviews on real testne
     if (!existsSync(sellerFile)) writeFileSync(sellerFile, JSON.stringify({ key: generatePrivateKey() }), { mode: 0o600 });
     const buyer = privateKeyToAccount(buyerKey!);
     const seller = privateKeyToAccount(JSON.parse(readFileSync(sellerFile, "utf8")).key as Hex);
-    const evidence: Record<string, unknown> = { buyer: buyer.address, seller: seller.address, startedAt: new Date().toISOString() };
+    // Resume: steps already recorded for this buyer/seller pair are never sent twice.
+    const previous = existsSync(".live-demo/evidence.json") ? JSON.parse(readFileSync(".live-demo/evidence.json", "utf8")) : {};
+    const evidence: Record<string, unknown> = previous.buyer === buyer.address && previous.seller === seller.address
+      ? previous : { buyer: buyer.address, seller: seller.address, startedAt: new Date().toISOString() };
+    const once = async <T,>(step: string, run: () => Promise<T>): Promise<T> => {
+      if (evidence[step] !== undefined) { console.log(step, "(already done)", evidence[step]); return evidence[step] as T; }
+      const value = await run(); log(step, value); return value;
+    };
     const save = () => writeFileSync(".live-demo/evidence.json", JSON.stringify(evidence, (_, v) => (typeof v === "bigint" ? v.toString() : v), 2));
     const log = (step: string, value: unknown) => { evidence[step] = value; save(); console.log(step, value); };
 
     const wc = createPublicClient({ chain: whitechainSepolia, transport: http() });
     const wcBuyer = createWalletClient({ account: buyer, chain: whitechainSepolia, transport: http() });
     const wcSeller = createWalletClient({ account: seller, chain: whitechainSepolia, transport: http() });
-    const rabdiPublic = createPublicClient({ chain: rabdiWalletChain, transport: http() });
-    const rabdiBuyerNative = createWalletClient({ account: buyer, chain: rabdiWalletChain, transport: http() });
-    const arkivSeller = createArkivWalletClient({ account: seller, chain: rabdiWalletChain, transport: http() });
-    const arkivBuyer = createArkivWalletClient({ account: buyer, chain: rabdiWalletChain, transport: http() });
+    const rabdiChain = rabdi({ accessKey: process.env.NEXT_PUBLIC_ARKIV_ACCESS_KEY ?? "" });
+    expect(rabdiChain.id).toBe(rabdiWalletChain.id);
+    const rabdiTransport = () => http(undefined, { retryCount: 4, retryDelay: 1_500, timeout: 30_000 });
+    const rabdiPublic = createPublicClient({ chain: rabdiChain, transport: rabdiTransport() });
+    const rabdiBuyerNative = createWalletClient({ account: buyer, chain: rabdiChain, transport: rabdiTransport() });
+    const arkivSeller = createArkivWalletClient({ account: seller, chain: rabdiChain, transport: rabdiTransport() });
+    const arkivBuyer = createArkivWalletClient({ account: buyer, chain: rabdiChain, transport: rabdiTransport() });
     const mined = async (client: typeof wc | typeof rabdiPublic, hash: Hex) => {
       const receipt = await client.waitForTransactionReceipt({ hash });
       expect(receipt.status).toBe("success");
@@ -67,7 +81,7 @@ describe.skipIf(!buyerKey)("live demo: Arkiv + FreshPay + reviews on real testne
 
     // 1. Official test USDT for the buyer: swap a little WBT on the Uniswap WWBT/USDT pool if short.
     const usdt = () => wc.readContract({ address: WHITECHAIN_SEPOLIA_USDT, abi: erc20Abi, functionName: "balanceOf", args: [buyer.address] });
-    if ((await usdt()) < 3_000_000n) {
+    if (evidence.swapWbtForUsdt === undefined && (await usdt()) < 3_000_000n) {
       const amountIn = parseEther("0.15");
       const params = { tokenIn: WWBT, tokenOut: WHITECHAIN_SEPOLIA_USDT, fee: 3000, recipient: buyer.address, amountIn, amountOutMinimum: 0n, sqrtPriceLimitX96: 0n } as const;
       const { result: quote } = await wc.simulateContract({ account: buyer, address: SWAP_ROUTER, abi: swapAbi, functionName: "exactInputSingle", args: [params], value: amountIn });
@@ -77,46 +91,53 @@ describe.skipIf(!buyerKey)("live demo: Arkiv + FreshPay + reviews on real testne
     log("buyerUsdtBalance", await usdt());
 
     // 2. Gas for the generated seller wallet on both chains.
-    if ((await rabdiPublic.getBalance({ address: seller.address })) < parseEther("0.5")) {
+    if (evidence.fundSellerRabdi === undefined && (await rabdiPublic.getBalance({ address: seller.address })) < parseEther("0.5")) {
       log("fundSellerRabdi", await mined(rabdiPublic, await rabdiBuyerNative.sendTransaction({ to: seller.address, value: parseEther("1") })));
     }
-    if ((await wc.getBalance({ address: seller.address })) < parseEther("0.01")) {
+    if (evidence.fundSellerWhitechain === undefined && (await wc.getBalance({ address: seller.address })) < parseEther("0.01")) {
       log("fundSellerWhitechain", await mined(wc, await wcBuyer.sendTransaction({ to: seller.address, value: parseEther("0.03") })));
     }
 
     // 3. Seller lifecycle on Arkiv.
     const base = { seller: seller.address, categoryPath: "electronics/computers/laptops", condition: "good" as const, city: "Mumbai",
       fulfilment: "pickup" as const, media: ["https://placehold.co/800x600/png?text=FreshMarket+demo"] };
-    const laptop = await listingRepository.createWithReceipt({ ...base, title: "Lenovo ThinkPad T14 (live demo)", price: 2, brand: "Lenovo", model: "ThinkPad T14",
-      description: "Live demo listing paid with official test USDT through FreshPay.", expirationDays: 7 }, arkivSeller);
-    log("arkivCreateListing", laptop);
-    log("arkivEditPrice", await listingRepository.updateListing(laptop.entityKey, { priceMinor: 1_000_000n }, arkivSeller));
-    log("arkivCreate15MinListing", await listingRepository.createWithReceipt({ ...base, title: "EXPIRY DEMO: test laptop", price: 1,
+    const laptop = await once("arkivCreateListing", () => listingRepository.createWithReceipt({ ...base, title: "Lenovo ThinkPad T14 (live demo)", price: 2, brand: "Lenovo", model: "ThinkPad T14",
+      description: "Live demo listing paid with official test USDT through FreshPay.", expirationDays: 7 }, arkivSeller));
+    // The edit's patch transaction is recognised on chain if a previous run sent it but lost the receipt.
+    await once("arkivEditPrice", async () => (await listingRepository.getById(laptop.entityKey))?.priceMinor === 1_000_000n
+      ? { note: "price already 1 USDT on chain (patch sent by a previous run)" }
+      : listingRepository.updateListing(laptop.entityKey, { priceMinor: 1_000_000n }, arkivSeller));
+    await once("arkivCreate15MinListing", () => listingRepository.createWithReceipt({ ...base, title: "EXPIRY DEMO: test laptop", price: 1,
       description: "Disposable fifteen-minute expiry demonstration. Not for sale.", expirationDays: DEMO_EXPIRATION_DAYS }, arkivSeller));
-    const doomed = await listingRepository.createWithReceipt({ ...base, title: "Delete demo item", price: 1,
-      description: "Created and then deleted by its seller to show deletion.", expirationDays: 1 }, arkivSeller);
-    log("arkivCreateThenDelete", { create: doomed, delete: await listingRepository.deleteListing(doomed.entityKey, arkivSeller) });
+    await once("arkivCreateThenDelete", async () => {
+      const doomed = await listingRepository.createWithReceipt({ ...base, title: "Delete demo item", price: 1,
+        description: "Created and then deleted by its seller to show deletion.", expirationDays: 1 }, arkivSeller);
+      return { create: doomed, delete: await listingRepository.deleteListing(doomed.entityKey, arkivSeller) };
+    });
 
     // 4. Buyer pays the Arkiv price into FreshPay (exact approval, then pay).
-    log("approveUsdt", await mined(wc, await wcBuyer.writeContract({ address: WHITECHAIN_SEPOLIA_USDT, abi: erc20Abi, functionName: "approve", args: [FRESHPAY, 1_000_000n] })));
-    const deadline = BigInt(Math.floor(Date.now() / 1000) + 900);
-    const payHash = await mined(wc, await wcBuyer.writeContract({ address: FRESHPAY, abi: freshPayAbi, functionName: "pay",
-      args: [seller.address, laptop.entityKey, 1_000_000n, deadline] }));
-    const payment = await verifyPayment(wc, FRESHPAY, payHash, { merchant: seller.address, reference: laptop.entityKey, amount: 1_000_000n });
-    log("freshPayPay", { txHash: payHash, orderId: payment.order.id, block: payment.blockNumber });
-    log("arkivMarkReserved", await listingRepository.updateStatus(laptop.entityKey, "reserved", arkivSeller));
+    await once("approveUsdt", async () => mined(wc, await wcBuyer.writeContract({ address: WHITECHAIN_SEPOLIA_USDT, abi: erc20Abi, functionName: "approve", args: [FRESHPAY, 1_000_000n] })));
+    const paid = await once("freshPayPay", async () => {
+      const deadline = BigInt(Math.floor(Date.now() / 1000) + 900);
+      const payHash = await mined(wc, await wcBuyer.writeContract({ address: FRESHPAY, abi: freshPayAbi, functionName: "pay",
+        args: [seller.address, laptop.entityKey, 1_000_000n, deadline] }));
+      const payment = await verifyPayment(wc, FRESHPAY, payHash, { merchant: seller.address, reference: laptop.entityKey, amount: 1_000_000n });
+      return { txHash: payHash, orderId: payment.order.id.toString(), block: payment.blockNumber.toString() };
+    });
+    const orderId = BigInt(paid.orderId);
+    await once("arkivMarkReserved", () => listingRepository.updateStatus(laptop.entityKey, "reserved", arkivSeller));
 
     // 5. Seller partial refund from escrow, then the buyer confirms receipt.
-    log("freshPayPartialRefund", await mined(wc, await wcSeller.writeContract({ address: FRESHPAY, abi: freshPayAbi, functionName: "refund", args: [payment.order.id, 250_000n] })));
-    log("freshPayRelease", await mined(wc, await wcBuyer.writeContract({ address: FRESHPAY, abi: freshPayAbi, functionName: "release", args: [payment.order.id] })));
-    const settled = await readOrder(wc, FRESHPAY, payment.order.id);
+    await once("freshPayPartialRefund", async () => mined(wc, await wcSeller.writeContract({ address: FRESHPAY, abi: freshPayAbi, functionName: "refund", args: [orderId, 250_000n] })));
+    await once("freshPayRelease", async () => mined(wc, await wcBuyer.writeContract({ address: FRESHPAY, abi: freshPayAbi, functionName: "release", args: [orderId] })));
+    const settled = await readOrder(wc, FRESHPAY, orderId);
     expect(settled).toMatchObject({ state: "Released", refunded: 250_000n });
     log("orderState", settled);
 
     // 6. Seller marks the item sold and extends it; the buyer reviews the verified purchase.
-    log("arkivMarkSold", await listingRepository.updateStatus(laptop.entityKey, "sold", arkivSeller));
-    log("arkivExtend", await listingRepository.extendExpiry(laptop.entityKey, 3, arkivSeller));
-    log("arkivReview", await reviewRepository.create({ seller: seller.address, orderId: payment.order.id, sellerRating: 5, itemRating: 4,
+    await once("arkivMarkSold", () => listingRepository.updateStatus(laptop.entityKey, "sold", arkivSeller));
+    await once("arkivExtend", () => listingRepository.extendExpiry(laptop.entityKey, 3, arkivSeller));
+    await once("arkivReview", () => reviewRepository.create({ seller: seller.address, orderId, sellerRating: 5, itemRating: 4,
       text: "Paid in USDT on Whitechain, picked up as described. Seller refunded a small difference without fuss." }, arkivBuyer));
     log("finishedAt", new Date().toISOString());
   });
