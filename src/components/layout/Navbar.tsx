@@ -36,7 +36,7 @@ export function Navbar() {
             <span className="font-extrabold text-foreground text-xl tracking-[-.04em]">FreshMarket</span>
           </Link>
           <Badge variant="outline" className="hidden sm:inline-flex xl:hidden 2xl:inline-flex border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-medium">
-            Rabdi testnet
+            Testnet
           </Badge>
         </div>
 

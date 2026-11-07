@@ -43,6 +43,20 @@ export default function Home() {
       {icon: Clock,title:"Less stale. More relevant.",text:"Listings expire unless their sellers renew them. Check availability and the remaining lifetime before buying."},
       {icon: Layers,title:"Your finds, beyond one storefront.",text:"The same public listings can appear in independent storefronts. Discover another perspective in SECOND LOOK."},
     ].map(({icon: Icon,title,text}) => <div key={title}><Icon aria-hidden="true" className="mb-4 h-6 w-6 text-primary" strokeWidth={1.5} /><h2 className="font-semibold">{title}</h2><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{text}</p></div>)}</div></section>
-    <section className="mx-auto grid max-w-[1440px] gap-6 px-5 py-16 sm:px-8 md:grid-cols-2 md:items-center lg:px-12"><div><p className="editorial-kicker text-primary">Built on open foundations</p><h2 className="mt-4 text-3xl font-semibold tracking-tight">The listing belongs to its seller.</h2></div><div><p className="text-sm leading-relaxed text-muted-foreground">Underneath the marketplace, Arkiv Rabdi stores wallet-owned listings with public availability and expiration. Browse freely, or connect a wallet to sell. This project runs on test networks.</p><Link href="/storefront" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">Explore SECOND LOOK<ArrowRight aria-hidden="true" className="h-4 w-4" /></Link></div></section>
+    <section aria-labelledby="how-it-works" className="mx-auto max-w-[1440px] px-5 py-14 sm:px-8 lg:px-12">
+      <p className="editorial-kicker text-primary">How it works</p>
+      <h2 id="how-it-works" className="mt-3 text-3xl font-semibold tracking-tight">List, pay and review, each on the network built for it.</h2>
+      <ol className="mt-8 grid gap-5 md:grid-cols-3">{[
+        { step: "1", title: "List on Arkiv", network: "Arkiv Rabdi", text: "Sellers publish listings their wallet owns, with a lifetime they choose. Any storefront can read them; only the seller can change them.", href: "/sell", cta: "Sell an item" },
+        { step: "2", title: "Pay in USDT", network: "Whitechain Sepolia", text: "Buyers pay with USDT through FreshPay. The payment is held until the item arrives, one order per listing, with refunds back to the buyer.", href: "/browse", cta: "Find something to buy" },
+        { step: "3", title: "Review a real purchase", network: "Arkiv + ENS", text: "Reviews cite the paid order, so only real buyers count. Sellers show a verified name like seller1.freshmarket.eth from ENSv2.", href: "/storefront/settings", cta: "Set up a seller name" },
+      ].map((item) => <li key={item.step} className="flex flex-col rounded-2xl border border-border bg-card p-6">
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Step {item.step} · {item.network}</span>
+        <h3 className="mt-3 text-lg font-semibold">{item.title}</h3>
+        <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">{item.text}</p>
+        <Link href={item.href} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary">{item.cta}<ArrowRight aria-hidden="true" className="h-4 w-4" /></Link>
+      </li>)}</ol>
+    </section>
+    <section className="mx-auto grid max-w-[1440px] gap-6 px-5 py-16 sm:px-8 md:grid-cols-2 md:items-center lg:px-12"><div><p className="editorial-kicker text-primary">Built on open foundations</p><h2 className="mt-4 text-3xl font-semibold tracking-tight">The listing belongs to its seller.</h2></div><div><p className="text-sm leading-relaxed text-muted-foreground">Arkiv Rabdi stores wallet-owned listings and reviews, ENSv2 on Ethereum Sepolia gives sellers verifiable names, and FreshPay on Whitechain Sepolia settles payments in USDT. Browse freely, or connect a wallet to buy or sell. Everything runs on test networks with no real funds.</p><Link href="/storefront" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">Explore SECOND LOOK<ArrowRight aria-hidden="true" className="h-4 w-4" /></Link></div></section>
   </div>;
 }

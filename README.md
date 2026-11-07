@@ -146,6 +146,8 @@ Sellers get a name like `alice.freshmarket.eth` under the project's own subname 
 
 ## FreshPay: USDT checkout on Whitechain
 
+**Why onchain stablecoin settlement on Whitechain:** FreshMarket's catalogue belongs to seller wallets on Arkiv, so there is no marketplace operator to hold a card merchant account or a payout balance for sellers. USDT settles buyer to seller wallet directly, and the FreshPay contract enforces what a regular payment rail cannot: one paid order per listing across every storefront that reads it, escrow until the buyer confirms receipt, refunds that go back to the payer's own address, and a public order ID that an Arkiv review cites as proof of purchase.
+
 Buyers pay for an Arkiv listing in the official test USDT on Whitechain Sepolia. FreshPay holds the payment until the buyer confirms receipt (or 10 minutes pass), allows one paid order per listing, lets the seller refund part or all of it, and issues the `orderId` that a `freshmarket.reviews` entity cites as proof of purchase. Payment never edits the Arkiv listing. The seller marks it sold with their own wallet.
 
 ```
@@ -159,15 +161,18 @@ Buyer wallet ──approve(exact amount)──▶ USDT 0xcedf…55a7
 
 `/checkout-demo` embeds the widget in 21 lines that import only `@/freshpay` ([source](src/app/checkout-demo/page.tsx)). Connect a wallet with WBT ([faucet](https://faucet.testnet.whitechain.io)) and test USDT, then click **Pay with USDT**. More in [whitechain/README.md](whitechain/README.md).
 
-## Demo script (2 minutes)
+## Demo script (3 minutes, two wallets)
 
-1. **0:00–0:20:** The problem: stale listings and posting the same item on many sites.
-2. **0:20–0:50:** Publish a laptop and show the transaction and entity key.
-3. **0:50–1:15:** Open SECOND LOOK and show the same key and seller.
-4. **1:15–1:40:** Edit the price, reserve, mark sold, and refresh SECOND LOOK.
-5. **1:40–2:00:** A 15-minute listing reaching its expiry block and disappearing. Sold doesn't delete.
+Seller `seller1.freshmarket.eth`, buyer `buyer1.freshmarket.eth`.
 
-Full walkthrough: [arkiv/portability-demo.md](arkiv/portability-demo.md).
+1. **0:00–0:20 Problem.** Stale second-hand listings, re-posted on every site, and no proof a reviewer actually bought anything.
+2. **0:20–0:55 Arkiv.** The seller publishes a listing with a chosen lifetime and shows its entity key. SECOND LOOK, a separate app, shows the same entity. Browse filters by category, city and price with indexed queries, without a wallet.
+3. **0:55–1:25 ENSv2.** The listing shows `seller1.freshmarket.eth`, resolved live. On Storefront Settings, the seller lets a manager edit one text record, then revokes it.
+4. **1:25–2:20 Whitechain.** The buyer clicks **Buy now with USDT**: the widget switches network, approves the exact amount, and pays into FreshPay. The seller sees the sale on Payments, issues a partial refund, and marks the listing reserved, then sold, on Arkiv. The buyer confirms receipt and the seller is paid.
+5. **2:20–2:50 Reviews.** The buyer reviews the seller from the receipt. The review is an Arkiv entity citing the FreshPay order, and the listing page shows it as a verified purchase.
+6. **2:50–3:00 Expiry.** A 15-minute listing has passed its expiry block and is gone from every app. Sold items stay until their owner removes them.
+
+Full Arkiv walkthrough: [arkiv/portability-demo.md](arkiv/portability-demo.md).
 
 ## Limitations
 
@@ -176,6 +181,7 @@ Full walkthrough: [arkiv/portability-demo.md](arkiv/portability-demo.md).
 - Expiry is a block height. Countdowns are estimates from Rabdi's 2-second blocks.
 - Everything on Arkiv is public. Don't put addresses or phone numbers in listings.
 - Pending-transaction locks live in memory. Keep the transaction link if you reload mid-write.
+- Order webhooks are implemented and tested (`TEST_REPORT.md`) but not running on the live deployment, which has no Redis state store configured. Run them locally with `npm run freshpay:webhooks`.
 - Not audited for production. See [SECURITY.md](SECURITY.md).
 
 ## How we used AI

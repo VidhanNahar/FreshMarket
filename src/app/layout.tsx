@@ -19,10 +19,14 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const description = "A second-hand marketplace where sellers own their listings on Arkiv, buyers pay in USDT on Whitechain, and sellers carry verified ENSv2 names.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://fresh-market-tawny.vercel.app"),
   title: "FreshMarket | Portable, Wallet-Owned Second-Hand Marketplace",
-  description:
-    "A second-hand marketplace where sellers own their listings and stale listings expire on their own. Powered by Arkiv.",
+  description,
+  openGraph: { title: "FreshMarket", description, siteName: "FreshMarket", type: "website" },
+  twitter: { card: "summary_large_image", title: "FreshMarket", description },
 };
 
 export default function RootLayout({

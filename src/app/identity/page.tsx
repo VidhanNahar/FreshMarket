@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import { PageHeader } from "@/components/layout/PageHeader";
 import Link from "next/link";
 import { StorefrontIdentityManager } from "@/components/identity/StorefrontIdentityManager";
+
+export const metadata: Metadata = { title: "Seller identity | FreshMarket", description: "Issue and manage an ENSv2 seller name under freshmarket.eth on Ethereum Sepolia." };
 
 export default function IdentityPage() {
   return <div className="container mx-auto max-w-3xl space-y-6 px-4 py-10">

@@ -67,7 +67,7 @@ The app never trusts a transaction hash from the browser. `verifyPayment` requir
 3. It enqueues each event under a stable ID, `chainId:txHash:logIndex`, then advances the cursor.
 4. It POSTs due events with `freshpay-signature: t=<unix>,v1=<HMAC-SHA256("t.body")>` and an `idempotency-key` header. Non-2xx responses or errors retry after 30 s, 1 min, 2 min, and so on, capped at 1 hour, for up to 8 attempts.
 
-A crash anywhere leads to redelivery, never loss. Receivers deduplicate by event ID; [`demo-receiver`](../src/app/api/freshpay/webhooks/demo-receiver/route.ts) shows a verified receiver that creates each order once. `npm run freshpay:webhooks` calls the dispatcher every 15 s for local demos. Production needs `FRESHPAY_STATE_URL`/`TOKEN` (Redis-compatible REST); process memory is used only in development.
+A crash anywhere leads to redelivery, never loss. Receivers deduplicate by event ID; [`demo-receiver`](../src/app/api/freshpay/webhooks/demo-receiver/route.ts) shows a verified receiver that creates each order once. `npm run freshpay:webhooks` calls the dispatcher every 15 s for local demos. Production needs `FRESHPAY_STATE_URL`/`TOKEN` (Redis-compatible REST); process memory is used only in development. **The live deployment does not run the dispatcher:** it has no Redis state store, so `/api/freshpay/webhooks/dispatch` returns 503 there. Delivery, retries and deduplication are verified in `src/__tests__/freshpay-webhooks.test.ts` and on a Whitechain fork.
 
 ## Deploy and verify
 
