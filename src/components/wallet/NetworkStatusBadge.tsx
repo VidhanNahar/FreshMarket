@@ -1,11 +1,12 @@
 "use client";
 
-import { useAccount, useChainId } from "wagmi";
+import { useAccount, useChainId, useSwitchChain } from "wagmi";
+import { toast } from "sonner";
 import { usePathname } from "next/navigation";
 import { PAGE_NETWORKS, pageNeedsWalletNetwork, pageNetwork } from "@/lib/wallet/page-networks";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { describeChain } from "@/lib/wallet/wallet-ui";
+import { describeChain, getWalletErrorReason } from "@/lib/wallet/wallet-ui";
 
 /**
  * Compact live network indicator for the navbar.
@@ -21,6 +22,7 @@ export function NetworkStatusBadge({ className }: { className?: string }) {
   const onRequired = chainId === required.chainId;
   const requiredName = required.name;
   const requiredId = required.chainId;
+  const { switchChainAsync, isPending } = useSwitchChain();
 
   if (!isConnected) {
     return (
@@ -46,27 +48,32 @@ export function NetworkStatusBadge({ className }: { className?: string }) {
     );
   }
 
+  if (onRequired) {
+    return (
+      <Badge variant="outline" className={cn("hidden whitespace-nowrap border-emerald-500/30 text-emerald-600 dark:text-emerald-400 lg:inline-flex", className)}>
+        <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
+        {requiredName} · {requiredId}
+      </Badge>
+    );
+  }
+
+  // Wrong network for this page: the badge is the switch button (it adds the chain if missing).
   return (
-    <Badge
-      variant="outline"
+    <button
+      type="button"
+      disabled={isPending}
+      onClick={async () => {
+        try { await switchChainAsync({ chainId: requiredId }); }
+        catch (error) { toast.error("Could not switch network", { description: getWalletErrorReason(error) }); }
+      }}
+      title={`Wallet is on ${describeChain(chainId)}; click to switch to ${requiredName} (chain ${requiredId})`}
       className={cn(
-        "hidden whitespace-nowrap lg:inline-flex",
-        onRequired
-          ? "border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
-          : "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+        "hidden items-center gap-1.5 whitespace-nowrap rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-700 hover:bg-amber-500/20 disabled:opacity-60 dark:text-amber-300 lg:inline-flex",
         className
       )}
-      title={onRequired ? undefined : `Wallet is on ${describeChain(chainId)}; this page needs ${requiredName} (chain ${requiredId})`}
     >
-      <span
-        className={cn(
-          "inline-block h-1.5 w-1.5 rounded-full",
-          onRequired ? "bg-emerald-500" : "bg-amber-500"
-        )}
-        aria-hidden="true"
-      />
-      {/* Name the network this page needs; the tooltip names the one the wallet is on. */}
-      {onRequired ? `${requiredName} · ${requiredId}` : `Switch to ${requiredName}`}
-    </Badge>
+      <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden="true" />
+      {isPending ? "Check your wallet…" : `Switch to ${requiredName}`}
+    </button>
   );
 }
