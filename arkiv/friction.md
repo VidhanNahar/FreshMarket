@@ -47,7 +47,7 @@ What got in our way while building FreshMarket on Rabdi with `@arkiv-network/sdk
 
 - **Expected:** A typed `NotOwnerError` the app can catch.
 - **Happened:** Arkiv does refuse a patch or delete from another wallet (good), but the failure arrives as a gas-estimation revert. We match it with a regex: `/NotOwner|owned by.*not /i`.
-- **Reproduce:** `ARKIV_SECURITY_ENTITY_KEY=0x02efe70e7f31a9a8d966a880f4ecdf13066bd91880dbe11a32799e6ff5b46437 npx vitest run src/__tests__/listing-security-live.test.ts` (read-only; nothing is signed).
+- **Reproduce:** `ARKIV_SECURITY_ENTITY_KEY=0x083dacf10fb6869c85d12685194687833265a850d51964d984378c3206be3d7f npx vitest run src/__tests__/listing-security-live.test.ts` (read-only; nothing is signed).
 - **Fix:** Export typed errors for `NotOwner`, `Expired` and `NotFound`.
 
 ### 7. Expiry is a block height, not a time

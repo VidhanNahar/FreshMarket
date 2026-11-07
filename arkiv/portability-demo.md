@@ -38,7 +38,7 @@ The production script explicitly uses Webpack and runs `prebuild` to package Sto
 | Evidence | Status |
 | --- | --- |
 | Fixture rehearsal: matching keys, price/status changes and expiry | Passes (`storefront-portability.test.ts`) |
-| Real publish | Done: 17 live listings from 4 wallets. Example: [`0x888bc02c…6887`](https://rabdi.explorer.arkiv.network/entity/0x888bc02cb0f37fc6f6a13c6566f233cd850aae58a00ba73777c4055839156887) (MacBook Air M1) |
+| Real publish | Done: 16 live listings from 3 seller wallets. Example: [`0x888bc02c…6887`](https://rabdi.explorer.arkiv.network/entity/0x888bc02cb0f37fc6f6a13c6566f233cd850aae58a00ba73777c4055839156887) (MacBook Air M1) |
 | Both readers show the same live key | Done: https://fresh-market-tawny.vercel.app/listing/0x888bc02cb0f37fc6f6a13c6566f233cd850aae58a00ba73777c4055839156887 and `/storefront` |
 | Real price edit, reserve, sold and renew | Done on the ThinkPad [`0x083dacf1…3d7f`](https://rabdi.explorer.arkiv.network/entity/0x083dacf10fb6869c85d12685194687833265a850d51964d984378c3206be3d7f). Transactions are in [how-you-use-arkiv.md](how-you-use-arkiv.md#live-evidence-on-rabdi) |
 | Real delete | Done: [`0xdafec1fe…0823`](https://rabdi.explorer.arkiv.network/tx/0xdafec1fe8737bddb4b7184296cf51db7ac1a418ab3072aacc646b19b19d70823) |

@@ -27,7 +27,7 @@ It runs on three testnets: Arkiv Rabdi (listings, reviews), Ethereum Sepolia (EN
 | --- | --- | --- |
 | Arkiv Rabdi (7794095) | `0x8A9a8Ed316F939b5d19Ee6cAa7f0fB56D88E2A30`, `0x10fE549c8d1d3d4272c8d88aa6b9ffFD23E7aeEB`, `0xC431629995Cc77d29e1629eaFC57222033fBa196` | 16 listings (`freshmarket.listings.v2`) and their edits, status changes, renewal and delete |
 | Arkiv Rabdi | `0x6b446F7c62C8892a9E830Fd4D6dAf9943b2609C1` | 4 buyer reviews (`freshmarket.reviews`) |
-| Arkiv Rabdi | `0x8221b829d2a7Aa718e7e72D4690f112D4cb39fC8` | First test listings, including Iphone-16 [`0x02efe70e…6437`](https://rabdi.explorer.arkiv.network/entity/0x02efe70e7f31a9a8d966a880f4ecdf13066bd91880dbe11a32799e6ff5b46437) |
+| Arkiv Rabdi | `0x8221b829d2a7Aa718e7e72D4690f112D4cb39fC8` | First test listings on 2026-11-06, and a delete on 2026-11-07 ([`0xdb20848d…d5f4`](https://rabdi.explorer.arkiv.network/tx/0xdb20848d880c389e667954b739af8d064d9c4eaf45b8a2e79e1662a33165d5f4)) |
 | Ethereum Sepolia | `0x2D63097b7d955d487F06523f05676611146CA905` | `freshmarket.eth`, its subname registry, `alice.freshmarket.eth`, records and delegation ([ENS_QUALIFICATION.md](ENS_QUALIFICATION.md)) |
 | Whitechain Sepolia | `0x6b446f7c62c8892a9e830fd4d6daf9943b2609c1` | FreshPay contract [`0x2D67…657F`](https://explorer.testnet.whitechain.io/address/0x2D67Ed6aA929B1Dbc28370AEe3e23AD56277657F) (verified) and 4 USDT orders as the buyer ([whitechain/README.md](whitechain/README.md#live-evidence)) |
 

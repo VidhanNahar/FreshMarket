@@ -31,7 +31,7 @@ Two entity types on Rabdi (chain `7794095`). Full field list: [schema.md](schema
 
 ## Live evidence on Rabdi
 
-On 2026-11-07, 17 listings and 4 reviews are live. They were written by these wallets:
+On 2026-11-07, 16 listings and 4 reviews are live. They were written by these wallets:
 
 | Wallet | Role | What it wrote |
 | --- | --- | --- |
@@ -39,7 +39,7 @@ On 2026-11-07, 17 listings and 4 reviews are live. They were written by these wa
 | `0x10fE549c8d1d3d4272c8d88aa6b9ffFD23E7aeEB` | Seller (Pune) | 5 listings |
 | `0xC431629995Cc77d29e1629eaFC57222033fBa196` | Seller (Bengaluru) | 5 listings |
 | `0x6b446F7c62C8892a9E830Fd4D6dAf9943b2609C1` | Buyer | 4 reviews, each backed by a FreshPay order |
-| `0x8221b829d2a7Aa718e7e72D4690f112D4cb39fC8` | Seller (first tests) | 9 transactions on 2026-11-06, including the Iphone-16 listing |
+| `0x8221b829d2a7Aa718e7e72D4690f112D4cb39fC8` | Seller (first tests) | 9 transactions on 2026-11-06 and a delete on 2026-11-07 |
 
 One listing, the Lenovo ThinkPad T14 [`0x083dacf1…3d7f`](https://rabdi.explorer.arkiv.network/entity/0x083dacf10fb6869c85d12685194687833265a850d51964d984378c3206be3d7f), went through every operation:
 
@@ -57,7 +57,7 @@ One listing, the Lenovo ThinkPad T14 [`0x083dacf1…3d7f`](https://rabdi.explore
 | --- | --- |
 | A 15-minute listing expires on its own | Created in [`0x7f93aa81…a14a`](https://rabdi.explorer.arkiv.network/tx/0x7f93aa811a427f4d8f5297ca517a436d92980a7dd4e12dc7d9347a27e4c7a14a) with `$expiresAt` 314,356. After that block it is gone from every query, with no delete call |
 | Delete | Created in [`0x6c7dec89…cdf7`](https://rabdi.explorer.arkiv.network/tx/0x6c7dec89802930560c5ab7420f937386d3fa231a14e42e9e15147a2c1ca6cdf7), deleted in [`0xdafec1fe…0823`](https://rabdi.explorer.arkiv.network/tx/0xdafec1fe8737bddb4b7184296cf51db7ac1a418ab3072aacc646b19b19d70823) |
-| Another wallet can't edit a listing | `ARKIV_SECURITY_ENTITY_KEY=0x02efe70e7f31a9a8d966a880f4ecdf13066bd91880dbe11a32799e6ff5b46437 npx vitest run src/__tests__/listing-security-live.test.ts`: patch and delete fail with `NotOwner` at gas estimation, and nothing is broadcast |
+| Another wallet can't edit a listing | `ARKIV_SECURITY_ENTITY_KEY=0x083dacf10fb6869c85d12685194687833265a850d51964d984378c3206be3d7f npx vitest run src/__tests__/listing-security-live.test.ts`: patch and delete fail with `NotOwner` at gas estimation, and nothing is broadcast |
 | Query it yourself | `npm run query:listings` |
 
 ## Reliability details

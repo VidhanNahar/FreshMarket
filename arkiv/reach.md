@@ -24,7 +24,7 @@ A seller would, because it removes stale listings and repeated data entry. A buy
 
 | Metric | Value | How to check |
 | --- | --- | --- |
-| Live listings | 17 across 7 categories and 4 cities (Mumbai, Pune, Bengaluru, Ahmedabad) | `npm run query:listings` |
+| Live listings | 16 across 6 categories and 3 cities (Mumbai, Pune, Bengaluru) | `npm run query:listings` |
 | Wallets that wrote to Arkiv | 5 (4 sellers, 1 buyer) | [how-you-use-arkiv.md](how-you-use-arkiv.md#live-evidence-on-rabdi) |
 | Real USDT orders on Whitechain | 4, all released, one partly refunded | `/receipt/1` to `/receipt/4` on the live app |
 | Buyer reviews on Arkiv | 4, each tied to a FreshPay order | Any listing page from those sellers |

@@ -11,7 +11,7 @@ Run on 2026-11-07 against `main` at `35e8d62` plus the Phase 11 changes in the s
 | FreshPay contract | `npm run contracts:test` | Local EVM | **21 passed** (unit and fuzz) |
 | FreshPay against the official USDT | `forge test --root contracts --match-contract Fork` | Whitechain Sepolia fork | **1 passed** |
 | FreshPay end to end (pay, block a second buyer, reject a spoofed hash, refund, release, history, webhooks) | `FRESHPAY_FORK_RPC=… npx vitest run src/__tests__/freshpay-fork-live.test.ts` | Whitechain Sepolia fork | **1 passed** |
-| Arkiv: another wallet cannot patch or delete a real listing | `ARKIV_SECURITY_ENTITY_KEY=0x02ef…6437 npx vitest run src/__tests__/listing-security-live.test.ts` | **Live Rabdi** | **2 passed** (`NotOwner` at gas estimation; nothing broadcast) |
+| Arkiv: another wallet cannot patch or delete a real listing | `ARKIV_SECURITY_ENTITY_KEY=0x083d…3d7f npx vitest run src/__tests__/listing-security-live.test.ts` | **Live Rabdi** | **2 passed** (`NotOwner` at gas estimation; nothing broadcast) |
 | Arkiv public discovery | `TEST_ARKIV_DISCOVERY=1 npx vitest run src/__tests__/listing-discovery-live.test.ts` | **Live Rabdi** | **2 passed** |
 | Arkiv chain and client | `npx vitest run src/__tests__/arkiv-chain.test.ts` | **Live Rabdi** | **5 passed** |
 | ENSv2 key-scoped delegation on the real resolver (grant → edit → stranger refused → out-of-scope refused → revoke → refused) | `ENS_LIVE_TESTS=1 npx vitest run src/__tests__/ens-delegation-live.test.ts` | **Live Sepolia** (`eth_simulateV1`) | **3 passed** |

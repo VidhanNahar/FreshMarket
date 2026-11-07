@@ -133,7 +133,12 @@ export function getWalletErrorReason(error: unknown): string {
   const { message, code } = collectWalletError(error);
   const lower = message.toLowerCase();
 
-  if (lower.includes("unauthorized") || lower.includes("notowner") || /is owned by.*not /.test(lower) || lower.includes("not the owner") || lower.includes("only the listing owner")) {
+  // EIP-1193 4100: the wallet hasn't authorized this site for the account (locked, or the account
+  // isn't connected to the site). Its message says "unauthorized", but it isn't an ownership error.
+  if (code === 4100 || lower.includes("has not been authorized") || lower.includes("not authorized by the user")) {
+    return "Your wallet hasn't approved this account for FreshMarket. Unlock your wallet, connect the seller account to this site, then try again.";
+  }
+  if (lower.includes("notowner") || /is owned by.*not /.test(lower) || lower.includes("not the owner") || lower.includes("only the listing owner")) {
     return "Only the listing owner can change or delete this item. Connect the seller wallet and try again.";
   }
   if (lower.includes("maximum lifetime")) return "Arkiv keeps an entity for at most about 182 days from now. Choose a shorter extension.";

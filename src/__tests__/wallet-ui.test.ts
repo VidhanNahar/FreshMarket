@@ -115,6 +115,17 @@ describe("Phase 1: wallet UI helpers", () => {
       expect(getWalletErrorReason(error)).toBe("Arkiv keeps an entity for at most about 182 days from now. Choose a shorter extension.");
     });
 
+    it("does not blame ownership when the wallet hasn't authorized the account (EIP-1193 4100)", () => {
+      const error = { code: 4100, message: "Unauthorized: The requested account and/or method has not been authorized by the user." };
+      expect(getWalletErrorReason(error)).toContain("Unlock your wallet");
+      expect(getWalletErrorReason({ cause: error })).not.toContain("Only the listing owner");
+    });
+
+    it("reports a real ownership rejection from the app or from Arkiv", () => {
+      expect(getWalletErrorReason(new Error("Unauthorized: only the listing owner can change this listing"))).toContain("Only the listing owner");
+      expect(getWalletErrorReason({ shortMessage: "execution reverted: NotOwner" })).toContain("Only the listing owner");
+    });
+
     it("explains an unapproved custom-chain WalletConnect session", () => {
       const reason = getWalletErrorReason({ cause: { message: "Invalid chainId" } });
       expect(reason).toContain("Disconnect FreshMarket");
