@@ -12,8 +12,17 @@ function parentName(value: string | undefined) {
   try { return value?.trim() ? normalize(value.trim()) : ""; }
   catch { configurationErrors.push("Invalid ENS parent name"); return ""; }
 }
+/** Template values copied from docs ("https://your-rpc-endpoint") count as unset, not as a host. */
+export function isPlaceholderUrl(value: string | undefined): boolean {
+  if (!value?.trim()) return false;
+  try {
+    const { hostname } = new URL(value.trim());
+    return !hostname.includes(".") || /your[-_]|example|placeholder|changeme/i.test(hostname);
+  } catch { return false; }
+}
 function rpcUrl(value: string | undefined) {
   const fallback = "https://ethereum-sepolia-rpc.publicnode.com";
+  if (isPlaceholderUrl(value)) return fallback;
   try {
     const url = new URL(value?.trim() || fallback);
     if (!["http:", "https:"].includes(url.protocol)) throw new Error();

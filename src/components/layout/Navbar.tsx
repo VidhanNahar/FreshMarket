@@ -10,6 +10,14 @@ import { WalletButton } from "@/components/wallet/WalletButton";
 import { NetworkStatusBadge } from "@/components/wallet/NetworkStatusBadge";
 import { RabdiNetworkGuard } from "@/components/wallet/RabdiNetworkGuard";
 
+/** SECOND LOOK is a static page outside the Next router; a <Link> would fetch `?_rsc` and 404. */
+function NavLink({ href, ...props }: React.ComponentProps<typeof Link>) {
+  if (typeof href === "string" && href.endsWith(".html")) {
+    return <a href={href} {...(props as React.AnchorHTMLAttributes<HTMLAnchorElement>)} />;
+  }
+  return <Link href={href} {...props} />;
+}
+
 export function Navbar() {
   const pathname = usePathname();
   const menuButton = useRef<HTMLButtonElement>(null);
@@ -17,7 +25,7 @@ export function Navbar() {
 
   const navLinks = [
     { href: "/browse", label: "Browse", icon: Compass },
-    { href: "/storefront", label: "SECOND LOOK", icon: Store },
+    { href: "/storefront/index.html", label: "SECOND LOOK", icon: Store },
     { href: "/sell", label: "Sell Item", icon: PlusCircle },
     { href: "/my-listings", label: "My Listings", icon: LayoutList },
     { href: "/merchant/payments", label: "Payments", icon: Wallet },
@@ -46,7 +54,7 @@ export function Navbar() {
             const Icon = link.icon;
             const isActive = pathname === link.href || (link.href === "/storefront/settings" && pathname === "/identity") || (link.href === "/browse" && Boolean(pathname?.startsWith("/listing/") || pathname?.startsWith("/checkout/"))) || (link.href === "/merchant/payments" && Boolean(pathname?.startsWith("/receipt/")));
             return (
-              <Link
+              <NavLink
                 key={link.href}
                 href={link.href}
                 aria-current={isActive ? "page" : undefined}
@@ -58,7 +66,7 @@ export function Navbar() {
               >
                 <Icon className="hidden h-4 w-4 2xl:block" aria-hidden="true" />
                 {link.label}
-              </Link>
+              </NavLink>
             );
           })}
         </nav>
@@ -96,7 +104,7 @@ export function Navbar() {
             const Icon = link.icon;
             const isActive = pathname === link.href || (link.href === "/storefront/settings" && pathname === "/identity") || (link.href === "/browse" && Boolean(pathname?.startsWith("/listing/") || pathname?.startsWith("/checkout/"))) || (link.href === "/merchant/payments" && Boolean(pathname?.startsWith("/receipt/")));
             return (
-              <Link
+              <NavLink
                 key={link.href}
                 href={link.href}
                 aria-current={isActive ? "page" : undefined}
@@ -109,7 +117,7 @@ export function Navbar() {
               >
                 <Icon className="h-5 w-5" />
                 {link.label}
-              </Link>
+              </NavLink>
             );
           })}
           <div className="flex items-center justify-between px-3 py-2 text-xs text-muted-foreground">

@@ -1,5 +1,6 @@
 import { getAddress, type Address } from "viem";
 import { WHITECHAIN_SEPOLIA_RPC_URL, WHITECHAIN_SEPOLIA_USDT } from "@/freshpay/chain";
+import { isPlaceholderUrl } from "@/lib/ens/config";
 
 /** Public Whitechain settings only. Deployer keys stay in the Foundry environment, never here. */
 const configurationErrors: string[] = [];
@@ -9,6 +10,7 @@ function contract(value: string | undefined): Address | null {
   catch { configurationErrors.push("Invalid FreshPay contract address"); return null; }
 }
 function rpcUrl(value: string | undefined) {
+  if (isPlaceholderUrl(value)) return WHITECHAIN_SEPOLIA_RPC_URL;
   try {
     const url = new URL(value?.trim() || WHITECHAIN_SEPOLIA_RPC_URL);
     if (url.protocol !== "https:") throw new Error();
