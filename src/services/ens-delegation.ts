@@ -87,7 +87,12 @@ export class EnsDelegationService extends EnsStorefrontService {
     const location = await findNameRegistry(name, this.reader);
     if (!location) throw new Error(`${name} is not reachable from the configured ENSv2 root`);
     const resolver = await this.reader.readContract({ address: location.registry, abi: registryAbi, functionName: "getResolver", args: [location.label] });
-    if (resolver === zeroAddress) throw new Error(`${name} has no resolver`);
+    if (resolver === zeroAddress) {
+      const state = await this.reader.readContract({ address: location.registry, abi: registryAbi, functionName: "getState", args: [labelId(location.label)] });
+      throw new Error(state.status === 2
+        ? `${name} is registered but has no resolver yet. Its owner can prepare one on the Seller identity page.`
+        : `${name} isn't registered yet. The owner of the parent name issues it on the Seller identity page (/identity).`);
+    }
     const implementation = await this.reader.readContract({ address: ensConfig.factory, abi: factoryAbi, functionName: "verifyContract", args: [resolver] })
       .catch(() => zeroAddress);
     if (!isAddressEqual(implementation, ensConfig.resolverImplementation)) {
