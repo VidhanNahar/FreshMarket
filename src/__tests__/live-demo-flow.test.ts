@@ -136,7 +136,7 @@ describe.skipIf(!buyerKey)("live demo: Arkiv + FreshPay + reviews on real testne
 
     // 6. Seller marks the item sold and extends it; the buyer reviews the verified purchase.
     await once("arkivMarkSold", () => listingRepository.updateStatus(laptop.entityKey, "sold", arkivSeller));
-    await once("arkivExtend", () => listingRepository.extendExpiry(laptop.entityKey, 3, arkivSeller));
+    await once("arkivExtend", () => listingRepository.extendExpiry(laptop.entityKey, 7, arkivSeller));
     await once("arkivReview", () => reviewRepository.create({ seller: seller.address, orderId, sellerRating: 5, itemRating: 4,
       text: "Paid in USDT on Whitechain, picked up as described. Seller refunded a small difference without fuss." }, arkivBuyer));
     log("finishedAt", new Date().toISOString());
