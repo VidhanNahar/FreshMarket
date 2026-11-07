@@ -148,8 +148,14 @@ describe.skipIf(!buyerKey)("live seed: realistic Arkiv catalogue with paid, revi
       await once(`reserve:${item.id}`, () => listingRepository.updateStatus(ref, "reserved", seller.arkiv));
       await once(`release:${item.id}`, async () => mined(wc, await wcBuyer.writeContract({ address: FRESHPAY, abi: freshPayAbi, functionName: "release", args: [orderId] })));
       await once(`sold:${item.id}`, () => listingRepository.updateStatus(ref, "sold", seller.arkiv));
-      await once(`review:${item.id}`, () => reviewRepository.create({ seller: seller.account.address, orderId,
-        sellerRating: item.purchase!.sellerRating, itemRating: item.purchase!.itemRating, text: item.purchase!.review }, arkivBuyer));
+      // A review whose receipt was lost is found on chain instead of being posted twice.
+      await once(`review:${item.id}`, async () => {
+        const existing = (await reviewRepository.listForSeller(seller.account.address))
+          .find((review) => review.orderId === orderId && review.buyer.toLowerCase() === buyer.address.toLowerCase());
+        if (existing) return { entityKey: existing.id, note: "already on chain" };
+        return reviewRepository.create({ seller: seller.account.address, orderId,
+          sellerRating: item.purchase!.sellerRating, itemRating: item.purchase!.itemRating, text: item.purchase!.review }, arkivBuyer);
+      });
     }
     state.finishedAt = new Date().toISOString();
     save();
