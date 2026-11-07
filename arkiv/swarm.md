@@ -24,7 +24,7 @@ The HTTP integration follows [Bee's upload API](https://docs.ethswarm.org/api/).
 
 ## Configure and reproduce
 
-1. Obtain a usable postage batch from your Bee node/service or the Swarm team. Record its actual ID, network, expiry, buyer wallet or provider. No postage purchase or faucet allocation has been performed by this agent.
+1. Obtain a usable postage batch from your Bee node/service or the Swarm team. Record its actual ID, network, expiry, buyer wallet or provider.
 2. Set server-only `SWARM_BEE_URL`, `SWARM_POSTAGE_BATCH_ID`, optionally `SWARM_BEE_API_KEY`, comma-separated `SWARM_UPLOAD_ALLOWED_WALLETS`, and exact `SWARM_ALLOWED_ORIGIN`. Never put a Bee API credential in a `NEXT_PUBLIC_` or `VITE_` variable. Use HTTPS except for a loopback Bee node in local development. A deployed Vercel function cannot reach a Bee node running only on your laptop's localhost.
 3. Set `NEXT_PUBLIC_SWARM_GATEWAY_URL` and `VITE_SWARM_GATEWAY_URL` for the network holding the file. Rebuild browser bundles after changing them.
 4. Start FreshMarket, connect an enabled EOA wallet and select/drop an image on `/sell`. Sign the content-bound authorization message (no gas transaction). An unavailable configuration fails closed; HTTPS images remain usable.
@@ -60,4 +60,4 @@ Files are public and maximum 4 MiB. File signature validation is not a full imag
 | Writer transaction hash and wallet | No real writer evidence supplied |
 | Demo video timestamp | Not recorded |
 
-The implementation and mock-transport tests do not establish bonus qualification. Issue #22's live acceptance and #23's real gateway-rendering acceptance remain open until this evidence is recorded. Official requirements: https://ethglobal.com/events/mumbai/prizes
+The implementation and mock-transport tests don't qualify for the Swarm bonus on their own. A live upload, its `bzz://` reference in a real Arkiv listing and gateway rendering still need to be recorded. Official requirements: https://ethglobal.com/events/mumbai/prizes

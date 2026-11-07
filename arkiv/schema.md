@@ -1,7 +1,7 @@
 # Arkiv Schema Specification
 
 - **Network:** Arkiv Rabdi Testnet, chain ID `7794095`
-- **Schemas:** `freshmarket.listings.v2` (`LISTING_SCHEMA_VERSION = 2`), `freshmarket.sellers`, `freshmarket.reviews`
+- **Schemas:** `freshmarket.listings.v2` (`LISTING_SCHEMA_VERSION = 2`), `freshmarket.reviews`
 - **Source:** [`src/lib/arkiv/schema.ts`](../src/lib/arkiv/schema.ts); SECOND LOOK declares its own copy in [`storefront/src/reader.ts`](../storefront/src/reader.ts)
 - **Ownership:** the signing wallet is each entity's `$owner`; only it can patch, extend or delete
 
@@ -11,7 +11,7 @@ Each schema is an SDK convention, not a centrally registered table. The SDK writ
 
 | Record | Where | Why |
 | --- | --- | --- |
-| Listing, seller directory, review | **Arkiv** | Public, owned by a wallet, filtered by indexed fields, and expiring on their own |
+| Listing, review | **Arkiv** | Public, owned by a wallet, filtered by indexed fields, and expiring on their own |
 | Seller name, profile text, verified badge | ENS (Sepolia) | `priya.freshmarket.eth`; verification is a FreshMarket-issued subname the seller cannot edit |
 | Payment, one-sale-per-listing lock, orders, refunds | FreshPay on Whitechain (chain 1874) | Money and atomic stock need a contract. See [`whitechain/README.md`](../whitechain/README.md). The Arkiv `priceMinor` is the checkout price; FreshPay never writes to Arkiv |
 | Shipping address, dispute evidence | Private store | Arkiv data is public |
@@ -42,17 +42,6 @@ Removed from version 1: `category` (replaced by `categoryPath`), `currency` (alw
 
 13 attributes plus the schema tag, under Arkiv's limit of 32. All `str` values are capped at 128 UTF-8 bytes; the repository validates byte lengths separately from character counts.
 
-## `freshmarket.sellers`
-
-Owner: seller · Expiry: 180 days (`ExpirationTime.fromDays(180)`; Arkiv's maximum lifetime is about 182 days).
-
-| Attribute | SDK type | Indexed | Values |
-| --- | --- | --- | --- |
-| `ensName` | `str` | ✅ | `priya.freshmarket.eth`. Written only if it already resolves to the signing wallet |
-| `sellerType` | `str` | ✅ | `individual` \| `business` (self-declared; the verified badge comes from ENS) |
-
-A public directory keyed by ENS name. Display name, avatar and bio live in the seller's ENS records, so they are not stored twice. Readers keep the newest record per `$owner`.
-
 ## `freshmarket.reviews`
 
 Owner: buyer · Expiry: 180 days, so reputation is a trailing six-month window.
@@ -82,7 +71,6 @@ Every browse search adds `status = available` and `visibility = public`.
 | Condition, delivery | Like new, pickup | `eq('condition', …)`, `eq('fulfilment', …)` |
 | A seller's store | | `eq('seller', addr(…))` + `.ownedBy(…)` |
 | A Safe Deal / detail link | `/listing/0x…` | `getEntity($key)` |
-| Seller by ENS name | `priya.freshmarket.eth` | `eq('ensName', …)` on `freshmarket.sellers`, then ENS forward resolution |
 | Seller's reviews | | `eq('seller', addr(…))` on `freshmarket.reviews` |
 
 Words left over after category and brand/model resolution (`red`, `barely used`) are matched in the reader against title, description, brand and model, over the already-narrowed candidates. Matching ignores spacing, accepts prefixes and tolerates one typo per word (`latpop` → `laptop`). If a single-category search finds nothing, the reader retries one level up (`pets/dogs/toys` → `pets/dogs`) and labels the result. Fully typo-tolerant free-text search over millions of listings needs a separate, rebuildable search index; Arkiv stays the source of truth.

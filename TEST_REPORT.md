@@ -6,7 +6,7 @@ Run on 2026-11-07 against `main` at `35e8d62` plus the Phase 11 changes in the s
 
 | Suite | Command | Network | Result |
 | --- | --- | --- | --- |
-| Unit and component tests | `npm test` | Mocked transports | **364 passed**, 11 opt-in live tests skipped |
+| Unit and component tests | `npm test` | Mocked transports | **362 passed**, 12 opt-in live tests skipped |
 | Lint, type check, production build | `npm run lint`, `npx tsc --noEmit`, `npm run build` | — | Pass |
 | FreshPay contract | `npm run contracts:test` | Local EVM | **21 passed** (unit and fuzz) |
 | FreshPay against the official USDT | `forge test --root contracts --match-contract Fork` | Whitechain Sepolia fork | **1 passed** |
@@ -17,7 +17,7 @@ Run on 2026-11-07 against `main` at `35e8d62` plus the Phase 11 changes in the s
 | ENSv2 key-scoped delegation on the real resolver (grant → edit → stranger refused → out-of-scope refused → revoke → refused) | `ENS_LIVE_TESTS=1 npx vitest run src/__tests__/ens-delegation-live.test.ts` | **Live Sepolia** (`eth_simulateV1`) | **3 passed** |
 | ENSv2 delegation state of `alice.freshmarket.eth` | `npm run verify:ens-delegation` | **Live Sepolia** | Owner can edit, revoked manager cannot |
 
-## Three-network integration (`src/__tests__/three-network-integration.test.tsx`, #39)
+## Three-network integration (`src/__tests__/three-network-integration.test.tsx`)
 
 | Check | Result |
 | --- | --- |

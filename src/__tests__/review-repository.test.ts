@@ -2,9 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import { ExpirationTime, createPublicClient } from "@arkiv-network/sdk";
 import { custom, stringToHex, type Address, type Hex } from "viem";
 import { rabdiWalletChain } from "@/lib/arkiv/chain";
-import { reviewSchema, sellerSchema } from "@/lib/arkiv/schema";
+import { reviewSchema } from "@/lib/arkiv/schema";
 import { hasVerifiedBadge, sellerLabel, verifiedBadgeName, type EnsReader } from "@/lib/ens";
-import { ArkivSellerRepository, SELLER_PROFILE_DAYS } from "@/services/seller-repository";
 import {
   ArkivReviewRepository, REVIEW_DAYS, orderAllowsReview, summarizeReviews, type OrderLookup, type PurchaseOrder,
 } from "@/services/review-repository";
@@ -27,12 +26,6 @@ function reader(rows: unknown[]) {
   const request = vi.fn().mockResolvedValue({ data: rows, blockNumber: "0x64" });
   return { request, client: createPublicClient({ chain: rabdiWalletChain, transport: custom({ request }, { retryCount: 0 }) }) };
 }
-function sellerRow(owner: Address, ensName: string, updatedAt = "0x64") {
-  return { key, owner, creator: owner, createdAt: "0x1", updatedAt, expiresAt: "0x49da4", creationFlags: 0, attributes: [
-    { name: "arkiv.schema", type: "str", value: "freshmarket.sellers" },
-    { name: "ensName", type: "str", value: ensName }, { name: "sellerType", type: "str", value: "business" },
-  ] };
-}
 function reviewRow(owner: Address, orderId: string, rating = "0x5", updatedAt = "0x64") {
   return { key, owner, creator: owner, createdAt: "0x1", updatedAt, expiresAt: "0x49da4", creationFlags: 0, attributes: [
     { name: "arkiv.schema", type: "str", value: "freshmarket.reviews" },
@@ -53,27 +46,6 @@ describe("ENS names", () => {
     expect(await hasVerifiedBadge("priya.freshmarket.eth", seller, ens({ "priya.verified.freshmarket.eth": seller }))).toBe(true);
     expect(await hasVerifiedBadge("priya.freshmarket.eth", seller, ens({ "priya.verified.freshmarket.eth": buyer }))).toBe(false);
     expect(await hasVerifiedBadge("priya.freshmarket.eth", seller, ens({}))).toBe(false);
-  });
-});
-
-describe("seller directory", () => {
-  it("publishes only names that already resolve to the connected wallet", async () => {
-    const client = wallet(seller);
-    const repository = new ArkivSellerRepository(undefined, ens({ "priya.freshmarket.eth": seller }));
-    await repository.publish({ ensName: " Priya.FreshMarket.eth ", sellerType: "individual" }, client);
-    const [schema, values, options] = client.createEntity.mock.calls[0];
-    expect(schema).toBe(sellerSchema);
-    expect(values.ensName.value).toBe("priya.freshmarket.eth");
-    expect(options.expiration).toEqual(ExpirationTime.fromDays(SELLER_PROFILE_DAYS));
-    await expect(repository.publish({ ensName: "arjun.freshmarket.eth", sellerType: "individual" }, client)).rejects.toThrow("does not resolve");
-    await expect(repository.publish({ ensName: "priya.eth", sellerType: "individual" }, client)).rejects.toThrow("FreshMarket name");
-    expect(client.createEntity).toHaveBeenCalledOnce();
-  });
-  it("ignores directory entries whose ENS name points at another wallet", async () => {
-    const { client, request } = reader([sellerRow(buyer, "priya.freshmarket.eth"), sellerRow(seller, "priya.freshmarket.eth")]);
-    const repository = new ArkivSellerRepository(client, ens({ "priya.freshmarket.eth": seller }));
-    expect((await repository.findByEnsName("priya.freshmarket.eth"))?.owner).toBe(seller);
-    expect(request.mock.calls[0][0].params[0]).toContain("ensName = str('priya.freshmarket.eth')");
   });
 });
 

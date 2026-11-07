@@ -37,13 +37,10 @@ The production script explicitly uses Webpack and runs `prebuild` to package Sto
 
 | Evidence | Status |
 | --- | --- |
-| Fixture rehearsal: matching keys, price/status changes and expiry | Passed automated test in `storefront-portability.test.ts` |
-| Live independent public reads (2026-11-06) | Both readers succeeded; zero live records returned, so populated live sync is not yet demonstrated |
-| Independent static hosting smoke check | Separate local HTTP server served the reader successfully (200) |
-| Real laptop publish transaction / entity key | Pending connected-wallet demo |
-| Separate-host reader URL and matching real entity key | Pending deployment/demo |
-| Real edit/reserved/sold transaction hashes | Pending connected-wallet demo |
-| Short-lived entity key and observed expiration block | Pending connected-wallet expiry demo |
-| Final recording / screenshots | Pending live rehearsal |
-
-Do not close the live demo acceptance solely because an empty public catalogue query passes. Replace pending evidence with genuine receipts and observed results after running the script.
+| Fixture rehearsal: matching keys, price/status changes and expiry | Passes (`storefront-portability.test.ts`) |
+| Real publish | Done: [`0x02efe70e…6437`](https://rabdi.explorer.arkiv.network/entity/0x02efe70e7f31a9a8d966a880f4ecdf13066bd91880dbe11a32799e6ff5b46437), created in [`0x994880ef…fa4b`](https://rabdi.explorer.arkiv.network/tx/0x994880efeeedd63bf2671854ee093fb81fb6d25466c77a140ff6fa5fb486fa4b) |
+| Both readers show the same live key | Done: https://fresh-market-tawny.vercel.app/listing/0x02efe70e7f31a9a8d966a880f4ecdf13066bd91880dbe11a32799e6ff5b46437 and `/storefront` |
+| Real price edit | Done: patch [`0xda5be436…827f`](https://rabdi.explorer.arkiv.network/tx/0xda5be436ad82c04a5347af15792f01c93df9ba0e4bad301ef191849368c3827f) |
+| Real reserved/sold, extension and delete transactions | Not recorded yet |
+| 15-minute listing observed expiring | Not recorded yet |
+| Side-by-side recording | Not recorded yet |

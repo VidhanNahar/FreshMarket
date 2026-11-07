@@ -195,11 +195,11 @@ export default function SellPage() {
           Pass it on
         </div>
         <h1 className="text-4xl font-semibold tracking-[-.05em] text-foreground sm:text-5xl">
-          Create a New Listing
+          Create a listing
         </h1>
         <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
           Give something good a second life. Add clear photos, describe its condition, and set your price.
-          Your wallet signs the listing on Arkiv Rabdi testnet.
+          Your wallet signs the listing on the Arkiv Rabdi testnet, so only you can edit or remove it.
         </p>
       </div>
 
@@ -224,7 +224,7 @@ export default function SellPage() {
               <div>
                 <p className="font-semibold text-sm">Connect your wallet to list an item</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Arkiv requires an onchain transaction signed by your wallet to create and own the entity.
+                  Publishing is a transaction signed by your wallet, which then owns the listing.
                   Connect your wallet on <strong>{RABDI_CHAIN_NAME}</strong> (Chain ID {RABDI_CHAIN_ID}).
                 </p>
               </div>
@@ -246,9 +246,9 @@ export default function SellPage() {
             <div className="flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold text-sm">Wrong Network Connected</p>
+                <p className="font-semibold text-sm">Wrong network</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Connected wallet is on chain ID <code>{chainId ?? "Unknown"}</code>. Switch to{" "}
+                  Your wallet is on chain ID <code>{chainId ?? "Unknown"}</code>. Switch to{" "}
                   <strong>{RABDI_CHAIN_NAME}</strong> (Chain ID {RABDI_CHAIN_ID}) to write listings.
                 </p>
               </div>
@@ -289,9 +289,9 @@ export default function SellPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-xl">Listing Details</CardTitle>
+                  <CardTitle className="text-xl">Listing details</CardTitle>
                   <CardDescription>
-                    Fill in item information. Indexed attributes will be queryable across all Arkiv-enabled storefronts.
+                    Category, brand, city, price and condition become searchable in every storefront that reads Arkiv.
                   </CardDescription>
                 </div>
                 <Button
@@ -578,7 +578,7 @@ export default function SellPage() {
                       className="bg-amber-600 hover:bg-amber-700 text-white gap-2 w-full sm:w-auto"
                     >
                       <Wallet className="h-4 w-4" />
-                      Connect Wallet to Publish
+                      Connect wallet to publish
                     </Button>
                   ) : !isOnRabdi ? (
                     <Button
@@ -587,7 +587,7 @@ export default function SellPage() {
                       variant="destructive"
                       className="gap-2 w-full sm:w-auto"
                     >
-                      Switch Network to Publish
+                      Switch network to publish
                     </Button>
                   ) : (
                     <Button
@@ -596,7 +596,7 @@ export default function SellPage() {
                       className="bg-emerald-700 hover:bg-emerald-800 text-white gap-2 w-full sm:w-auto font-medium"
                     >
                       <Sparkles className="h-4 w-4" />
-                      Publish Listing to Arkiv
+                      Publish listing
                     </Button>
                   )}
                 </div>
@@ -610,11 +610,11 @@ export default function SellPage() {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               <Eye className="h-3.5 w-3.5 text-emerald-500" />
-              Live Marketplace Preview
+              Preview
             </div>
             <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-500/10 px-2 py-0.5 rounded-full">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Instant Live Preview
+              How buyers will see it
             </div>
           </div>
 
@@ -700,7 +700,7 @@ export default function SellPage() {
 
             <CardFooter className="bg-muted/30 border-t border-border/40 py-2.5 px-4 flex items-center justify-between text-[11px] text-muted-foreground">
               <span>Arkiv Rabdi Schema: <code>freshmarket.listings.v2</code></span>
-              <span className="font-semibold text-emerald-600 dark:text-emerald-400">Time-Limited</span>
+              <span className="font-semibold text-emerald-600 dark:text-emerald-400">Expires automatically</span>
             </CardFooter>
           </Card>
         </div>

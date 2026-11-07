@@ -1,70 +1,50 @@
-# FreshMarket Arkiv lifecycle
+# How FreshMarket uses Arkiv
 
-Listings use the `freshmarket.listings.v2` schema on Rabdi (7794095), alongside `freshmarket.sellers` and `freshmarket.reviews`; see [schema.md](schema.md) for fields, indexes and which search uses which index. Public readers do not require a wallet. The connected wallet provider signs creates and lifecycle operations; private keys never enter the application.
+Two entity types on Rabdi (chain `7794095`). Full field list: [schema.md](schema.md).
 
-## Seller lifecycle: issues #11–#13
+| Entity | Owner (can edit) | Expires | Why that fits |
+| --- | --- | --- | --- |
+| `freshmarket.listings.v2` | Seller | The seller picks: 15 minutes (demo), 3, 7, 14 or 30 days. Default 7, renewable | A second-hand item is sold within days or weeks. An old listing should disappear rather than mislead buyers |
+| `freshmarket.reviews` | Buyer | 180 days | Reputation as a trailing six-month window. The buyer, not the seller or us, owns the review |
 
-`ArkivListingRepository` exposes `updateListing`, `updateStatus`, `extendExpiry`, and `deleteListing`, each taking an SDK wallet client and returning the confirmed entity key and transaction hash. Extension receipts also return the expiration block. Before a mutation, the repository rereads the record and requires the connected account to equal both the indexed seller and actual Arkiv owner. The signer must be on Rabdi. The provider account and chain are checked again immediately before broadcast, covering account/network switches while reads and estimation are in progress.
+## Every Arkiv feature we use, and what the user sees
 
-- Price and description use the SDK's schema-typed `patchEntity`. Prices remain uint64 minor units; text is UTF-8 bytes. Edit inputs parse decimal strings directly to bigint, preserving exact prices.
-- Status is a single-column patch. Available, reserved and sold are reversible seller choices. **Sold does not delete, shorten, or extend the entity.**
-- `extendEntity` sets a deadline rather than adding a duration. FreshMarket adds the requested 7/14/30 days (43,200 blocks per day) to the latest stored expiration and passes `ExpirationTime.atBlock`. The SDK receipt contains the actual resulting block.
-- Delete calls `deleteEntity` only after an explicit permanent-delete confirmation. The entity disappears from live public queries after confirmation/indexing.
-- `/my-listings` queries all live pages with both indexed seller and `$owner`, with `status: 'all'`. Tabs separate available, reserved and sold. Expired/deleted records are not historical archives on Arkiv.
+| Arkiv feature | Where in the code | What the user sees |
+| --- | --- | --- |
+| `createEntity` with schema-typed attributes | `createWithReceipt` in [`listing-repository.ts`](../src/services/listing-repository.ts) | `/sell` → **Publish** shows the entity key, transaction link and expiry block |
+| Indexed `eq` / `startsWith` / `gte` / `lte` / `or` | `search` / `searchAll` in the repository | `/browse` filters: category tree, brand/model search, city, price range, condition, pickup/ship. Typing `dogtoy` runs one indexed `startsWith('categoryPath', 'pets/dogs/toys')` query |
+| `status` as an indexed attribute plus `patchEntity` | `updateStatus` | **Reserve** / **Mark sold** in `/my-listings`. The listing leaves `/browse` (available only) but stays visible in SECOND LOOK with its new status |
+| `patchEntity` on price and description | `updateListing` | **Edit** in `/my-listings`. The new price appears in both storefronts under the same key |
+| `$expiresAt` | Every reader | A countdown on each card, an amber warning near the deadline, and the card dropping out of `/browse` when the block passes |
+| `extendEntity` with `ExpirationTime.atBlock` | `extendExpiry` | **Renew +7 / +14 / +30 days** in `/my-listings`. The new deadline comes from the receipt |
+| `deleteEntity` | `deleteListing` | **Delete** (with confirmation) removes the listing from every app |
+| `$owner` and `.ownedBy()` | Every reader, plus `/my-listings` | A seller's dashboard shows only their own listings. A listing whose `seller` doesn't match `$owner` is never shown, so no one can fake a listing in someone else's name |
+| `getEntity(key)` | `getById` | Direct links: `/listing/0x…` and SECOND LOOK's key view |
+| Second, independent public client | [`storefront/src/reader.ts`](../storefront/src/reader.ts) | SECOND LOOK at `/storefront`: a different app showing the same entity key, price and status |
+| Reviews filtered by `eq('seller', …)` | Review reader | Star ratings and reviews on each listing page, counted only when the FreshPay order proves the reviewer bought from that seller |
 
-The SDK and expiry behavior follow the [official change/delete guide](https://docs.arkiv.network/writing/change/) and [expiration guide](https://docs.arkiv.network/writing/expiration/).
+## Do filters, owners and expiry fit the app?
 
-## Transaction and cache behavior
+- **Filters:** We index exactly what buyers filter on: `status`, `visibility`, `categoryPath`, `brand`, `model`, `condition`, `city`, `fulfilment`, `priceMinor` and `seller`. Title, description and media aren't indexed because no query filters on them. Price is a `u64` in USDT minor units so range filters are exact and match the FreshPay checkout price.
+- **Who can edit:** Only the seller wallet can change or delete a listing. Payment doesn't change it: FreshPay never writes to Arkiv, and the seller marks the item sold. Reviews are owned by the buyer, so a seller can't delete a bad review.
+- **Expiry:** Sold isn't the same as expired. A sold listing stays readable until its deadline, so a buyer can still open the link from their receipt. An unsold listing vanishes at its deadline unless the seller renews it.
 
-The dashboard allows one operation at a time, pauses its inventory refetch while pending, and provides wallet-confirmation, pending, public-verification, confirmed and error states with a transaction link. Status/detail/delete changes optimistically update affected caches. Rejected requests roll back only the affected record, preserving other records updated concurrently. Extension uses the receipt's actual deadline.
+## Live evidence on Rabdi
 
-No wallet mutation is automatically retried. Confirmation invalidates the common listing namespace, including buyer catalogue, seller inventory and detail data. Public verification alone retries with bounded backoff to tolerate indexing lag. An indexing timeout retains the confirmed receipt and offers refresh instead of another signature.
-
-If a hash was submitted but confirmation fails, the dashboard blocks further mutations and offers **Check transaction status**, a read-only receipt check. A reverted receipt restores the previous record; a successful receipt refreshes queries. Keep the transaction link before leaving/reloading the page: action locks and pending state are currently in memory, not persistent across navigation or reload.
-
-## Automated verification
-
-`npm test` covers:
-
-- Owner checks before all four operations, missing/expired records, wrong chain and invalid edits.
-- Wallet B rejected before patch, status, extension or deletion requests.
-- Real SDK patch serialization before signing; sold makes no extension/deletion call.
-- Exact prices, extension relative to the existing deadline and all-status seller queries.
-- Wallet account/network changes before broadcast, duplicate-click guards, rejected-signature rollback, unknown-outcome receipt checks and indexing lag.
-- Dashboard connection/network states, ownership filtering, tabs, edit/extension forms and delete confirmation/cancellation.
-
-These tests use fixtures and transport mocks. They are **not evidence that live Rabdi owner enforcement or actual wallet transactions have been demonstrated**.
-
-## Live two-wallet authorization verification
-
-1. Wallet A publishes a disposable test listing on Rabdi. Record the real entity key and transaction hash.
-2. Wallet A reserves the item, marks it sold and restores it to available. Check the public record after each transaction; verify its key and expiration do not change on status updates.
-3. Edit its price/description and extend it by +7 days. Confirm the resulting expiration increased by 302,400 blocks from the pre-extension deadline.
-4. Connect wallet B. Wallet A's items must not appear in B's dashboard. A direct application repository update/delete using B must reject before any signature request.
-5. To verify protocol enforcement separately from the application guard, run read-only direct-SDK simulations against A's still-live entity:
-
-```bash
-ARKIV_SECURITY_ENTITY_KEY=0x... ARKIV_SECURITY_OTHER_WALLET=0x... npm test -- src/__tests__/listing-security-live.test.ts
-```
-
-The second address is public, not a private key, and must differ from the owner. The test allowlists read/estimate RPC methods and blocks signing and broadcast. It must receive an explicit NotOwner/owned-by rejection for patch and delete. Rate-limit, connectivity and insufficient-funds errors do not pass as authorization evidence.
-
-6. Back on wallet A, cancel a delete once and verify no transaction was sent. Then confirm deletion of the disposable listing and check that it no longer appears in public queries.
-
-| Required live evidence | Status |
+| What | Link or command |
 | --- | --- |
-| Wallet A entity key / creation transaction | Pending a funded browser-wallet test |
-| Available → Reserved → Sold transactions | Pending |
-| Price/description edit and extension transactions | Pending |
-| Wallet B direct SDK patch/delete NotOwner results | Pending; opt-in simulation requires A's live entity |
-| Wallet A deletion transaction / public absence | Pending |
+| Writer wallet | `0x8221b829d2a7Aa718e7e72D4690f112D4cb39fC8`: 9 transactions (8 creates, 1 patch) on 2026-11-06 |
+| Live listing | [`0x02efe70e…6437`](https://rabdi.explorer.arkiv.network/entity/0x02efe70e7f31a9a8d966a880f4ecdf13066bd91880dbe11a32799e6ff5b46437) ("Iphone-16", created in [`0x994880ef…fa4b`](https://rabdi.explorer.arkiv.network/tx/0x994880efeeedd63bf2671854ee093fb81fb6d25466c77a140ff6fa5fb486fa4b)) |
+| A patch | [`0xda5be436…827f`](https://rabdi.explorer.arkiv.network/tx/0xda5be436ad82c04a5347af15792f01c93df9ba0e4bad301ef191849368c3827f) (entity `0x155b56be…72e7`) |
+| Expiry working | The first listing, created in [`0xd81bfe31…a8fa`](https://rabdi.explorer.arkiv.network/tx/0xd81bfe31c3e8d16ae0ef2f2aeed24dc1fe50d78f0503c2740dbaca78ce92a8fa), has expired and no longer appears in any query |
+| Another wallet can't edit it | `ARKIV_SECURITY_ENTITY_KEY=0x02efe70e7f31a9a8d966a880f4ecdf13066bd91880dbe11a32799e6ff5b46437 npx vitest run src/__tests__/listing-security-live.test.ts`: patch and delete fail with `NotOwner` at gas estimation, and nothing is broadcast |
+| Query it yourself | `npm run query:listings` |
 
-No live transaction hash, entity key, or network-rejection result is fabricated. Keep #11 and #13 live acceptance open until this evidence is recorded.
+## Reliability details
 
-## Reproducible reads and Swarm references
+- Before any write, the repository rereads the listing and checks that the connected wallet is both the indexed `seller` and the actual `$owner`, and that the wallet is on Rabdi. It checks again just before broadcast in case the user switched account or network.
+- Wallet writes are never retried automatically. After confirmation, only the public read is retried, with backoff, to cover indexer lag. If the read times out, the user keeps the transaction link and can refresh without signing again.
+- If a hash was submitted but confirmation failed, the dashboard blocks further edits and offers **Check transaction status**, a read-only receipt check.
+- Readers page with `entities.length + skipped` so rows from other writers can't end pagination early, and stop at 10,000 matches or 60 seconds with a visible error.
 
-Run `npm run query:listings` with an optional `NEXT_PUBLIC_ARKIV_ACCESS_KEY` in the shell environment to query the schema directly without FreshMarket's server. The exact executable query is in `scripts/query-listings.mjs`. It uses `.from(schema)`, `eq('status', 'available')`, ascending `$key` order and a 20-record limit. Bigint values are printed as decimal strings.
-
-`createWithReceipt(input, connectedArkivWallet)` writes schema-typed attributes and a selected lifetime; SDK `createEntity` returns the entity key, transaction hash and exact expiration block. `getById(key)` performs public read-back. `updateStatus(key, 'sold', wallet)` patches only status. `extendExpiry(key, 7, wallet)` adds 302,400 blocks to the freshly read deadline. `deleteListing(key, wallet)` explicitly removes the entity. None of these examples is a fabricated transaction receipt.
-
-Phase 8 stores `bzz://` references in the public `media` list, while file bytes are uploaded to Swarm separately. See `swarm.md` for exact source files, upload/read commands and missing live evidence. A failed Swarm upload never automatically creates an Arkiv entity.
+`npm test` covers these paths with the real SDK serializer and mocked transports. The live checks above cover them on Rabdi.

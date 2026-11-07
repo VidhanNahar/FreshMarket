@@ -1,4 +1,4 @@
-# Phase 10: FreshPay USDT checkout on Whitechain
+# FreshPay: USDT checkout on Whitechain
 
 FreshPay lets a buyer pay a FreshMarket seller in USDT on **Whitechain Sepolia (chain ID 1874)**. The Arkiv listing decides what is for sale and at what price; the FreshPay contract holds the payment, records the order and settles it. A merchant outside FreshMarket can embed the same checkout in about 20 lines.
 

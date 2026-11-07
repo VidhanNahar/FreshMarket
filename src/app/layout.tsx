@@ -22,7 +22,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "FreshMarket | Portable, Wallet-Owned Second-Hand Marketplace",
   description:
-    "A wallet-owned second-hand marketplace with time-limited listings powered by Arkiv Rabdi testnet. Built for ETHGlobal Mumbai 2026.",
+    "A second-hand marketplace where sellers own their listings and stale listings expire on their own. Powered by Arkiv.",
 };
 
 export default function RootLayout({

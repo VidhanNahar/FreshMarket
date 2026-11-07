@@ -15,15 +15,15 @@ export function Footer() {
               <span className="text-xl font-bold tracking-[-.04em] text-white">FreshMarket</span>
             </div>
             <p className="max-w-md text-sm leading-relaxed text-white/55">
-              A wallet-owned, portable second-hand marketplace with time-limited listings.
-              Built from scratch for ETHGlobal Mumbai 2026 on Arkiv Rabdi testnet.
+              A second-hand marketplace where every listing belongs to its seller&apos;s wallet
+              and expires on its own when its time is up.
             </p>
             <div className="flex flex-wrap items-center gap-4 pt-1 text-xs text-white/55">
               <span className="flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5 text-emerald-500" /> Auto-Expiring Listings
+                <Clock className="h-3.5 w-3.5 text-emerald-500" /> Listings that expire
               </span>
               <span className="flex items-center gap-1">
-                <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" /> Wallet-Owned Entities
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" /> Owned by the seller
               </span>
             </div>
           </div>
@@ -34,17 +34,17 @@ export function Footer() {
             <ul className="space-y-2 text-sm text-white/55">
               <li>
                 <Link href="/browse" className="hover:text-white transition-colors">
-                  Browse Listings
+                  Browse listings
                 </Link>
               </li>
               <li>
                 <Link href="/sell" className="hover:text-white transition-colors">
-                  Sell an Item
+                  Sell an item
                 </Link>
               </li>
               <li>
                 <Link href="/my-listings" className="hover:text-white transition-colors">
-                  Seller Dashboard
+                  My listings
                 </Link>
               </li>
             </ul>
@@ -52,7 +52,7 @@ export function Footer() {
 
           {/* Protocol Links */}
           <div>
-            <h4 className="mb-3 text-sm font-semibold text-white">Protocol & Resources</h4>
+            <h4 className="mb-3 text-sm font-semibold text-white">Resources</h4>
             <ul className="space-y-2 text-sm text-white/55">
               <li>
                 <a
@@ -81,7 +81,7 @@ export function Footer() {
                   rel="noreferrer"
                   className="inline-flex items-center gap-1 hover:text-white transition-colors"
                 >
-                  <Code2 className="h-3.5 w-3.5" /> GitHub Repository
+                  <Code2 className="h-3.5 w-3.5" /> Source code
                 </a>
               </li>
             </ul>
@@ -89,8 +89,8 @@ export function Footer() {
         </div>
 
         <div className="flex flex-col items-center justify-between gap-4 border-t border-white/15 pt-6 text-xs text-white/40 sm:flex-row">
-          <p>© 2026 FreshMarket Team (Vidhan Nahar & Dhairya). Open-source under MIT License.</p>
-          <p>Target: Arkiv — Build on Arkiv (From Scratch) • Chain ID: 7794095</p>
+          <p>© 2026 FreshMarket. Open source under the MIT License.</p>
+          <p>Running on test networks. No real funds are used.</p>
         </div>
       </div>
     </footer>

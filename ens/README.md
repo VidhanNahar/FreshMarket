@@ -1,4 +1,4 @@
-# Phase 9: Sepolia ENSv2 storefront identity
+# Sepolia ENSv2 storefront identity
 
 ## Start here: setting up your first parent name
 
@@ -44,7 +44,7 @@ The operator retains root permissions in the project registry. Seller token owne
 - The navbar allows Sepolia on `/identity`; returning to sell/manage listings requires an explicit Rabdi switch. A Sepolia wallet never becomes an Arkiv write client.
 - Pending hashes lock further ENS actions until confirmation is known. Receipt/event/read-back failures keep the explorer link; **Check submitted transaction** performs a read rather than recreating anything. Closing the page/reloading loses the in-memory lock, so save the link and check its receipt before retrying. This is not an exactly-once guarantee if a provider broadcasts before returning a hash.
 
-## Delegated storefront permissions (#30) and `/storefront/settings` (#31)
+## Delegated storefront permissions and `/storefront/settings`
 
 Sources checked: `PermissionedResolver.sol`, `PermissionedResolverLib.sol` and `EnhancedAccessControl.sol` at the pinned commit.
 
@@ -73,15 +73,15 @@ Sources checked: `PermissionedResolver.sol`, `PermissionedResolverLib.sol` and `
 npm run test:ens-live
 ```
 
-Doing this with real signed transactions on a registered storefront still needs a project parent name (see the table below).
+The same sequence was then run with real signed transactions on `alice.freshmarket.eth`; see [ENS_QUALIFICATION.md](../ENS_QUALIFICATION.md).
 
 ## Contract sources and ABI choice
 
 Deployment addresses are pinned in [shared/ens-deployment.json](../shared/ens-deployment.json), from ENS's official Sepolia deployment at commit `07e55a056f5b6a9c90119f501bdd05714e67dddd`. The minimal ABIs in `src/lib/ens/contracts.ts` were checked against that deployment's artifacts. Deployment addresses can change on testnets; review the [canonical deployment list](https://docs.ens.domains/learn/deployments/) before changing overrides. The client deliberately uses the pinned `UniversalResolverV2` at `0x24E1D8e068620B647CA097f961A61055f4f42D72`, whose `ROOT_REGISTRY()` was verified against this deployment. The shared canonical proxy timed out on that getter during compatibility checking; its address is retained as reference metadata, not silently used for identity ownership proofs. A resolver/root mismatch fails closed with an address fallback and blocks subname issuance.
 
-Issue #28 mentioned NameWrapper. That is the legacy ENSv1 ownership path, not the current ENSv2 registry API. This implementation uses `UserRegistry`, `PermissionedResolver` and `VerifiableFactory`; see [ENSv2 subnames](https://docs.ens.domains/ensv2/subnames/). The deployed `PublicResolverV2` is not interchangeable with a per-seller permissioned resolver. Reverse writes are intentionally the existing reverse-registrar path mirrored by ENSv2; see [reverse resolution](https://docs.ens.domains/ensv2/reverse-resolution/).
+NameWrapper is the legacy ENSv1 ownership path, not the current ENSv2 registry API. This implementation uses `UserRegistry`, `PermissionedResolver` and `VerifiableFactory`; see [ENSv2 subnames](https://docs.ens.domains/ensv2/subnames/). The deployed `PublicResolverV2` is not interchangeable with a per-seller permissioned resolver. Reverse writes are intentionally the existing reverse-registrar path mirrored by ENSv2; see [reverse resolution](https://docs.ens.domains/ensv2/reverse-resolution/).
 
-## Verified evidence and remaining acceptance
+## Live evidence
 
 A real, wallet-free contract read succeeded on Sepolia at block **12077239**, UTC **2026-11-06T14:46:25.168Z**. The configured ENSv2 root routed `.eth` to the expected ETHRegistry, the root's `getState(labelhash('eth'))` returned `REGISTERED` (`2`), and the pinned UniversalResolverV2 reported the same root. Full public output is [sepolia-read-proof.json](sepolia-read-proof.json). Reproduce:
 
@@ -89,28 +89,8 @@ A real, wallet-free contract read succeeded on Sepolia at block **12077239**, UT
 npm run verify:ens
 ```
 
-This is #27's real read evidence. It is **not** a project parent registration or seller subname transaction. The user has not yet configured/registered a parent, and this session has no signing browser wallet. #28's real operation, owner/forward/reverse evidence, and a populated #29 live UI demo remain manual acceptance steps.
+The project's own parent `freshmarket.eth`, its subname registry, `alice.freshmarket.eth`, the seller's resolver and records, and a real grant → delegated edit → revoke sequence are all live on Sepolia. Every transaction is listed in [ENS_QUALIFICATION.md](../ENS_QUALIFICATION.md).
 
-| Required live artifact | Status |
-| --- | --- |
-| Sepolia ENSv2 root/.eth contract read | Verified; proof above |
-| Project-owned parent name | Not yet configured |
-| Parent registry deployment/attachment tx | Pending wallet approvals |
-| Seller resolver deployment tx | Pending wallet approval |
-| Subname registration tx + `LabelRegistered` event | Pending wallet approval |
-| Seller token ownership + forward address | Unit fixtures pass; real subname pending |
-| Seller reverse primary name | Unit fixtures pass; live write/read pending |
-| Populated name/avatar on seller's real Arkiv listing | Pending actual seller identity and listing |
-| Delegation grant → edit → unauthorized → revoke → rejected | Verified against real Sepolia contracts via `eth_simulateV1` (`npm run test:ens-live`); signed txs on a registered storefront pending |
+## Automated verification
 
-Record actual parent, seller/issuer addresses, resolver/subregistry addresses and Sepolia explorer links here after the test. Do not substitute fixture addresses for live evidence.
-
-## Automated verification of this implementation
-
-- Phase 8 baseline: 217 tests passed, 6 opt-in tests skipped; lint passed.
-- With phase 9: 247 tests passed, 6 opt-in tests skipped. ENS tests cover claim/owner/forward mismatches, consistent block reads, text failure, cache isolation, transaction event verification, wrong-chain rejection, no automatic send retries, duplicate-click locks and receipt-only recovery.
-- TypeScript and ESLint passed. Production build (including independent Storefront B) passed with the existing optional MetaMask React Native storage-module warning.
-- Production HTTP smoke checks returned 200 for the main pages and `/identity`; Storefront B's JavaScript and redirect checks passed.
-- The final default `npm run verify:ens` configuration passed the real Sepolia reads recorded above. No wallet write was broadcast.
-
-These checks do not establish a real seller subname, wallet extension/mobile compatibility, avatar gateway uptime, or live profile rendering for a populated Arkiv listing. Finish the wallet checklist above before closing the remaining live acceptance criteria.
+`npm test` covers claim/owner/forward mismatches, consistent block reads, text-record failures, cache isolation, transaction event checks, wrong-chain rejection, no automatic send retries, duplicate-click locks and receipt-only recovery. Live checks: `npm run verify:ens`, `npm run verify:ens-delegation` and `npm run test:ens-live`. Current results are in [TEST_REPORT.md](../TEST_REPORT.md).

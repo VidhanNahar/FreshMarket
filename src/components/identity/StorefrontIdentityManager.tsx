@@ -74,7 +74,7 @@ export function StorefrontIdentityManager() {
       setUnresolved(false);
       setError("");
       setPhase(receipt.status === "success"
-        ? "Transaction confirmed. Refresh ownership/profile; inspect deployment addresses in its explorer logs if needed."
+        ? "Transaction confirmed. Refresh to see the updated name and records."
         : "Transaction reverted. Review the details before trying again.");
       void cache.invalidateQueries({ queryKey: ensIdentityKeys.all });
     } catch { setError("Confirmation is still unavailable. Keep the transaction link and check again shortly."); }
@@ -88,7 +88,7 @@ export function StorefrontIdentityManager() {
       {!configured && <div role="status" className="space-y-2 rounded-lg bg-amber-500/10 p-4">
         <p>{ensConfigurationError || "Register a Sepolia parent name, set NEXT_PUBLIC_ENS_PARENT_NAME, and restart the app to enable these controls."}</p>
         <a href="https://sepolia.app.ens.domains/" target="_blank" rel="noopener noreferrer" className="underline">Open the Sepolia ENS app</a>
-        <p className="text-sm">Use a test wallet and Sepolia test ETH. The example freshmarket.eth is illustrative; this app does not claim to own it.</p>
+        <p className="text-sm">Use a test wallet and Sepolia test ETH.</p>
       </div>}
       {ensConfig.parentName && <p>Project parent: <strong>{ensConfig.parentName}</strong></p>}
       {!isConnected ? <button className={button} onClick={openConnectModal}>Connect wallet</button> : <>

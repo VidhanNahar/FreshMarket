@@ -201,12 +201,12 @@ export function SellerDashboard() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium" htmlFor="edit-brand">Brand (Optional)</label>
+                  <label className="block text-sm font-medium" htmlFor="edit-brand">Brand (optional)</label>
                   <input id="edit-brand" className={field} name="brand" maxLength={64} defaultValue={activeDialog.listing.brand} placeholder="e.g. Lenovo" />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium" htmlFor="edit-model">Model (Optional)</label>
+                  <label className="block text-sm font-medium" htmlFor="edit-model">Model (optional)</label>
                   <input id="edit-model" className={field} name="model" maxLength={64} defaultValue={activeDialog.listing.model} placeholder="e.g. ThinkPad T14" />
                 </div>
               </div>

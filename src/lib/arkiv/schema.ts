@@ -33,17 +33,6 @@ export const listingSchema = defineSchema("freshmarket.listings.v2", {
 export type ListingSchema = typeof listingSchema;
 
 /**
- * Arkiv Schema: `freshmarket.sellers`. A public seller directory keyed by ENS name.
- * The display name, avatar and bio live in the seller's ENS records, not here.
- */
-export const sellerSchema = defineSchema("freshmarket.sellers", {
-  ensName: str().indexed(), // "priya.freshmarket.eth"; trusted only if it resolves to $owner
-  sellerType: str().indexed(), // individual | business (self-declared; badges come from ENS)
-});
-
-export type SellerSchema = typeof sellerSchema;
-
-/**
  * Arkiv Schema: `freshmarket.reviews`. Owned by the buyer and tied to a FreshPay order,
  * which is the proof of purchase on Whitechain.
  */

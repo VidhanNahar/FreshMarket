@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { isSchema } from "@arkiv-network/sdk";
 import { eq, or, startsWith } from "@arkiv-network/sdk/query";
-import { listingSchema, reviewSchema, sellerSchema, LISTING_SCHEMA_VERSION } from "../lib/arkiv/schema";
+import { listingSchema, reviewSchema, LISTING_SCHEMA_VERSION } from "../lib/arkiv/schema";
 import { toPriceMinor, toPriceInput, formatPrice } from "../domain/listing";
 import { getArkivPublicClient } from "../lib/arkiv/chain";
 import fs from "fs/promises";
@@ -12,7 +12,6 @@ describe("Phase 2: Arkiv Schema & Domain Validation", () => {
     expect(isSchema(listingSchema)).toBe(true);
     expect(listingSchema.name).toBe("freshmarket.listings.v2");
     expect(LISTING_SCHEMA_VERSION).toBe(2);
-    expect(sellerSchema.name).toBe("freshmarket.sellers");
     expect(reviewSchema.name).toBe("freshmarket.reviews");
   });
 
@@ -30,9 +29,7 @@ describe("Phase 2: Arkiv Schema & Domain Validation", () => {
     expect(Object.keys(cols).length).toBeLessThan(32);
   });
 
-  it("indexes seller directory and review lookups", () => {
-    expect(sellerSchema.columns.ensName.isIndexed).toBe(true);
-    expect(sellerSchema.columns.sellerType.isIndexed).toBe(true);
+  it("indexes review lookups", () => {
     expect(reviewSchema.columns.seller.isIndexed).toBe(true);
     expect(reviewSchema.columns.orderId.isIndexed).toBe(true);
     expect(reviewSchema.columns.sellerRating.isIndexed).toBe(false);
@@ -84,7 +81,6 @@ describe("Phase 2: Arkiv Schema & Domain Validation", () => {
     const content = await fs.readFile(schemaDocPath, "utf-8");
 
     expect(content).toContain("freshmarket.listings.v2");
-    expect(content).toContain("freshmarket.sellers");
     expect(content).toContain("freshmarket.reviews");
     expect(content).toContain("7794095");
     expect(content).toContain("categoryPath");

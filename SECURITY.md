@@ -1,10 +1,16 @@
-# Project audit and hardening — 2026-11-06
+# Security
 
-## Scope and conclusion
+FreshMarket is a testnet prototype and is **not cleared for an unrestricted production launch**. Passing tests don't prove there are no vulnerabilities. Never put real private keys, Bee credentials or personal data in the repository or in Arkiv entities, which are public.
+
+**Reporting:** contact the maintainers privately (for example through a GitHub private security advisory on this repository). Don't post credentials or exploit details in a public issue.
+
+## Audit and hardening (2026-11-06)
+
+### Scope and conclusion
 
 Reviewed the current main application, independent storefront reader, Arkiv repository and ownership checks, mutation/publication state, cache reconciliation, Swarm upload/auth/media paths, schemas, and deployment assumptions. This is a code/automated-test review, not an external penetration test, formal proof, or complete production certification.
 
-## Reproduced and fixed
+### Reproduced and fixed
 
 | Finding | Trigger and result | Fix / regression coverage |
 | --- | --- | --- |
@@ -19,7 +25,7 @@ Reviewed the current main application, independent storefront reader, Arkiv repo
 
 Quota reservations are intentionally not refunded on malformed bodies, Bee errors or timeouts: a failed response does not prove the remote node did no work. UI retries require a new signed authorization. Requests exceeding 32 attempts or 16 MiB per wallet/UTC hour are rejected before the image is allocated. Shared state uses one EVAL script and wallet hash-tagged keys; real Redis/Bee interoperability must still be verified in deployment.
 
-## Dependency advisory snapshot
+### Dependency advisory snapshot
 
 Commands: `npm audit --json` and `npm audit --omit=dev --json`, against the current npm advisory database.
 
@@ -42,10 +48,10 @@ References: [ws advisory](https://github.com/advisories/GHSA-96hv-2xvq-fx4p), [d
 3. Shared replay/quota storage, funded Bee/postage, correct Arkiv/gateway origins, real wallet writes, owner rejection, extension, deletion and live image retrieval still require deployment-level verification. Fixture responses do not establish network enforcement.
 4. Public upload infrastructure needs perimeter rate limiting, monitoring and account/storage spending controls. EOA signature recovery does not support arbitrary contract-wallet signatures. File signature checks are not a full image decoder, decompression-bomb defense or moderation system.
 5. The 10,000-match/60-second reader guard is a protective prototype limit. Large catalogues require user-visible pagination and narrower node queries. Concurrent writes/expiry can shift offset pages. Public schema/owner checks do not provide moderation or prevent legitimate owners from publishing spam/false item details.
-6. Browser visual/Lighthouse checks and a populated cross-storefront live demo remain unverified. The last real catalogue reads were empty. Vercel/Bee credentials and real writer evidence are not present in this session.
+6. Browser visual/Lighthouse checks and real mobile-wallet tests haven't been run. Live Rabdi writes, cross-wallet `NotOwner` rejection and the Vercel deployment are verified (see [TEST_REPORT.md](TEST_REPORT.md)). A funded Bee/postage setup is not.
 
 Do not call the project loophole-free, production-ready, or all edge cases covered on the basis of these checks.
 
-## Verification
+## Verification at audit time
 
 Final automated checks: 217 tests passed, 6 opt-in live tests skipped; ESLint and the production Webpack build passed. The build still emits the existing optional MetaMask React Native storage-module warning. Production HTTP smoke checks passed for the main routes, Storefront B JavaScript asset and redirect. These checks do not replace the pending live-wallet, Redis/Bee, browser visual or deployment checks above.

@@ -1,20 +1,45 @@
-# Who FreshMarket serves
+# Reach
 
-FreshMarket is a testnet prototype for local second-hand sellers and buyers. It addresses two practical problems: stale listings that remain visible after their useful lifetime and repeated catalog entry across separate marketplaces.
+## Who it's for
 
-The intended user is a seller who publishes one public record and controls its availability and deadline with a wallet. Buyers can browse without connecting a wallet. Community storefront operators can implement the public schema and read the same entity keys without asking FreshMarket for a private API key or database export.
+- **Local second-hand sellers.** People selling a phone, a laptop or a dog crate in their own city. Today they post the same item on three or four sites, and the old posts stay up long after the item is gone. On FreshMarket they publish once, the listing expires on its own, and they mark it reserved or sold with their wallet.
+- **Buyers.** They browse, search by category, brand, city and price, and see only listings that are still live. No wallet is needed to browse.
+- **Other storefronts.** Anyone can show the same listings without asking us for an API key or a data export. SECOND LOOK, our second reader, is the proof: a separate static app with its own Arkiv client and no FreshMarket code.
 
-## What someone can try today
+## Would they use it?
 
-The repository includes FreshMarket and SECOND LOOK, an independently buildable static storefront. Run `npm ci`, `npm run dev`, then open `/browse`, `/sell`, `/my-listings`, and `/storefront`. SECOND LOOK can be deployed independently from `public/storefront/`; see `storefront/README.md`.
+A seller would, because it removes stale listings and repeated data entry. A buyer would, because "is this still available?" is the most common question on second-hand sites, and here an expired listing is simply gone. The cost today is a wallet and testnet gas for each write. That's acceptable for a demo but not for mainstream users yet (see "After Mumbai").
 
-Current public deployment and real writer evidence are not recorded. Local live read checks reached Rabdi successfully but returned zero entities, so they do not demonstrate real adoption or populated catalog sync. Automated portability fixtures test matching IDs, price changes, reserved/sold states and expiry; fixtures are not customers or production usage.
+## Try it today
 
-## Reach evidence
+| What | Where |
+| --- | --- |
+| Live app (browse without a wallet) | https://fresh-market-tawny.vercel.app/browse |
+| Sell a listing (Rabdi wallet with tGLM from the [faucet](https://hub.arkiv.network/faucet)) | https://fresh-market-tawny.vercel.app/sell |
+| Second, independent storefront | https://fresh-market-tawny.vercel.app/storefront |
+| Pay for a listing in USDT (Whitechain Sepolia) | `/listing/<key>` → **Buy now with USDT** |
+| Query the data with no app at all | `npm run query:listings` |
 
-- Public source and MIT license: https://github.com/VidhanNahar/FreshMarket
-- Reproducible direct Arkiv read: `npm run query:listings` (no wallet or FreshMarket server required).
-- Independent reader: `storefront/src/reader.ts`, with public schema and owner validation.
-- Rehearsal and genuine evidence requirements: `arkiv/portability-demo.md` and `arkiv/submission-evidence.md`.
+## Numbers so far
 
-No customer counts, interviews, adoption metrics, live deployment claims or post-event delivery commitments have been fabricated. The team must confirm intended post-Mumbai maintenance and actual user feedback before stating either as an achieved result.
+| Metric | Value | How to check |
+| --- | --- | --- |
+| Rabdi transactions from our writer wallet | 9 (8 creates, 1 patch) on 2026-11-06 | `curl "https://rabdi.explorer.arkiv.network/api/transactions?address=0x8221b829d2a7Aa718e7e72D4690f112D4cb39fC8"` |
+| Live listings | 1 ([`0x02efe70e…6437`](https://rabdi.explorer.arkiv.network/entity/0x02efe70e7f31a9a8d966a880f4ecdf13066bd91880dbe11a32799e6ff5b46437)). The other 7 are no longer live (expired or removed) | `npm run query:listings` |
+| Apps reading the same entities | 2 (FreshMarket and SECOND LOOK) | Open the same key in `/listing/<key>` and `/storefront` |
+| Networks in one flow | 3: Arkiv (listings, reviews), Sepolia ENS (seller names), Whitechain (USDT checkout) | [TEST_REPORT.md](../TEST_REPORT.md) |
+| Automated tests | 362 passing, plus live checks on Rabdi, Sepolia and a Whitechain fork | [TEST_REPORT.md](../TEST_REPORT.md) |
+
+We don't have real users yet. Everything above was written by the team during the event.
+
+## After Mumbai
+
+We plan to keep building FreshMarket. In order:
+
+1. **Pilot in one city.** Onboard a handful of real sellers in Mumbai or Ahmedabad and collect feedback on the publish → reserve → sold → expire loop.
+2. **Remove the gas step for sellers.** Sponsored or batched writes, so a seller signs once instead of paying per listing.
+3. **Open the schema to other storefronts.** Publish `freshmarket.listings.v2` as a standalone spec with the reader rules, so a community group or local shop can run its own storefront over the same listings.
+4. **Real images on Swarm**, with a postage batch, so photos are as portable as the listing.
+5. **Mainnet** once Arkiv and Whitechain are available there.
+
+Source: https://github.com/VidhanNahar/FreshMarket (MIT).

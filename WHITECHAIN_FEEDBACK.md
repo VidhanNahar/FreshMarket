@@ -1,6 +1,6 @@
 # Whitechain feedback
 
-Notes from building FreshPay on Whitechain Sepolia during ETHGlobal Mumbai 2026. The team should add its own deployment and demo experience before submitting.
+Notes from building FreshPay on Whitechain Sepolia during ETHGlobal Mumbai 2026.
 
 ## What worked
 

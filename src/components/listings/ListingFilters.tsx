@@ -49,7 +49,7 @@ export function ListingFilters() {
           <option value="">Pickup or shipping</option>{LISTING_FULFILMENTS.map((fulfilment) => <option key={fulfilment} value={fulfilment}>{FULFILMENT_LABELS[fulfilment]}</option>)}
         </select></label>
         <label className="space-y-1 text-sm font-medium">Sort by<select className={field} value={filters.sort} onChange={(event) => update({ sort: event.target.value as ListingSort })}>
-          <option value="newest">Best match, then newest</option><option value="price-asc">Price: Lowest to Highest</option><option value="price-desc">Price: Highest to Lowest</option>
+          <option value="newest">Best match, then newest</option><option value="price-asc">Price: low to high</option><option value="price-desc">Price: high to low</option>
         </select></label>
       </div>
       {active && <button type="button" className="text-sm font-medium text-emerald-700 dark:text-emerald-400 underline underline-offset-4" onClick={() => router.push("/browse", { scroll: false })}>Clear all filters</button>}
