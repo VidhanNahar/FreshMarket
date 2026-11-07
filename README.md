@@ -138,6 +138,17 @@ Buyers pay for an Arkiv listing in the official test USDT on Whitechain Sepolia 
 
 **Why onchain stablecoin settlement on Whitechain:** the catalogue has no operator who could hold a card merchant account for sellers, so USDT settles wallet to wallet. The contract enforces what a card rail or plain transfer cannot: one sale per listing across every storefront, escrow until receipt, refunds to the payer, and a public order ID that proves a purchase for reviews.
 
-Routes: `/listing/[id]` → **Buy now with USDT** → `/checkout/[listingId]` → `/receipt/[orderId]`; sellers use `/merchant/payments`. `/checkout-demo` embeds the reusable widget in 20 lines with no FreshMarket imports. Signed, idempotent order webhooks are dispatched from `/api/freshpay/webhooks/dispatch`.
+Routes: `/listing/[id]` → **Buy now with USDT** → `/checkout/[listingId]` → `/receipt/[orderId]`; sellers use `/merchant/payments`. `/checkout-demo` embeds the reusable widget in about 20 lines with no FreshMarket imports. Signed, idempotent order webhooks are dispatched from `/api/freshpay/webhooks/dispatch`.
+
+```
+Buyer wallet ──approve(exact amount)──▶ USDT 0xcedf…55a7
+     └──pay(seller, Arkiv listing key, price, deadline)──▶ FreshPay 0x2D67…657F (Whitechain Sepolia)
+             ├─ holds USDT · one live order per listing · emits OrderPaid
+             ├─ buyer confirms receipt, or 10 min passes ──▶ USDT to seller (OrderReleased)
+             ├─ seller refunds part or all ──▶ USDT to buyer (OrderRefunded)
+             └─ events ──▶ signed webhooks · receipts · order ID cited by Arkiv reviews
+```
+
+**Try the reusable widget:** open [`/checkout-demo`](https://fresh-market-tawny.vercel.app/checkout-demo), connect a wallet with WBT ([faucet](https://faucet.testnet.whitechain.io)) and the official test USDT, and click **Pay with USDT**. The widget switches to Whitechain, approves the exact amount, pays, and verifies the order onchain. The whole integration is [`src/app/checkout-demo/page.tsx`](src/app/checkout-demo/page.tsx), 21 lines that import only `@/freshpay`.
 
 Read the [Whitechain guide](whitechain/README.md) for architecture, deployment, verification, webhooks and limitations, and [WHITECHAIN_FEEDBACK.md](WHITECHAIN_FEEDBACK.md). `npm run contracts:test` runs the Foundry suite. FreshPay is deployed and verified on Whitechain Sepolia at [`0x2D67Ed6aA929B1Dbc28370AEe3e23AD56277657F`](https://explorer.testnet.whitechain.io/address/0x2D67Ed6aA929B1Dbc28370AEe3e23AD56277657F) (10-minute hold for the demo). No live USDT payment or refund is claimed yet; those are added to the guide's evidence table once they happen.

@@ -9,7 +9,8 @@ This file records missing evidence explicitly rather than inventing a deployed U
 | Real portable entity key | [`0x02efe70e7f31a9a8d966a880f4ecdf13066bd91880dbe11a32799e6ff5b46437`](https://rabdi.explorer.arkiv.network/entity/0x02efe70e7f31a9a8d966a880f4ecdf13066bd91880dbe11a32799e6ff5b46437) ("Iphone-16", available, `$owner` = seller) |
 | Wallet-free read checks | `npm run query:listings` returns the live listing (2026-11-07) |
 | Cross-wallet rejection | Live: another wallet's patch and delete of that entity fail with `NotOwner` at gas estimation, nothing broadcast (`listing-security-live.test.ts`, see [TEST_REPORT.md](../TEST_REPORT.md)) |
-| Real status/edit/extension/delete transaction hashes | Not yet recorded |
+| Real create and edit transactions | Wallet `0x8221…9fC8` sent 9 Rabdi transactions on 2026-11-06: 8 creates and 1 patch. For example, the first create [`0xd81bfe31…a8fa`](https://rabdi.explorer.arkiv.network/tx/0xd81bfe31c3e8d16ae0ef2f2aeed24dc1fe50d78f0503c2740dbaca78ce92a8fa) (entity `0xaaa46e15…6c7e`, no longer live on 2026-11-07), the patch [`0xda5be436…827f`](https://rabdi.explorer.arkiv.network/tx/0xda5be436ad82c04a5347af15792f01c93df9ba0e4bad301ef191849368c3827f) (entity `0x155b56be…72e7`), and the Iphone-16 create [`0x994880ef…6fa4b`](https://rabdi.explorer.arkiv.network/tx/0x994880efeeedd63bf2671854ee093fb81fb6d25466c77a140ff6fa5fb486fa4b). The explorer lists them via `/api/transactions?address=<wallet>` |
+| Real status/extension/delete transaction hashes | Not yet recorded |
 | Two storefront sync | Automated fixture rehearsal passes. Both storefronts read the same live entity key; a recorded side-by-side run is still needed |
 | 15-minute expiry demo | Preset and 450-block encoding tested; live expiration observation not recorded |
 | Swarm upload + reference + postage provenance | Requires Bee endpoint, usable batch and enabled test wallet |
